@@ -1,20 +1,40 @@
 # Technology Stack: Industrial Geofencing Safety System
 
-## Core Languages & Runtimes
-- **C++:** Primary language for the high-performance inference engine and real-time processing pipeline.
-- **CUDA:** For GPU-accelerated computations and TensorRT integration.
+## Core Development
+- **Language:** C++20
+  - *Why:* Uncompromising performance and direct memory management required for low-latency video processing.
+- **Language:** Python 3.10+
+  - *Why:* Primary language for model training (PyTorch/Ultralytics), data preprocessing, and rapid prototyping of CV algorithms before C++ implementation.
+- **Build System:** CMake
+  - *Why:* Industry standard for C++ project configuration, ensuring cross-platform compatibility and easy dependency management.
+- **Compiler:** GCC / Clang
+  - *Why:* Mature, highly optimizing compilers with robust support for C++20 features.
 
-## Computer Vision & AI
-- **YOLOv11-Nano:** The chosen model architecture for lightweight, high-speed object detection.
-- **NVIDIA TensorRT:** Used for model optimization (INT8 quantization) to achieve sub-50ms latency on RTX GPUs.
-- **OpenCV:** For image manipulation, drawing safety overlays, and homography-based spatial transformations.
+## Computer Vision & AI Inference
+- **Model:** YOLOv11-Nano
+  - *Why:* State-of-the-art accuracy-to-speed ratio. "Nano" variant chosen specifically for maximum frame rate on edge hardware.
+- **Inference Engine:** NVIDIA TensorRT (INT8 Quantization)
+  - *Why:* Optimizes neural networks for NVIDIA GPUs, delivering significantly higher throughput and lower latency than raw framework inference.
+- **Image Processing:** OpenCV (w/ CUDA modules)
+  - *Why:* Universal library for pre/post-processing, drawing overlays, and performing geometric transformations (homography).
 
-## Multimedia & Streaming
-- **GStreamer:** Handles robust, low-latency RTSP video ingestion and hardware-accelerated decoding.
+## Multimedia Pipeline
+- **Framework:** GStreamer
+  - *Why:* Enterprise-grade multimedia graph framework capable of zero-copy memory transfers and hardware-accelerated decoding/encoding.
 
 ## Communication & Integration
-- **MQTT:** Low-latency messaging protocol for triggering emergency stops and communicating with industrial IoT devices.
+- **Messaging:** MQTT (e.g., Eclipse Mosquitto)
+  - *Why:* Lightweight, publish/subscribe protocol ideal for IoT. Decouples the detection engine from the alerting systems (dashboards, PLCs).
+- **Data Interchange:** JSON
+  - *Why:* Human-readable, standard format for alert payloads and configuration.
+
+## Dashboard & Visualization
+- **Frontend:** React (TypeScript) with Material UI
+  - *Why:* Modern, responsive web interface for viewing live streams (via WebRTC/HLS) and historical alert logs.
+- **Backend API:** Node.js / Express
+  - *Why:* Efficiently handles WebSocket connections for real-time dashboard updates and serves the frontend.
 
 ## Infrastructure & Hardware
-- **NVIDIA RTX GPU:** Target hardware platform for TensorRT-accelerated inference.
-- **Linux (Ubuntu recommended):** Development and deployment environment for optimal GStreamer and NVIDIA driver support.
+- **Target Hardware:** NVIDIA RTX Series GPU
+- **OS:** Linux (Ubuntu 22.04/24.04 LTS)
+  - *Why:* First-class support for NVIDIA drivers, Docker, and ROS (if needed later).
