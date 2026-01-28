@@ -1,4 +1,4 @@
-This document outlines the end-to-end engineering steps to build your **Industrial Geofencing Safety System**. It is designed to maximize your **Asus Vivobook’s RTX GPU** and your background in **ECE/C++** to deliver a production-grade project for your 2026 capstone.
+
 
 ---
 
