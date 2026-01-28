@@ -172,17 +172,3 @@ Here is a structured, high-impact description you can copy and paste into your `
 └── README.md
 
 ```
-
----
-
-## 📝 Scopus Publication Intent
-
-This project serves as the primary research for the paper:
-
-> *"Optimizing Spatial Safety Enforcement in Low-Resolution Industrial Surveillance via Homographic Perspective Correction and Temporal Filtering."*
-
----
-
-### **Next Step for You**
-
-Would you like me to generate a **"How to Use"** section for this README that explains the command-line arguments for running the calibration vs. the live inference mode?
