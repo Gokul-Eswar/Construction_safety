@@ -15,11 +15,11 @@
     - [x] Update `PipelineManager` to include `SpatialMapper` and `Visualizer` steps
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Pipeline Orchestration' (Protocol in workflow.md)
 
-## Phase 3: Application Entry Point & Alerting Logic
+## Phase 3: Application Entry Point & Alerting Logic [checkpoint: c8bb3b4]
 - [x] Task: Alert Generation Logic [01adffb]
     - [x] Write tests for zone violation checks and alert throttling
     - [x] Implement logic to trigger MQTT alerts based on `SpatialMapper` results (e.g., "Person in Zone A")
 - [x] Task: Main Application (`main.cpp`) [01adffb]
     - [x] Implement command-line argument parsing (config path, debug mode)
     - [x] Wire up the `PipelineManager` and start the main loop
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: Application Entry Point & Alerting Logic' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 3: Application Entry Point & Alerting Logic' (Protocol in workflow.md) [c8bb3b4]
