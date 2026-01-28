@@ -1,6 +1,6 @@
 # Implementation Plan: System Integration & Alerting
 
-## Phase 1: MQTT Client Implementation
+## Phase 1: MQTT Client Implementation [checkpoint: d134340]
 - [x] Task: MQTT Client Wrapper [cbc8e1b]
     - [x] Write unit tests for connection, publishing, and disconnection (using a mock or embedded broker if possible, or just interface mocking)
     - [x] Implement `MQTTClient` class using a standard C++ MQTT library (e.g., Paho MQTT C++)
