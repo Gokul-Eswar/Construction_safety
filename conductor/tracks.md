@@ -4,5 +4,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: Core Inference Pipeline & GStreamer Integration**
+- [~] **Track: Core Inference Pipeline & GStreamer Integration**
   *Link: [./tracks/core_inference_20260127/](./tracks/core_inference_20260127/)*
