@@ -19,12 +19,12 @@
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: GStreamer Video Ingestion' (Protocol in workflow.md)
 
 ## Phase 3: TensorRT Inference Engine
-- [~] Task: TensorRT Model Loader & Optimizer
+- [x] Task: TensorRT Model Loader & Optimizer [129fa70]
     - [x] Write tests for model file existence and engine serialization/deserialization
-    - [ ] Implement YOLOv11 TensorRT engine loader (supporting ONNX to TRT conversion)
-- [ ] Task: Inference Pipeline Implementation
-    - [ ] Write unit tests for pre-processing (resize, normalization) and post-processing (NMS)
-    - [ ] Implement `InferenceEngine` class to execute TensorRT context on GPU
+    - [x] Implement YOLOv11 TensorRT engine loader (supporting ONNX to TRT conversion)
+- [x] Task: Inference Pipeline Implementation [62307d3]
+    - [x] Write unit tests for pre-processing (resize, normalization) and post-processing (NMS)
+    - [x] Implement `InferenceEngine` class to execute TensorRT context on GPU
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: TensorRT Inference Engine' (Protocol in workflow.md)
 
 ## Phase 4: Spatial Mapping & Visualization
