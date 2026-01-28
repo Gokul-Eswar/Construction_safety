@@ -1,9 +1,9 @@
 # Implementation Plan: System Integration & Alerting
 
 ## Phase 1: MQTT Client Implementation
-- [ ] Task: MQTT Client Wrapper
-    - [ ] Write unit tests for connection, publishing, and disconnection (using a mock or embedded broker if possible, or just interface mocking)
-    - [ ] Implement `MQTTClient` class using a standard C++ MQTT library (e.g., Paho MQTT C++)
+- [x] Task: MQTT Client Wrapper [cbc8e1b]
+    - [x] Write unit tests for connection, publishing, and disconnection (using a mock or embedded broker if possible, or just interface mocking)
+    - [x] Implement `MQTTClient` class using a standard C++ MQTT library (e.g., Paho MQTT C++)
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: MQTT Client Implementation' (Protocol in workflow.md)
 
 ## Phase 2: Pipeline Orchestration
