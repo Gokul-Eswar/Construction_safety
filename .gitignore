@@ -1,0 +1,11 @@
+build/
+bin/
+lib/
+*.o
+*.exe
+*.so
+*.dylib
+__pycache__/
+*.pyc
+.vscode/
+.idea/
