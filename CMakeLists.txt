@@ -59,3 +59,31 @@ endif()
 if(CMAKE_CUDA_COMPILER)
     target_link_libraries(env_check PRIVATE ${CUDA_CUDART_LIBRARY}) 
 endif()
+
+# Testing
+enable_testing()
+include(FetchContent)
+FetchContent_Declare(
+  googletest
+  URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.zip
+)
+# For Windows: Prevent overriding the parent project's compiler/linker settings
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googletest)
+
+# Unit Tests
+add_executable(unit_tests 
+    tests/unit/test_rtsp_source.cpp
+    src/pipeline/rtsp_source.cpp
+)
+target_include_directories(unit_tests PRIVATE src)
+target_link_libraries(unit_tests PRIVATE 
+    GTest::gtest_main 
+    ${GST_LIBRARIES} 
+    ${OpenCV_LIBS}
+)
+if(GST_FOUND OR GSTREAMER_FOUND)
+     target_include_directories(unit_tests PRIVATE ${GST_INCLUDE_DIRS})
+endif()
+
+add_test(NAME unit_tests COMMAND unit_tests)
