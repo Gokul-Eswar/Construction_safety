@@ -7,12 +7,12 @@
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: MQTT Client Implementation' (Protocol in workflow.md)
 
 ## Phase 2: Pipeline Orchestration
-- [ ] Task: Pipeline Manager Core
-    - [ ] Write tests for component initialization and data flow
-    - [ ] Implement `PipelineManager` to link `RTSPSource` callbacks to `InferenceEngine` execution
-- [ ] Task: Integration of Spatial & Visualizer
-    - [ ] Write tests for the full processing chain (Source -> Detect -> Map -> Visualize)
-    - [ ] Update `PipelineManager` to include `SpatialMapper` and `Visualizer` steps
+- [x] Task: Pipeline Manager Core [07bfe16]
+    - [x] Write tests for component initialization and data flow
+    - [x] Implement `PipelineManager` to link `RTSPSource` callbacks to `InferenceEngine` execution
+- [x] Task: Integration of Spatial & Visualizer [07bfe16]
+    - [x] Write tests for the full processing chain (Source -> Detect -> Map -> Visualize)
+    - [x] Update `PipelineManager` to include `SpatialMapper` and `Visualizer` steps
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Pipeline Orchestration' (Protocol in workflow.md)
 
 ## Phase 3: Application Entry Point & Alerting Logic
