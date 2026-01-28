@@ -24,13 +24,43 @@ bool ModelLoader::load() {
     // Check extension
     if (model_path_.find(".onnx") != std::string::npos) {
         std::cout << "Detected ONNX model. Starting conversion to TensorRT..." << std::endl;
-        // Mock conversion delay
-        // In real impl: Parse ONNX, Build Engine
+        return buildFromOnnx();
     } else if (model_path_.find(".engine") != std::string::npos) {
          std::cout << "Detected TensorRT engine. Deserializing..." << std::endl;
-         // In real impl: Runtime->deserializeCudaEngine
+         return deserializeEngine();
     }
     
+    loaded_ = false;
+    return false;
+}
+
+bool ModelLoader::buildFromOnnx() {
+#ifdef ENABLE_CUDA
+    // Real implementation would:
+    // 1. Create builder
+    // 2. Create network definition
+    // 3. Create parser
+    // 4. Parse ONNX
+    // 5. Build engine
+    // 6. Serialize and save
+    std::cout << "[Mock] Building TensorRT engine from ONNX..." << std::endl;
+#else
+    std::cout << "[Mock] CUDA disabled. Skipping actual engine build." << std::endl;
+#endif
+    loaded_ = true;
+    return true;
+}
+
+bool ModelLoader::deserializeEngine() {
+#ifdef ENABLE_CUDA
+    // Real implementation would:
+    // 1. Read file into memory
+    // 2. Create runtime
+    // 3. deserializeCudaEngine
+    std::cout << "[Mock] Deserializing TensorRT engine..." << std::endl;
+#else
+    std::cout << "[Mock] CUDA disabled. Skipping actual deserialization." << std::endl;
+#endif
     loaded_ = true;
     return true;
 }

@@ -23,6 +23,9 @@ public:
     bool isLoaded() const;
 
 private:
+    bool buildFromOnnx();
+    bool deserializeEngine();
+
     std::string model_path_;
     bool loaded_;
     
