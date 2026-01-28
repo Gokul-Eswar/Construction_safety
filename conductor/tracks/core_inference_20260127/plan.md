@@ -27,11 +27,11 @@
     - [x] Implement `InferenceEngine` class to execute TensorRT context on GPU
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: TensorRT Inference Engine' (Protocol in workflow.md)
 
-## Phase 4: Spatial Mapping & Visualization
+## Phase 4: Spatial Mapping & Visualization [checkpoint: f2b84f8]
 - [x] Task: Homography Transformation Logic [479a5f4]
     - [x] Write tests for coordinate transformation accuracy against known points
     - [x] Implement `SpatialMapper` class using OpenCV `findHomography` and `perspectiveTransform`
 - [x] Task: Detection Overlay & Result Visualization [15dbb56]
     - [x] Write tests for overlay rendering performance
     - [x] Implement visualization layer to draw bounding boxes and safety zones on the video frame
-- [ ] Task: Conductor - User Manual Verification 'Phase 4: Spatial Mapping & Visualization' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 4: Spatial Mapping & Visualization' (Protocol in workflow.md) [f2b84f8]
