@@ -75,8 +75,10 @@ FetchContent_MakeAvailable(googletest)
 add_executable(unit_tests 
     tests/unit/test_rtsp_source.cpp
     tests/unit/test_model_loader.cpp
+    tests/unit/test_inference_engine.cpp
     src/pipeline/rtsp_source.cpp
     src/inference/model_loader.cpp
+    src/inference/inference_engine.cpp
 )
 target_include_directories(unit_tests PRIVATE src)
 target_link_libraries(unit_tests PRIVATE 
