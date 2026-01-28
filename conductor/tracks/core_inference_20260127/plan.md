@@ -9,7 +9,7 @@
     - [ ] Implement a utility to check and report system capabilities
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Foundation & Build System' (Protocol in workflow.md)
 
-## Phase 2: GStreamer Video Ingestion
+## Phase 2: GStreamer Video Ingestion [checkpoint: 9c735d4]
 - [x] Task: RTSP Source Component [97bddbf]
     - [x] Write unit tests for GStreamer pipeline string generation
     - [x] Implement GStreamerRTSPSource class using `rtspsrc` and hardware decoding (`nvv4l2decoder`)
