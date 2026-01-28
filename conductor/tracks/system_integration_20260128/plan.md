@@ -16,10 +16,10 @@
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Pipeline Orchestration' (Protocol in workflow.md)
 
 ## Phase 3: Application Entry Point & Alerting Logic
-- [ ] Task: Alert Generation Logic
-    - [ ] Write tests for zone violation checks and alert throttling
-    - [ ] Implement logic to trigger MQTT alerts based on `SpatialMapper` results (e.g., "Person in Zone A")
-- [ ] Task: Main Application (`main.cpp`)
-    - [ ] Implement command-line argument parsing (config path, debug mode)
-    - [ ] Wire up the `PipelineManager` and start the main loop
+- [x] Task: Alert Generation Logic [01adffb]
+    - [x] Write tests for zone violation checks and alert throttling
+    - [x] Implement logic to trigger MQTT alerts based on `SpatialMapper` results (e.g., "Person in Zone A")
+- [x] Task: Main Application (`main.cpp`) [01adffb]
+    - [x] Implement command-line argument parsing (config path, debug mode)
+    - [x] Wire up the `PipelineManager` and start the main loop
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Application Entry Point & Alerting Logic' (Protocol in workflow.md)
