@@ -74,7 +74,9 @@ FetchContent_MakeAvailable(googletest)
 # Unit Tests
 add_executable(unit_tests 
     tests/unit/test_rtsp_source.cpp
+    tests/unit/test_model_loader.cpp
     src/pipeline/rtsp_source.cpp
+    src/inference/model_loader.cpp
 )
 target_include_directories(unit_tests PRIVATE src)
 target_link_libraries(unit_tests PRIVATE 
@@ -82,6 +84,13 @@ target_link_libraries(unit_tests PRIVATE
     ${GST_LIBRARIES} 
     ${OpenCV_LIBS}
 )
+
+if(CMAKE_CUDA_COMPILER)
+    target_link_libraries(unit_tests PRIVATE ${CUDA_CUDART_LIBRARY} nvinfer) 
+    # Assuming nvinfer is in path or handled by FindCUDA/CMAKE_CUDA_IMPLICIT_LINK_DIRECTORIES
+    # For now, we might need to manually find it if not standard.
+    # But since CUDA is disabled in current env, it won't trigger.
+endif()
 if(GST_FOUND OR GSTREAMER_FOUND)
      target_include_directories(unit_tests PRIVATE ${GST_INCLUDE_DIRS})
 endif()
