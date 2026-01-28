@@ -6,7 +6,7 @@
     - [x] Implement `MQTTClient` class using a standard C++ MQTT library (e.g., Paho MQTT C++)
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: MQTT Client Implementation' (Protocol in workflow.md)
 
-## Phase 2: Pipeline Orchestration
+## Phase 2: Pipeline Orchestration [checkpoint: e8121ff]
 - [x] Task: Pipeline Manager Core [07bfe16]
     - [x] Write tests for component initialization and data flow
     - [x] Implement `PipelineManager` to link `RTSPSource` callbacks to `InferenceEngine` execution
