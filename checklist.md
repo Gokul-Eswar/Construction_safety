@@ -1,0 +1,50 @@
+# Construction Safety Inference System - Progress Checklist
+
+## ✅ Completed (Milestone 1: Prototype & Integration)
+
+### 🏗️ Foundation & Build
+- [x] **Modular CMake Project:** Support for GStreamer, OpenCV, CUDA, and TensorRT.
+- [x] **Dependency Management:** Automatic fetching of `googletest` and `nlohmann_json`.
+- [x] **Environment Validation:** `env_check` utility for system capability reporting.
+
+### 📹 Video Ingestion Pipeline
+- [x] **RTSP Source:** Support for hardware decoding (`nvv4l2decoder`) via GStreamer.
+- [x] **Asynchronous Ingestion:** Frame callbacks via `appsink`.
+- [x] **Telemetry:** Real-time FPS and frame count monitoring.
+
+### 🧠 Inference & Intelligence
+- [x] **Model Loader:** Logic for ONNX conversion and TensorRT engine management.
+- [x] **Inference Logic:** Image preprocessing and NMS (Non-Maximum Suppression) post-processing.
+- [x] **Spatial Mapper:** Homography-based mapping (Image -> World coordinates).
+
+### 🚨 Visualization & Alerting
+- [x] **Detection Overlay:** Bounding boxes and confidence labels.
+- [x] **Safety Zones:** Polygonal zone rendering with semi-transparent overlays.
+- [x] **MQTT Client:** Wrapper for sub-millisecond alert dispatching (Mocked for prototype).
+
+### ⚙️ Orchestration & Config
+- [x] **Pipeline Manager:** Centralized orchestration of all components.
+- [x] **JSON Config:** Dynamic configuration via `config.json` (URIs, Zones, MQTT settings).
+- [x] **Graceful Lifecycle:** Main application with signal handling (SIGINT/SIGTERM).
+- [x] **Test Coverage:** 18 unit tests verifying all core modules.
+
+---
+
+## 🛠️ Pending / Future Roadmap (Milestone 2: Production Readiness)
+
+### ⚡ Hardware Optimization
+- [ ] **Native TensorRT Execution:** Transition from mocked inference to actual GPU execution (requires CUDA environment).
+- [ ] **Paho MQTT Integration:** Replace mock client with actual Paho C++ library for broker communication.
+
+### 📊 Data & Throttling
+- [ ] **Violation Logging:** SQLite or file-based persistence for audit logs.
+- [ ] **Intelligent Throttling:** Logic to prevent alert fatigue (e.g., 1 alert per person per interval).
+
+### 🖥️ User Experience
+- [ ] **Web Dashboard:** Real-time monitoring UI and violation history.
+- [ ] **Visual Zone Editor:** GUI tool to define safety zones interactively.
+
+### 🔄 Advanced Features
+- [ ] **Multi-Object Tracking:** Assign persistent IDs to detections (SORT/DeepSORT).
+- [ ] **Multi-Stream Support:** Orchestrate multiple RTSP feeds in a single instance.
+- [ ] **Dockerization:** NVIDIA Container Toolkit integration for edge deployment.
