@@ -45,8 +45,22 @@ void PipelineManager::stop() {
     if (source_) {
         source_->stop();
     }
+    if (mqtt_client_) {
+        mqtt_client_->disconnect();
+    }
     running_ = false;
     std::cout << "Pipeline stopped." << std::endl;
+}
+
+void PipelineManager::setSafetyZones(const std::vector<std::vector<cv::Point>>& zones) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    safety_zones_ = zones;
+}
+
+void PipelineManager::setMQTTConfig(const std::string& host, int port, const std::string& topic) {
+    mqtt_client_ = std::make_unique<MQTTClient>("safety_system_p1");
+    mqtt_client_->connect(host, port);
+    mqtt_topic_ = topic;
 }
 
 void PipelineManager::onFrameReceived(GstSample* sample) {
@@ -61,11 +75,6 @@ void PipelineManager::onFrameReceived(GstSample* sample) {
 
     GstMapInfo map;
     if (gst_buffer_map(buffer, &map, GST_MAP_READ)) {
-        // Create cv::Mat from buffer data
-        // For simplicity assuming BGR or RGB based on caps. 
-        // Our test source uses I420, real pipeline uses hardware decoder output.
-        // For the mock integration, we just verify we can map the buffer.
-        
         cv::Mat frame;
         if (GST_VIDEO_INFO_FORMAT(&info) == GST_VIDEO_FORMAT_I420) {
             cv::Mat yuv(info.height + info.height / 2, info.width, CV_8UC1, map.data);
@@ -75,24 +84,40 @@ void PipelineManager::onFrameReceived(GstSample* sample) {
         }
 
         if (!frame.empty()) {
-            // 2. runInference
             auto detections = engine_->runInference(frame);
             
-            // 3. Visualize
+            // Draw detections
             visualizer_->drawDetections(frame, detections);
             
-            // 4. Spatial Mapping (example: map center of box)
-            for (auto& det : detections) {
-                cv::Point2f center(det.box.x + det.box.width / 2.0f, det.box.y + det.box.height / 2.0f);
-                cv::Point2f world_pos = spatial_mapper_->mapToWorld(center);
-                // Log or use world_pos for zone checks in Phase 3
+            // Draw zones
+            {
+                std::lock_guard<std::mutex> lock(mutex_);
+                visualizer_->drawZones(frame, safety_zones_);
             }
 
-            // In real app, we might display or stream this back
-            // cv::imshow("Debug View", frame);
-            // cv::waitKey(1);
+            // Check alerts
+            checkAlerts(detections);
         }
 
         gst_buffer_unmap(buffer, &map);
+    }
+}
+
+void PipelineManager::checkAlerts(const std::vector<Detection>& detections) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (safety_zones_.empty() || !mqtt_client_ || !mqtt_client_->isConnected()) return;
+
+    for (const auto& det : detections) {
+        // Use center of bottom of box for ground-plane check
+        cv::Point feet(det.box.x + det.box.width / 2, det.box.y + det.box.height);
+        
+        for (size_t i = 0; i < safety_zones_.size(); ++i) {
+            double dist = cv::pointPolygonTest(safety_zones_[i], feet, false);
+            if (dist >= 0) { // Inside or on edge
+                std::string alert = "{\"alert\": \"zone_violation\", \"zone_id\": " + std::to_string(i) + 
+                                   ", \"class_id\": " + std::to_string(det.class_id) + "}";
+                mqtt_client_->publish(mqtt_topic_, alert);
+            }
+        }
     }
 }

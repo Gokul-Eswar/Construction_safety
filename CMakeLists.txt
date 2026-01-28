@@ -71,6 +71,24 @@ FetchContent_Declare(
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
+add_executable(main_app src/main.cpp 
+    src/pipeline/rtsp_source.cpp
+    src/pipeline/pipeline_manager.cpp
+    src/inference/model_loader.cpp
+    src/inference/inference_engine.cpp
+    src/spatial/spatial_mapper.cpp
+    src/utils/visualizer.cpp
+    src/utils/mqtt_client.cpp
+)
+target_include_directories(main_app PRIVATE src)
+target_link_libraries(main_app PRIVATE 
+    ${GST_LIBRARIES} 
+    ${OpenCV_LIBS}
+)
+if(GST_FOUND OR GSTREAMER_FOUND)
+     target_include_directories(main_app PRIVATE ${GST_INCLUDE_DIRS})
+endif()
+
 # Unit Tests
 add_executable(unit_tests 
     tests/unit/test_rtsp_source.cpp
@@ -79,7 +97,9 @@ add_executable(unit_tests
     tests/unit/test_spatial_mapper.cpp
     tests/unit/test_visualizer.cpp
     tests/unit/test_mqtt_client.cpp
+    tests/unit/test_pipeline_manager.cpp
     src/pipeline/rtsp_source.cpp
+    src/pipeline/pipeline_manager.cpp
     src/inference/model_loader.cpp
     src/inference/inference_engine.cpp
     src/spatial/spatial_mapper.cpp
