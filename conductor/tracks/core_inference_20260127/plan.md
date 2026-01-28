@@ -18,7 +18,7 @@
     - [x] Implement frame callback mechanism to pass buffers to the processing engine
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: GStreamer Video Ingestion' (Protocol in workflow.md)
 
-## Phase 3: TensorRT Inference Engine
+## Phase 3: TensorRT Inference Engine [checkpoint: 46b8957]
 - [x] Task: TensorRT Model Loader & Optimizer [129fa70]
     - [x] Write tests for model file existence and engine serialization/deserialization
     - [x] Implement YOLOv11 TensorRT engine loader (supporting ONNX to TRT conversion)
