@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.18)
+set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
 project(ConstructionSafetyInference LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -71,6 +72,14 @@ FetchContent_Declare(
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
+# JSON
+FetchContent_Declare(
+    json
+    URL https://github.com/nlohmann/json/releases/download/v3.11.2/json.tar.xz
+)
+FetchContent_MakeAvailable(json)
+
+# Main Application
 add_executable(main_app src/main.cpp 
     src/pipeline/rtsp_source.cpp
     src/pipeline/pipeline_manager.cpp
@@ -79,11 +88,13 @@ add_executable(main_app src/main.cpp
     src/spatial/spatial_mapper.cpp
     src/utils/visualizer.cpp
     src/utils/mqtt_client.cpp
+    src/utils/config_loader.cpp
 )
 target_include_directories(main_app PRIVATE src)
 target_link_libraries(main_app PRIVATE 
     ${GST_LIBRARIES} 
     ${OpenCV_LIBS}
+    nlohmann_json::nlohmann_json
 )
 if(GST_FOUND OR GSTREAMER_FOUND)
      target_include_directories(main_app PRIVATE ${GST_INCLUDE_DIRS})
@@ -98,6 +109,7 @@ add_executable(unit_tests
     tests/unit/test_visualizer.cpp
     tests/unit/test_mqtt_client.cpp
     tests/unit/test_pipeline_manager.cpp
+    tests/unit/test_config_loader.cpp
     src/pipeline/rtsp_source.cpp
     src/pipeline/pipeline_manager.cpp
     src/inference/model_loader.cpp
@@ -105,12 +117,14 @@ add_executable(unit_tests
     src/spatial/spatial_mapper.cpp
     src/utils/visualizer.cpp
     src/utils/mqtt_client.cpp
+    src/utils/config_loader.cpp
 )
 target_include_directories(unit_tests PRIVATE src)
 target_link_libraries(unit_tests PRIVATE 
     GTest::gtest_main 
     ${GST_LIBRARIES} 
     ${OpenCV_LIBS}
+    nlohmann_json::nlohmann_json
 )
 
 if(CMAKE_CUDA_COMPILER)

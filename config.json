@@ -1,0 +1,17 @@
+{
+    "rtsp_uri": "rtsp://127.0.0.1:8554/live",
+    "model_path": "yolov11n.engine",
+    "mqtt": {
+        "host": "localhost",
+        "port": 1883,
+        "topic": "safety/alerts",
+        "client_id": "safety_system_p1"
+    },
+    "zones": [
+        {
+            "id": 1,
+            "name": "Primary Hazardous Zone",
+            "points": [[100, 100], [540, 100], [540, 380], [100, 380]]
+        }
+    ]
+}

@@ -12,7 +12,11 @@ TEST(PipelineManagerTest, InitializationAndLifecycle) {
     f << "dummy data";
     f.close();
 
-    PipelineManager manager("test", dummy_model);
+    AppConfig config;
+    config.rtsp_uri = "test";
+    config.model_path = dummy_model;
+
+    PipelineManager manager(config);
     ASSERT_TRUE(manager.init());
     
     manager.start();
