@@ -7,7 +7,7 @@
 - [x] Task: Environment Validation Utility [77b7283]
     - [ ] Write tests for CUDA and GStreamer plugin availability
     - [ ] Implement a utility to check and report system capabilities
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Foundation & Build System' (Protocol in workflow.md)
+- [~] Task: Conductor - User Manual Verification 'Phase 1: Foundation & Build System' (Protocol in workflow.md)
 
 ## Phase 2: GStreamer Video Ingestion
 - [ ] Task: RTSP Source Component
