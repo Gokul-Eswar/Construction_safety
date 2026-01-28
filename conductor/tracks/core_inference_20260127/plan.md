@@ -10,12 +10,12 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Foundation & Build System' (Protocol in workflow.md)
 
 ## Phase 2: GStreamer Video Ingestion
-- [ ] Task: RTSP Source Component
-    - [ ] Write unit tests for GStreamer pipeline string generation
-    - [ ] Implement GStreamerRTSPSource class using `rtspsrc` and hardware decoding (`nvv4l2decoder`)
-- [ ] Task: Frame Ingestion & Buffer Management
-    - [ ] Write tests for frame rate and buffer health monitoring
-    - [ ] Implement frame callback mechanism to pass buffers to the processing engine
+- [x] Task: RTSP Source Component [97bddbf]
+    - [x] Write unit tests for GStreamer pipeline string generation
+    - [x] Implement GStreamerRTSPSource class using `rtspsrc` and hardware decoding (`nvv4l2decoder`)
+- [x] Task: Frame Ingestion & Buffer Management [97bddbf]
+    - [x] Write tests for frame rate and buffer health monitoring
+    - [x] Implement frame callback mechanism to pass buffers to the processing engine
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: GStreamer Video Ingestion' (Protocol in workflow.md)
 
 ## Phase 3: TensorRT Inference Engine
