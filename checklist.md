@@ -28,6 +28,10 @@
 - [x] **Graceful Lifecycle:** Main application with signal handling (SIGINT/SIGTERM).
 - [x] **Test Coverage:** 18 unit tests verifying all core modules.
 
+### 📝 Documentation & Architecture
+- [x] **Visual Architecture Diagram:** High-resolution pipeline flow (PNG) integrated into `conductor/`.
+- [x] **Project Scaffolding:** Comprehensive `conductor/` metadata and track management.
+
 ---
 
 ## 🛠️ Pending / Future Roadmap (Milestone 2: Production Readiness)
