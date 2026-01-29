@@ -28,6 +28,10 @@
 - **Data Interchange:** JSON
   - *Why:* Human-readable, standard format for alert payloads and configuration.
 
+## Data Persistence
+- **Database:** SQLite
+  - *Why:* Embedded, serverless, zero-configuration database. Ideal for local logging of high-frequency events without the overhead of a network database.
+
 ## Dashboard & Visualization
 - **Frontend:** React (TypeScript) with Material UI
   - *Why:* Modern, responsive web interface for viewing live streams (via WebRTC/HLS) and historical alert logs.

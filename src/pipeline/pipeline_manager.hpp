@@ -5,6 +5,8 @@
 #include "utils/visualizer.hpp"
 #include "utils/mqtt_client.hpp"
 #include "utils/config_loader.hpp"
+#include "utils/violation_logger.hpp"
+#include "utils/alert_throttler.hpp"
 #include <memory>
 #include <mutex>
 
@@ -28,6 +30,8 @@ private:
     std::unique_ptr<SpatialMapper> spatial_mapper_;
     std::unique_ptr<Visualizer> visualizer_;
     std::unique_ptr<MQTTClient> mqtt_client_;
+    std::unique_ptr<safety::ViolationLogger> violation_logger_;
+    std::unique_ptr<safety::AlertThrottler> alert_throttler_;
 
     bool running_;
     std::mutex mutex_;

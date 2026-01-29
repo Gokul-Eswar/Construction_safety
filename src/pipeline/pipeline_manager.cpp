@@ -31,7 +31,17 @@ bool PipelineManager::init() {
     // 4. Init Visualizer
     visualizer_ = std::make_unique<Visualizer>();
 
-    // 5. Init MQTT
+    // 5. Init Persistence & Alerting
+    violation_logger_ = std::make_unique<safety::ViolationLogger>();
+    if (!violation_logger_->init(config_.database_path)) {
+        std::cerr << "Failed to initialize violation logger at " << config_.database_path << std::endl;
+        return false;
+    }
+
+    alert_throttler_ = std::make_unique<safety::AlertThrottler>();
+    alert_throttler_->set_cooldown(config_.alert_cooldown);
+
+    // 6. Init MQTT
     if (!config_.mqtt.host.empty()) {
         mqtt_client_ = std::make_unique<MQTTClient>(config_.mqtt.client_id);
         mqtt_client_->connect(config_.mqtt.host, config_.mqtt.port);
@@ -100,7 +110,7 @@ void PipelineManager::onFrameReceived(GstSample* sample) {
 }
 
 void PipelineManager::checkAlerts(const std::vector<Detection>& detections) {
-    if (config_.zones.empty() || !mqtt_client_ || !mqtt_client_->isConnected()) return;
+    if (config_.zones.empty()) return;
 
     for (const auto& det : detections) {
         // Use center of bottom of box for ground-plane check
@@ -109,9 +119,23 @@ void PipelineManager::checkAlerts(const std::vector<Detection>& detections) {
         for (const auto& zone : config_.zones) {
             double dist = cv::pointPolygonTest(zone.points, feet, false);
             if (dist >= 0) { // Inside or on edge
-                std::string alert = "{\"alert\": \"zone_violation\", \"zone_name\": \"" + zone.name + 
-                                   "\", \"class_id\": " + std::to_string(det.class_id) + "}";
-                mqtt_client_->publish(config_.mqtt.topic, alert);
+                
+                // 1. Log to Database (Persistent Record)
+                // We use -1 for object_id if tracking is not yet implemented
+                if (violation_logger_) {
+                    violation_logger_->log_violation(zone.id, det.confidence, -1);
+                }
+
+                // 2. Check Throttler before Alerting
+                // We use -1 for object_id for now, meaning "any person in this zone" throttles alerts
+                // If tracking were enabled, we would pass det.track_id
+                if (alert_throttler_ && alert_throttler_->should_alert(zone.id, -1)) {
+                    if (mqtt_client_ && mqtt_client_->isConnected()) {
+                        std::string alert = "{\"alert\": \"zone_violation\", \"zone_name\": \"" + zone.name + 
+                                        "\", \"class_id\": " + std::to_string(det.class_id) + "}";
+                        mqtt_client_->publish(config_.mqtt.topic, alert);
+                    }
+                }
             }
         }
     }

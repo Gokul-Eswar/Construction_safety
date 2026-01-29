@@ -1,0 +1,11 @@
+{
+  "id": "persistence_alerting_20260129",
+  "name": "Data Persistence & Intelligent Alerting",
+  "description": "Implementation of SQLite-based violation logging and alert throttling to prevent operator fatigue.",
+  "status": "active",
+  "startDate": "2026-01-29",
+  "owner": "Gemini",
+  "dependencies": [
+    "mqtt_integration_20260129"
+  ]
+}

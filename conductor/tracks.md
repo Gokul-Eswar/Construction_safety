@@ -15,3 +15,6 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [x] **Track: Paho MQTT Integration**
   *Link: [./tracks/mqtt_integration_20260129/](./tracks/mqtt_integration_20260129/)*
+
+- [x] **Track: Data Persistence & Intelligent Alerting**
+  *Link: [./tracks/persistence_alerting_20260129/](./tracks/persistence_alerting_20260129/)*

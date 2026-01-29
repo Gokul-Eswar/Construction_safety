@@ -19,6 +19,8 @@ struct ZoneConfig {
 struct AppConfig {
     std::string rtsp_uri;
     std::string model_path;
+    std::string database_path = "safety_violations.db";
+    int alert_cooldown = 5000;
     MQTTConfig mqtt;
     std::vector<ZoneConfig> zones;
     

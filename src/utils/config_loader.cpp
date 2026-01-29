@@ -19,6 +19,8 @@ AppConfig ConfigLoader::load(const std::string& path) {
 
         if (j.contains("rtsp_uri")) config.rtsp_uri = j["rtsp_uri"];
         if (j.contains("model_path")) config.model_path = j["model_path"];
+        if (j.contains("database_path")) config.database_path = j["database_path"];
+        if (j.contains("alert_cooldown")) config.alert_cooldown = j["alert_cooldown"];
         
         if (j.contains("mqtt")) {
             auto& m = j["mqtt"];
@@ -54,6 +56,8 @@ bool ConfigLoader::save(const std::string& path, const AppConfig& config) {
     json j;
     j["rtsp_uri"] = config.rtsp_uri;
     j["model_path"] = config.model_path;
+    j["database_path"] = config.database_path;
+    j["alert_cooldown"] = config.alert_cooldown;
     
     j["mqtt"]["host"] = config.mqtt.host;
     j["mqtt"]["port"] = config.mqtt.port;

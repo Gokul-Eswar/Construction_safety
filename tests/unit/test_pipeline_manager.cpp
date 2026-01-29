@@ -15,6 +15,7 @@ TEST(PipelineManagerTest, InitializationAndLifecycle) {
     AppConfig config;
     config.rtsp_uri = "test";
     config.model_path = dummy_model;
+    config.database_path = "pm_test_db.sqlite";
 
     PipelineManager manager(config);
     ASSERT_TRUE(manager.init());
@@ -27,4 +28,5 @@ TEST(PipelineManagerTest, InitializationAndLifecycle) {
     SUCCEED();
     
     std::remove(dummy_model.c_str());
+    std::remove(config.database_path.c_str());
 }

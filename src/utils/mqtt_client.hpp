@@ -2,10 +2,8 @@
 #include <string>
 #include <memory>
 
-namespace paho {
-    namespace mqtt {
-        class async_client;
-    }
+namespace mqtt {
+    class async_client;
 }
 
 class IMQTTClient {
@@ -29,5 +27,5 @@ public:
 
 private:
     std::string client_id_;
-    std::unique_ptr<paho::mqtt::async_client> client_;
+    std::unique_ptr<mqtt::async_client> client_;
 };
