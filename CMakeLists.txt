@@ -79,6 +79,29 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(json)
 
+# Paho MQTT C
+FetchContent_Declare(
+    PahoMqttC
+    GIT_REPOSITORY https://github.com/eclipse/paho.mqtt.c.git
+    GIT_TAG v1.3.13
+)
+set(PAHO_BUILD_STATIC ON CACHE BOOL "")
+set(PAHO_ENABLE_SSL OFF CACHE BOOL "")
+set(PAHO_ENABLE_TESTING OFF CACHE BOOL "")
+FetchContent_MakeAvailable(PahoMqttC)
+
+# Paho MQTT C++
+FetchContent_Declare(
+    PahoMqttCpp
+    GIT_REPOSITORY https://github.com/eclipse/paho.mqtt.cpp.git
+    GIT_TAG v1.2.0
+)
+set(PAHO_WITH_SSL OFF CACHE BOOL "")
+set(PAHO_BUILD_STATIC ON CACHE BOOL "")
+set(PAHO_BUILD_DOCUMENTATION OFF CACHE BOOL "")
+set(PAHO_BUILD_SAMPLES OFF CACHE BOOL "")
+FetchContent_MakeAvailable(PahoMqttCpp)
+
 # Main Application
 add_executable(main_app src/main.cpp 
     src/pipeline/rtsp_source.cpp
@@ -95,6 +118,7 @@ target_link_libraries(main_app PRIVATE
     ${GST_LIBRARIES} 
     ${OpenCV_LIBS}
     nlohmann_json::nlohmann_json
+    paho-mqttpp3
 )
 if(GST_FOUND OR GSTREAMER_FOUND)
      target_include_directories(main_app PRIVATE ${GST_INCLUDE_DIRS})
@@ -125,6 +149,7 @@ target_link_libraries(unit_tests PRIVATE
     ${GST_LIBRARIES} 
     ${OpenCV_LIBS}
     nlohmann_json::nlohmann_json
+    paho-mqttpp3
 )
 
 if(CMAKE_CUDA_COMPILER)

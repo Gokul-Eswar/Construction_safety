@@ -2,6 +2,12 @@
 #include <string>
 #include <memory>
 
+namespace paho {
+    namespace mqtt {
+        class async_client;
+    }
+}
+
 class IMQTTClient {
 public:
     virtual ~IMQTTClient() = default;
@@ -23,6 +29,5 @@ public:
 
 private:
     std::string client_id_;
-    bool connected_;
-    // In real implementation: paho::mqtt::client* client_;
+    std::unique_ptr<paho::mqtt::async_client> client_;
 };

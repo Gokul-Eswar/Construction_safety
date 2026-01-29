@@ -34,7 +34,7 @@
 
 ### ⚡ Hardware Optimization
 - [ ] **Native TensorRT Execution:** Transition from mocked inference to actual GPU execution (requires CUDA environment).
-- [ ] **Paho MQTT Integration:** Replace mock client with actual Paho C++ library for broker communication.
+- [x] **Paho MQTT Integration:** Replace mock client with actual Paho C++ library for broker communication.
 
 ### 📊 Data & Throttling
 - [ ] **Violation Logging:** SQLite or file-based persistence for audit logs.

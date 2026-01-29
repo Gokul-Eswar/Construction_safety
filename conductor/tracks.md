@@ -12,3 +12,6 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [x] **Track: Configuration & Deployment Readiness**
   *Link: [./tracks/config_deployment_20260128/](./tracks/config_deployment_20260128/)*
+
+- [x] **Track: Paho MQTT Integration**
+  *Link: [./tracks/mqtt_integration_20260129/](./tracks/mqtt_integration_20260129/)*
