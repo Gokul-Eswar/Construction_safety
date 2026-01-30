@@ -45,7 +45,7 @@
 - [x] **Intelligent Throttling:** Logic to prevent alert fatigue (e.g., 1 alert per person per interval).
 
 ### 🖥️ User Experience
-- [ ] **Web Dashboard:** Real-time monitoring UI and violation history.
+- [x] **Web Dashboard:** Real-time monitoring UI and violation history.
 - [ ] **Visual Zone Editor:** GUI tool to define safety zones interactively.
 
 ### 🔄 Advanced Features
