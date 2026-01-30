@@ -1,0 +1,8 @@
+{
+    "id": "live_streaming_20260130",
+    "name": "Live Web Video Streaming",
+    "status": "active",
+    "start_date": "2026-01-30",
+    "owner": "Gokul",
+    "description": "Implement a real-time MJPEG stream server in the C++ engine to visualize processed frames with overlays on the web dashboard."
+}

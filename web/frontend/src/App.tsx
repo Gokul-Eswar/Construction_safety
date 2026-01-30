@@ -74,6 +74,42 @@ function App() {
       <Container maxWidth="lg" sx={{ mt: 4 }}>
         {tabIndex === 0 ? (
           <Grid container spacing={3}>
+            {/* Live Video Feed */}
+            <Grid item xs={12}>
+              <Card>
+                <CardContent>
+                  <Typography variant="h6" gutterBottom>Live Video Feed</Typography>
+                  <Box 
+                    display="flex" 
+                    justifyContent="center" 
+                    bgcolor="#000" 
+                    borderRadius={1} 
+                    overflow="hidden"
+                    sx={{ minHeight: 400 }}
+                  >
+                    <img 
+                      src="http://localhost:8081" 
+                      alt="Live Stream" 
+                      style={{ maxWidth: '100%', maxHeight: '600px', display: 'block' }} 
+                      onError={(e: any) => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'block';
+                      }}
+                    />
+                    <Box 
+                      display="none" 
+                      sx={{ color: '#fff', p: 4, textAlign: 'center' }}
+                    >
+                      <Typography variant="h6">Live Feed Offline</Typography>
+                      <Typography variant="body2" color="grey.500">
+                        Ensure the Sentinel Engine is running and port 8081 is accessible.
+                      </Typography>
+                    </Box>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+
             {/* Stats Cards */}
             <Grid item xs={12} md={6}>
               <Card>

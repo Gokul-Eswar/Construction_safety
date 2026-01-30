@@ -161,44 +161,15 @@ add_executable(main_app src/main.cpp
     src/utils/config_loader.cpp
     src/utils/violation_logger.cpp
     src/utils/alert_throttler.cpp
+    src/utils/mjpeg_streamer.cpp
 )
 target_include_directories(main_app PRIVATE src)
-target_link_libraries(main_app PRIVATE 
-    ${GST_LIBRARIES} 
-    ${OpenCV_LIBS}
-    nlohmann_json::nlohmann_json
-    paho-mqttpp3
-    SQLite::SQLite3
-)
-if(GST_FOUND OR GSTREAMER_FOUND)
-     target_include_directories(main_app PRIVATE ${GST_INCLUDE_DIRS})
-endif()
-
-# Unit Tests
-add_executable(unit_tests 
-    tests/unit/test_rtsp_source.cpp
-    tests/unit/test_model_loader.cpp
-    tests/unit/test_inference_engine.cpp
-    tests/unit/test_spatial_mapper.cpp
-    tests/unit/test_visualizer.cpp
-    tests/unit/test_mqtt_client.cpp
-    tests/unit/test_pipeline_manager.cpp
-    tests/unit/test_config_loader.cpp
-    tests/unit/test_violation_logger.cpp
-    tests/unit/test_alert_throttler.cpp
-    tests/unit/test_sort_tracker.cpp
-    src/pipeline/rtsp_source.cpp
-    src/pipeline/pipeline_manager.cpp
-    src/inference/model_loader.cpp
-    src/inference/inference_engine.cpp
-    src/spatial/spatial_mapper.cpp
-    src/tracking/kalman_box_tracker.cpp
-    src/tracking/sort_tracker.cpp
-    src/utils/visualizer.cpp
+...
     src/utils/mqtt_client.cpp
     src/utils/config_loader.cpp
     src/utils/violation_logger.cpp
     src/utils/alert_throttler.cpp
+    src/utils/mjpeg_streamer.cpp
 )
 target_include_directories(unit_tests PRIVATE src)
 target_link_libraries(unit_tests PRIVATE 

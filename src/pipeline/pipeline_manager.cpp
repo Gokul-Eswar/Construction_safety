@@ -44,7 +44,11 @@ bool PipelineManager::init() {
     // 6. Init Tracker
     tracker_ = std::make_unique<SortTracker>();
 
-    // 7. Init MQTT
+    // 7. Init Streamer
+    streamer_ = std::make_unique<MJPEGStreamer>();
+    streamer_->start(8081); // Default streaming port
+
+    // 8. Init MQTT
     if (!config_.mqtt.host.empty()) {
         mqtt_client_ = std::make_unique<MQTTClient>(config_.mqtt.client_id);
         mqtt_client_->connect(config_.mqtt.host, config_.mqtt.port);
