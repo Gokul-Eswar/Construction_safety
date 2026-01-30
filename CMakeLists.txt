@@ -154,6 +154,8 @@ add_executable(main_app src/main.cpp
     src/inference/model_loader.cpp
     src/inference/inference_engine.cpp
     src/spatial/spatial_mapper.cpp
+    src/tracking/kalman_box_tracker.cpp
+    src/tracking/sort_tracker.cpp
     src/utils/visualizer.cpp
     src/utils/mqtt_client.cpp
     src/utils/config_loader.cpp
@@ -184,11 +186,14 @@ add_executable(unit_tests
     tests/unit/test_config_loader.cpp
     tests/unit/test_violation_logger.cpp
     tests/unit/test_alert_throttler.cpp
+    tests/unit/test_sort_tracker.cpp
     src/pipeline/rtsp_source.cpp
     src/pipeline/pipeline_manager.cpp
     src/inference/model_loader.cpp
     src/inference/inference_engine.cpp
     src/spatial/spatial_mapper.cpp
+    src/tracking/kalman_box_tracker.cpp
+    src/tracking/sort_tracker.cpp
     src/utils/visualizer.cpp
     src/utils/mqtt_client.cpp
     src/utils/config_loader.cpp

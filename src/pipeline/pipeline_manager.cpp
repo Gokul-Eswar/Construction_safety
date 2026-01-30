@@ -41,7 +41,10 @@ bool PipelineManager::init() {
     alert_throttler_ = std::make_unique<safety::AlertThrottler>();
     alert_throttler_->set_cooldown(config_.alert_cooldown);
 
-    // 6. Init MQTT
+    // 6. Init Tracker
+    tracker_ = std::make_unique<SortTracker>();
+
+    // 7. Init MQTT
     if (!config_.mqtt.host.empty()) {
         mqtt_client_ = std::make_unique<MQTTClient>(config_.mqtt.client_id);
         mqtt_client_->connect(config_.mqtt.host, config_.mqtt.port);
@@ -89,7 +92,10 @@ void PipelineManager::onFrameReceived(GstSample* sample) {
         }
 
         if (!frame.empty()) {
-            auto detections = engine_->runInference(frame);
+            auto raw_detections = engine_->runInference(frame);
+            
+            // Apply Tracking
+            auto detections = tracker_->update(raw_detections);
             
             // Draw detections
             visualizer_->drawDetections(frame, detections);
@@ -121,18 +127,16 @@ void PipelineManager::checkAlerts(const std::vector<Detection>& detections) {
             if (dist >= 0) { // Inside or on edge
                 
                 // 1. Log to Database (Persistent Record)
-                // We use -1 for object_id if tracking is not yet implemented
                 if (violation_logger_) {
-                    violation_logger_->log_violation(zone.id, det.confidence, -1);
+                    violation_logger_->log_violation(zone.id, det.confidence, det.track_id);
                 }
 
                 // 2. Check Throttler before Alerting
-                // We use -1 for object_id for now, meaning "any person in this zone" throttles alerts
-                // If tracking were enabled, we would pass det.track_id
-                if (alert_throttler_ && alert_throttler_->should_alert(zone.id, -1)) {
+                if (alert_throttler_ && alert_throttler_->should_alert(zone.id, det.track_id)) {
                     if (mqtt_client_ && mqtt_client_->isConnected()) {
                         std::string alert = "{\"alert\": \"zone_violation\", \"zone_name\": \"" + zone.name + 
-                                        "\", \"class_id\": " + std::to_string(det.class_id) + "}";
+                                        "\", \"class_id\": " + std::to_string(det.class_id) + 
+                                        ", \"track_id\": " + std::to_string(det.track_id) + "}";
                         mqtt_client_->publish(config_.mqtt.topic, alert);
                     }
                 }

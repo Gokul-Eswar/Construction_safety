@@ -10,13 +10,18 @@ void Visualizer::drawDetections(cv::Mat& frame, const std::vector<Detection>& de
     for (const auto& det : detections) {
         cv::Scalar color = getColor(det.class_id);
         cv::rectangle(frame, det.box, color, 2);
-        
-        std::string label = std::to_string(det.class_id) + ": " + std::to_string(det.confidence).substr(0, 4);
-        int baseline = 0;
-        cv::Size label_size = cv::getTextSize(label, cv::FONT_HERSHEY_SIMPLEX, 0.5, 1, &baseline);
-        
-        cv::rectangle(frame, cv::Point(det.box.x, det.box.y - label_size.height),
-                      cv::Point(det.box.x + label_size.width, det.box.y + baseline), color, cv::FILLED);
+
+        std::string label = "Person";
+        if (det.track_id != -1) {
+            label += " #" + std::to_string(det.track_id);
+        }
+        label += ": " + std::to_string(static_cast<int>(det.confidence * 100)) + "%";
+
+        int baseLine;
+        cv::Size labelSize = cv::getTextSize(label, cv::FONT_HERSHEY_SIMPLEX, 0.5, 1, &baseLine);
+        cv::rectangle(frame, cv::Point(det.box.x, det.box.y - labelSize.height),
+                      cv::Point(det.box.x + labelSize.width, det.box.y + baseLine),
+                      color, cv::FILLED);
         cv::putText(frame, label, cv::Point(det.box.x, det.box.y),
                     cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(255, 255, 255), 1);
     }

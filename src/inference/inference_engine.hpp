@@ -17,6 +17,7 @@ struct Detection {
     int class_id;
     float confidence;
     cv::Rect box;
+    int track_id = -1; // -1 indicates untracked
 };
 
 class InferenceEngine {
