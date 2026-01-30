@@ -1,0 +1,8 @@
+{
+    "id": "tracking_id_20260130",
+    "name": "Advanced Object Tracking & ID Persistence",
+    "status": "active",
+    "start_date": "2026-01-30",
+    "owner": "Gokul",
+    "description": "Implement multi-object tracking (SORT/ByteTrack) to assign persistent IDs to detected persons, enabling intelligent alerting logic."
+}
