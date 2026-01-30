@@ -50,6 +50,6 @@
 - [x] **Visual Zone Editor:** GUI tool to define safety zones interactively.
 
 ### 🔄 Advanced Features
-- [ ] **Multi-Object Tracking:** Assign persistent IDs to detections (SORT/DeepSORT).
+- [x] **Multi-Object Tracking:** Assign persistent IDs to detections (SORT/DeepSORT).
 - [ ] **Multi-Stream Support:** Orchestrate multiple RTSP feeds in a single instance.
 - [ ] **Dockerization:** NVIDIA Container Toolkit integration for edge deployment.

@@ -22,5 +22,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 - [x] **Track: Web Dashboard & Visualization**
   *Link: [./tracks/web_dashboard_20260129/](./tracks/web_dashboard_20260129/)*
 
-- [ ] **Track: Advanced Object Tracking & ID Persistence**
+- [x] **Track: Advanced Object Tracking & ID Persistence**
   *Link: [./tracks/tracking_id_20260130/](./tracks/tracking_id_20260130/)*
