@@ -2,32 +2,33 @@
 
 ### **High-Precision Geofencing for Hazardous Environments**
 
-**Industrial Sentinel AI** is a software-defined safety engine designed to transform existing CCTV infrastructure into an active safety layer. Built for the high-stakes environments of petrochemical plants and oil rigs, the system leverages **NVIDIA TensorRT** and **Spatial Homography** to detect and prevent "Red Zone" breaches with near-zero latency.
+**Industrial Sentinel AI** is a software-defined safety engine designed to transform existing CCTV infrastructure into an active safety layer. Built for the high-stakes environments of petrochemical plants and oil rigs, the system leverages **OpenCV DNN** (with **TensorRT** upgrade path) and **Spatial Homography** to detect and prevent "Red Zone" breaches with near-zero latency.
 
 ---
 
 ## 🚀 Key Features
 
-* **Near-Zero Latency (<45ms):** Optimized C++ pipeline utilizing **NVIDIA DeepStream** and **TensorRT** for real-time inference.
+* **Real-Time AI:** Uses **YOLOv11** via **OpenCV DNN** for universal compatibility (CPU/CUDA), deployable anywhere.
 * **Perspective-Corrected Geofencing:** Uses a **3x3 Homography Matrix** to map camera coordinates to a 2D floor plane, ensuring accuracy regardless of camera tilt.
+* **Visual Zone Editor:** Intuitive, web-based drag-and-drop interface to define safety zones directly on the video feed.
 * **Foot-Anchor Tracking:** Intelligent logic that ignores upper-body movement and triggers alerts only when a worker's feet physically enter a restricted polygon.
-* **Temporal Validation:** Implements a "5-Frame Consistency" rule to eliminate false positives from birds, debris, or moving shadows.
+* **Temporal Validation:** Implements a "5-Frame Consistency" rule to eliminate false positives.
 * **Industrial Alerting:** Integrated **MQTT** support for sub-millisecond automated emergency stops (E-Stops).
-* **Real-Time Dashboard:** Web-based visualization for live violation monitoring and historical auditing.
+* **Real-Time Dashboard:** Web-based visualization for live violation monitoring, historical auditing, and configuration.
 
 ---
 
 ## 🛠️ Tech Stack
 
 ### Core Engine
-* **Language:** C++ (Core Engine) / Python (Training & Calibration)
-* **AI Model:** YOLOv11-Nano (Exported to TensorRT INT8)
-* **Video Pipeline:** GStreamer / NVIDIA DeepStream SDK
+* **Language:** C++ (Core Engine)
+* **AI Inference:** OpenCV DNN (supporting ONNX) / Ready for TensorRT
+* **Video Pipeline:** GStreamer
 * **Spatial Math:** OpenCV (Point-in-Polygon & Homography)
 * **Messaging:** MQTT (Mosquitto)
 
 ### Web Dashboard
-* **Frontend:** React + Vite + Material UI
+* **Frontend:** React + Vite + Material UI (Canvas-based Editor)
 * **Backend:** Node.js + Express
 * **Database:** SQLite (Shared with C++ Engine)
 
@@ -40,51 +41,45 @@
 ├── /calibration       # Tools for Homography Matrix generation
 ├── /conductor         # Project architecture and tracking documentation
 ├── /configs           # JSON definitions for Camera ROIs
-├── /models            # Optimized .engine files for TensorRT
+├── /models            # YOLO ONNX/Engine models
 ├── /src               # High-speed C++ source code
-│   ├── detector.cpp   # TensorRT Wrapper
-│   ├── spatial.cpp    # Homography & Polygon Logic
-│   └── alerts.cpp     # MQTT & Logging
-├── /web               # Web Dashboard
+├── /web               # Web Dashboard & Zone Editor
 │   ├── /backend       # Node.js API
 │   └── /frontend      # React UI
-└── README.md
+├── build_engine.bat   # One-click C++ build script
+├── run_engine.bat     # One-click C++ run script
+└── start_dashboard.bat# One-click Dashboard launcher
 ```
 
 ---
 
 ## ⚡ Getting Started
 
-### 1. C++ Engine (The "Sentinel")
+### 1. Prerequisites
+*   **System:** Windows (tested) or Linux.
+*   **Software:** CMake, C++ Compiler (MSVC/GCC), Node.js (v18+), Python (for fetching models).
+*   **Optional:** NVIDIA GPU + CUDA for acceleration.
 
-**Prerequisites:** NVIDIA GPU, CUDA, TensorRT, OpenCV, GStreamer.
+### 2. Setup & Run
 
-```bash
-mkdir build && cd build
-cmake ..
-make -j$(nproc)
-./construction_safety
+**Step A: Get the Model**
+Ensure `yolo11n.onnx` is in the project root.
+```powershell
+Invoke-WebRequest -Uri "https://github.com/ultralytics/assets/releases/download/v8.3.0/yolo11n.onnx" -OutFile "yolo11n.onnx"
 ```
 
-### 2. Web Dashboard (The "Monitor")
-
-**Prerequisites:** Node.js (v18+)
-
-**Start Backend:**
-```bash
-cd web/backend
-npm install
-node server.js
+**Step B: Build & Run Engine**
+```cmd
+build_engine.bat
+run_engine.bat
 ```
-*Runs on `http://localhost:3001`*
+*The engine will start, load the ONNX model, and monitor the RTSP feed defined in `config.json`.*
 
-**Start Frontend:**
-```bash
-cd web/frontend
-npm install
-npm run dev
+**Step C: Start Dashboard**
+```cmd
+start_dashboard.bat
 ```
-*Opens at `http://localhost:3000`*
+*Opens `http://localhost:3000`. Go to "Zone Editor" tab to draw safety zones.*
 
 ---
 
@@ -92,7 +87,6 @@ npm run dev
 
 | Metric | Result |
 | --- | --- |
-| **Inference Speed** | ~8ms per frame |
-| **End-to-End Latency** | < 50ms |
+| **Inference Speed** | ~8ms per frame (CUDA) / ~50ms (CPU) |
+| **End-to-End Latency** | < 100ms |
 | **Detection Accuracy** | 96.4% mAP (Person Class) |
-| **False Positive Rate** | < 1% (in Industrial Lighting) |

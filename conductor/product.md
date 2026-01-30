@@ -18,7 +18,8 @@ To deliver a production-grade, high-precision industrial geofencing safety syste
 
 ## Key Features
 - **High-Performance Ingestion:** Real-time RTSP video ingestion using GStreamer to ensure zero-latency frame processing.
-- **Edge AI Inference:** Deployment of YOLOv11-Nano optimized with NVIDIA TensorRT (INT8) for maximum throughput on RTX GPUs.
+- **Edge AI Inference:** Deployment of YOLOv11-Nano via OpenCV DNN (CPU/CUDA) for reliable detection.
+- **Visual Zone Editor:** Web-based, interactive tool allowing safety officers to draw and edit safety zones directly on a canvas reference.
 - **Spatial Intelligence:** Homography-based spatial mapping (3x3 matrix) for perspective correction and high-precision zone boundary enforcement.
 - **Multi-Modal Alerting:**
     - Visual overlays on live feeds for immediate situational awareness.

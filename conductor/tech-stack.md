@@ -13,9 +13,11 @@
 ## Computer Vision & AI Inference
 - **Model:** YOLOv11-Nano
   - *Why:* State-of-the-art accuracy-to-speed ratio. "Nano" variant chosen specifically for maximum frame rate on edge hardware.
-- **Inference Engine:** NVIDIA TensorRT (INT8 Quantization)
-  - *Why:* Optimizes neural networks for NVIDIA GPUs, delivering significantly higher throughput and lower latency than raw framework inference.
-- **Image Processing:** OpenCV (w/ CUDA modules)
+- **Inference Engine:** OpenCV DNN (with CUDA backend support)
+  - *Why:* Provides universal compatibility (CPU/GPU) via ONNX, simplifying development while offering clear upgrade paths to TensorRT for production.
+- **Optimization:** NVIDIA TensorRT (Optional)
+  - *Why:* Can be enabled for maximum throughput and lowest latency on dedicated NVIDIA hardware.
+- **Image Processing:** OpenCV
   - *Why:* Universal library for pre/post-processing, drawing overlays, and performing geometric transformations (homography).
 
 ## Multimedia Pipeline
