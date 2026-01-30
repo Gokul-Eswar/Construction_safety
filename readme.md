@@ -9,8 +9,10 @@
 ## 🚀 Key Features
 
 * **Real-Time AI:** Uses **YOLOv11** via **OpenCV DNN** for universal compatibility (CPU/CUDA), deployable anywhere.
+* **Multi-Object Tracking:** Integrated **SORT Tracker** assigns persistent IDs to workers, enabling intelligent "Time-in-Zone" analysis and occlusion handling.
 * **Perspective-Corrected Geofencing:** Uses a **3x3 Homography Matrix** to map camera coordinates to a 2D floor plane, ensuring accuracy regardless of camera tilt.
 * **Visual Zone Editor:** Intuitive, web-based drag-and-drop interface to define safety zones directly on the video feed.
+* **Live Web Stream:** Low-latency **MJPEG Stream** broadcasts processed video with AI overlays directly to the dashboard.
 * **Foot-Anchor Tracking:** Intelligent logic that ignores upper-body movement and triggers alerts only when a worker's feet physically enter a restricted polygon.
 * **Temporal Validation:** Implements a "5-Frame Consistency" rule to eliminate false positives.
 * **Industrial Alerting:** Integrated **MQTT** support for sub-millisecond automated emergency stops (E-Stops).
