@@ -35,20 +35,32 @@ bool ModelLoader::load() {
 }
 
 bool ModelLoader::buildFromOnnx() {
+    try {
+        std::cout << "Loading ONNX model using OpenCV DNN: " << model_path_ << std::endl;
+        net_ = cv::dnn::readNetFromONNX(model_path_);
+        
+        // Use CUDA if available, otherwise CPU
 #ifdef ENABLE_CUDA
-    // Real implementation would:
-    // 1. Create builder
-    // 2. Create network definition
-    // 3. Create parser
-    // 4. Parse ONNX
-    // 5. Build engine
-    // 6. Serialize and save
-    std::cout << "[Mock] Building TensorRT engine from ONNX..." << std::endl;
+        net_.setPreferableBackend(cv::dnn::DNN_BACKEND_CUDA);
+        net_.setPreferableTarget(cv::dnn::DNN_TARGET_CUDA);
+        std::cout << "OpenCV DNN: Using CUDA backend." << std::endl;
 #else
-    std::cout << "[Mock] CUDA disabled. Skipping actual engine build." << std::endl;
+        net_.setPreferableBackend(cv::dnn::DNN_BACKEND_OPENCV);
+        net_.setPreferableTarget(cv::dnn::DNN_TARGET_CPU);
+        std::cout << "OpenCV DNN: Using CPU backend." << std::endl;
 #endif
-    loaded_ = true;
-    return true;
+
+        if (net_.empty()) {
+            std::cerr << "Failed to load network with OpenCV DNN." << std::endl;
+            return false;
+        }
+
+        loaded_ = true;
+        return true;
+    } catch (const cv::Exception& e) {
+        std::cerr << "OpenCV Exception loading ONNX: " << e.what() << std::endl;
+        return false;
+    }
 }
 
 bool ModelLoader::deserializeEngine() {

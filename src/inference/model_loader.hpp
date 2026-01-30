@@ -22,6 +22,9 @@ public:
     // For now, we use a boolean or void* placeholder if headers aren't available
     bool isLoaded() const;
 
+    // Get the OpenCV DNN Net object
+    cv::dnn::Net& getNet() { return net_; }
+
 private:
     bool buildFromOnnx();
     bool deserializeEngine();
@@ -29,6 +32,8 @@ private:
     std::string model_path_;
     bool loaded_;
     
+    cv::dnn::Net net_; // OpenCV DNN Net
+
 #ifdef ENABLE_CUDA
     std::unique_ptr<nvinfer1::IRuntime> runtime_;
     std::shared_ptr<nvinfer1::ICudaEngine> engine_;
