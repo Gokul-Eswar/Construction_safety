@@ -1,6 +1,6 @@
 {
     "rtsp_uri": "rtsp://127.0.0.1:8554/live",
-    "model_path": "yolov11n.engine",
+    "model_path": "yolo11n.onnx",
     "database_path": "safety_violations.db",
     "alert_cooldown": 5000,
     "mqtt": {
