@@ -48,6 +48,7 @@
 ### 🖥️ User Experience
 - [x] **Web Dashboard:** Real-time monitoring UI and violation history.
 - [x] **Visual Zone Editor:** GUI tool to define safety zones interactively.
+- [x] **Live Web Stream:** Integrated MJPEG streaming for real-time visual monitoring on the dashboard.
 
 ### 🔄 Advanced Features
 - [x] **Multi-Object Tracking:** Assign persistent IDs to detections (SORT/DeepSORT).

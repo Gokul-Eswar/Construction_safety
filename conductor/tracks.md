@@ -25,5 +25,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 - [x] **Track: Advanced Object Tracking & ID Persistence**
   *Link: [./tracks/tracking_id_20260130/](./tracks/tracking_id_20260130/)*
 
-- [ ] **Track: Live Web Video Streaming**
+- [x] **Track: Live Web Video Streaming**
   *Link: [./tracks/live_streaming_20260130/](./tracks/live_streaming_20260130/)*
