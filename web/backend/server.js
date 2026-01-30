@@ -79,6 +79,36 @@ app.get('/api/stats', (req, res) => {
     });
 });
 
+// API: Get Config
+app.get('/api/config', (req, res) => {
+    try {
+        const data = fs.readFileSync(configPath);
+        res.json(JSON.parse(data));
+    } catch (err) {
+        res.status(500).json({ error: "Failed to read config" });
+    }
+});
+
+// API: Update Config
+app.post('/api/config', (req, res) => {
+    try {
+        const newConfig = req.body;
+        // Basic validation
+        if (!newConfig.zones) {
+            return res.status(400).json({ error: "Invalid config format" });
+        }
+        
+        fs.writeFileSync(configPath, JSON.stringify(newConfig, null, 4));
+        
+        // Update local cache
+        projectConfig = newConfig;
+        
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: "Failed to save config" });
+    }
+});
+
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
 });

@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { AppBar, Toolbar, Typography, Container, Grid, Card, CardContent, Box } from '@mui/material';
+import { AppBar, Toolbar, Typography, Container, Grid, Card, CardContent, Box, Tab, Tabs } from '@mui/material';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import axios from 'axios';
 import WarningIcon from '@mui/icons-material/Warning';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import ZoneEditor from './ZoneEditor';
 
 interface Violation {
   id: number;
@@ -19,6 +20,7 @@ interface Stats {
 }
 
 function App() {
+  const [tabIndex, setTabIndex] = useState(0);
   const [violations, setViolations] = useState<Violation[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
 
@@ -35,10 +37,12 @@ function App() {
   };
 
   useEffect(() => {
-    fetchData();
-    const interval = setInterval(fetchData, 5000); // Poll every 5 seconds
-    return () => clearInterval(interval);
-  }, []);
+    if (tabIndex === 0) {
+      fetchData();
+      const interval = setInterval(fetchData, 5000); // Poll every 5 seconds
+      return () => clearInterval(interval);
+    }
+  }, [tabIndex]);
 
   const columns: GridColDef[] = [
     { field: 'id', headerName: 'ID', width: 70 },
@@ -60,60 +64,68 @@ function App() {
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             Construction Safety Monitor
           </Typography>
+          <Tabs value={tabIndex} onChange={(_, val) => setTabIndex(val)} textColor="inherit" indicatorColor="secondary">
+            <Tab label="Monitor" />
+            <Tab label="Zone Editor" />
+          </Tabs>
         </Toolbar>
       </AppBar>
 
       <Container maxWidth="lg" sx={{ mt: 4 }}>
-        <Grid container spacing={3}>
-          {/* Stats Cards */}
-          <Grid item xs={12} md={6}>
-            <Card>
-              <CardContent>
-                <Typography color="text.secondary" gutterBottom>
-                  System Status
-                </Typography>
-                <Box display="flex" alignItems="center">
-                  <CheckCircleIcon color="success" sx={{ mr: 1 }} />
-                  <Typography variant="h5">
-                    {stats?.system_status || 'Offline'}
+        {tabIndex === 0 ? (
+          <Grid container spacing={3}>
+            {/* Stats Cards */}
+            <Grid item xs={12} md={6}>
+              <Card>
+                <CardContent>
+                  <Typography color="text.secondary" gutterBottom>
+                    System Status
                   </Typography>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <Card>
-              <CardContent>
-                <Typography color="text.secondary" gutterBottom>
-                  Violations Today
-                </Typography>
-                <Typography variant="h5" color="error">
-                  {stats?.today_violations || 0}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
+                  <Box display="flex" alignItems="center">
+                    <CheckCircleIcon color="success" sx={{ mr: 1 }} />
+                    <Typography variant="h5">
+                      {stats?.system_status || 'Offline'}
+                    </Typography>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Card>
+                <CardContent>
+                  <Typography color="text.secondary" gutterBottom>
+                    Violations Today
+                  </Typography>
+                  <Typography variant="h5" color="error">
+                    {stats?.today_violations || 0}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
 
-          {/* Data Table */}
-          <Grid item xs={12}>
-            <Typography variant="h5" gutterBottom sx={{ mt: 2 }}>
-              Recent Violations
-            </Typography>
-            <div style={{ height: 400, width: '100%' }}>
-              <DataGrid
-                rows={violations}
-                columns={columns}
-                initialState={{
-                  pagination: {
-                    paginationModel: { page: 0, pageSize: 5 },
-                  },
-                }}
-                pageSizeOptions={[5, 10]}
-                disableRowSelectionOnClick
-              />
-            </div>
+            {/* Data Table */}
+            <Grid item xs={12}>
+              <Typography variant="h5" gutterBottom sx={{ mt: 2 }}>
+                Recent Violations
+              </Typography>
+              <div style={{ height: 400, width: '100%' }}>
+                <DataGrid
+                  rows={violations}
+                  columns={columns}
+                  initialState={{
+                    pagination: {
+                      paginationModel: { page: 0, pageSize: 5 },
+                    },
+                  }}
+                  pageSizeOptions={[5, 10]}
+                  disableRowSelectionOnClick
+                />
+              </div>
+            </Grid>
           </Grid>
-        </Grid>
+        ) : (
+          <ZoneEditor />
+        )}
       </Container>
     </Box>
   );

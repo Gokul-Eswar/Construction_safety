@@ -47,7 +47,7 @@
 
 ### 🖥️ User Experience
 - [x] **Web Dashboard:** Real-time monitoring UI and violation history.
-- [ ] **Visual Zone Editor:** GUI tool to define safety zones interactively.
+- [x] **Visual Zone Editor:** GUI tool to define safety zones interactively.
 
 ### 🔄 Advanced Features
 - [ ] **Multi-Object Tracking:** Assign persistent IDs to detections (SORT/DeepSORT).
