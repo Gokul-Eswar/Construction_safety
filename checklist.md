@@ -41,8 +41,8 @@
 - [x] **Paho MQTT Integration:** Replace mock client with actual Paho C++ library for broker communication.
 
 ### 📊 Data & Throttling
-- [ ] **Violation Logging:** SQLite or file-based persistence for audit logs.
-- [ ] **Intelligent Throttling:** Logic to prevent alert fatigue (e.g., 1 alert per person per interval).
+- [x] **Violation Logging:** SQLite or file-based persistence for audit logs.
+- [x] **Intelligent Throttling:** Logic to prevent alert fatigue (e.g., 1 alert per person per interval).
 
 ### 🖥️ User Experience
 - [ ] **Web Dashboard:** Real-time monitoring UI and violation history.

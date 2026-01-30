@@ -18,3 +18,6 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [x] **Track: Data Persistence & Intelligent Alerting**
   *Link: [./tracks/persistence_alerting_20260129/](./tracks/persistence_alerting_20260129/)*
+
+- [x] **Track: Web Dashboard & Visualization**
+  *Link: [./tracks/web_dashboard_20260129/](./tracks/web_dashboard_20260129/)*
