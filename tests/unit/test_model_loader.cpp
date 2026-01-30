@@ -8,26 +8,18 @@ TEST(ModelLoaderTest, FileExistenceCheck) {
     EXPECT_FALSE(loader.load());
 }
 
-TEST(ModelLoaderTest, SuccessfulLoadAndSave) {
-    // Create a dummy model file
+TEST(ModelLoaderTest, LoadInvalidOnnxFails) {
+    // Create a dummy model file (garbage data)
     std::string dummy_model = "test_model.onnx";
     std::ofstream f(dummy_model);
     f << "dummy data";
     f.close();
     
     ModelLoader loader(dummy_model);
-    EXPECT_TRUE(loader.load());
-    EXPECT_TRUE(loader.isLoaded());
-    
-    std::string engine_out = "test_model.engine";
-    EXPECT_TRUE(loader.saveEngine(engine_out));
-    
-    // Verify engine file created
-    std::ifstream ef(engine_out);
-    EXPECT_TRUE(ef.good());
-    ef.close();
+    // Should FAIL because it's not a valid ONNX file
+    EXPECT_FALSE(loader.load());
+    EXPECT_FALSE(loader.isLoaded());
     
     // Cleanup
     std::remove(dummy_model.c_str());
-    std::remove(engine_out.c_str());
 }

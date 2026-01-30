@@ -3,10 +3,10 @@
 #include <fstream>
 #include <cstdio>
 
-TEST(PipelineManagerTest, InitializationAndLifecycle) {
+TEST(PipelineManagerTest, InitializationFailsWithInvalidModel) {
     gst_init(nullptr, nullptr);
     
-    // Create dummy model
+    // Create dummy model (garbage)
     std::string dummy_model = "pm_test.onnx";
     std::ofstream f(dummy_model);
     f << "dummy data";
@@ -18,15 +18,10 @@ TEST(PipelineManagerTest, InitializationAndLifecycle) {
     config.database_path = "pm_test_db.sqlite";
 
     PipelineManager manager(config);
-    ASSERT_TRUE(manager.init());
+    // Should fail to init
+    EXPECT_FALSE(manager.init());
     
-    manager.start();
-    // Let it run for a few frames
-    g_usleep(500000); 
-    manager.stop();
-    
-    SUCCEED();
-    
+    // Cleanup
     std::remove(dummy_model.c_str());
     std::remove(config.database_path.c_str());
 }

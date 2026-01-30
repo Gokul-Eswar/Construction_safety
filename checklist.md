@@ -37,6 +37,7 @@
 ## 🛠️ Pending / Future Roadmap (Milestone 2: Production Readiness)
 
 ### ⚡ Hardware Optimization
+- [x] **OpenCV DNN Inference:** Implemented generic ONNX inference backend (CPU/CUDA) as a functional baseline.
 - [ ] **Native TensorRT Execution:** Transition from mocked inference to actual GPU execution (requires CUDA environment).
 - [x] **Paho MQTT Integration:** Replace mock client with actual Paho C++ library for broker communication.
 

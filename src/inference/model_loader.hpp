@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <opencv2/dnn.hpp> // Required for cv::dnn::Net
 
 // Forward declaration for TensorRT runtime
 namespace nvinfer1 {

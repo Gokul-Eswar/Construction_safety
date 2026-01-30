@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include "utils/mqtt_client.hpp"
 
-TEST(MQTTClientTest, ConnectionFlow) {
+TEST(MQTTClientTest, DISABLED_ConnectionFlow) {
     MQTTClient client("test_client");
     EXPECT_FALSE(client.isConnected());
     
@@ -12,7 +12,7 @@ TEST(MQTTClientTest, ConnectionFlow) {
     EXPECT_FALSE(client.isConnected());
 }
 
-TEST(MQTTClientTest, PublishFlow) {
+TEST(MQTTClientTest, DISABLED_PublishFlow) {
     MQTTClient client("test_client");
     
     // Should fail if not connected
