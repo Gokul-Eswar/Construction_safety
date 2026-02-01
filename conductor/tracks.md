@@ -28,5 +28,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 - [x] **Track: Live Web Video Streaming**
   *Link: [./tracks/live_streaming_20260130/](./tracks/live_streaming_20260130/)*
 
-- [ ] **Track: Native TensorRT Execution**
+- [x] **Track: Native TensorRT Execution**
   *Link: [./tracks/native_tensorrt_20260201/](./tracks/native_tensorrt_20260201/)*
