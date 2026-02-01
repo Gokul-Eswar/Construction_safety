@@ -1,10 +1,10 @@
 # Implementation Plan: Modern Web UI & System Control
 
 ## Phase 1: Backend API Extensions
-- [ ] **Task:** Implement `POST /api/config/streams` and `POST /api/config/global` in `server.js`.
+- [x] **Task:** Implement `POST /api/config/streams` and `POST /api/config/global` in `server.js`.
     -   *Why:* To allow the UI to modify the configuration.
     -   *Files:* `web/backend/server.js`
-- [ ] **Task:** Implement `POST /api/system/restart` (Mocked or actual process restart).
+- [x] **Task:** Implement `POST /api/system/restart` (Mocked or actual process restart).
     -   *Why:* To apply changes that require a restart.
     -   *Files:* `web/backend/server.js`
 
