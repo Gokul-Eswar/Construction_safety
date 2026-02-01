@@ -106,30 +106,52 @@ void PipelineManager::onFrameReceived(const std::string& stream_id, GstSample* s
             auto it = streams_.find(stream_id);
             if (it != streams_.end()) {
                 auto& ctx = it->second;
+                ctx->frame_count++;
 
-                // 1. Inference (Shared engine is thread-safe if it uses separate execution contexts, 
-                // but currently we might need a mutex or multiple TRT contexts if running in parallel.
-                // For simplicity in prototype, we'll mutex the inference forward pass.)
-                std::vector<Detection> raw_detections;
-                {
-                    std::lock_guard<std::mutex> lock(mutex_);
-                    raw_detections = engine_->runInference(frame);
+                // Determine if we run inference
+                bool run_inference = true;
+                if (config_.inference_interval > 1) {
+                    if (ctx->frame_count % config_.inference_interval != 0) {
+                        run_inference = false;
+                    }
+                }
+
+                std::vector<Detection> detections;
+                
+                if (run_inference) {
+                    // 1. Inference
+                    std::vector<Detection> raw_detections;
+                    {
+                        std::lock_guard<std::mutex> lock(mutex_);
+                        raw_detections = engine_->runInference(frame);
+                    }
+                    
+                    // 2. Tracking (Per stream)
+                    detections = ctx->tracker->update(raw_detections);
+                } else {
+                    // Skip inference, but update tracker with empty detections (prediction step only)
+                    // Note: SORT implementation usually requires detections. 
+                    // If we skip inference, we might skip tracking update or just visualize old detections?
+                    // Better to skip tracking update or predict.
+                    // For simplicity in this optimization, we skip processing entirely but we must visualize SOMETHING.
+                    // We can reuse last known detections or just draw nothing? 
+                    // Let's NOT call tracker->update() to avoid "lost" tracks due to missing detections.
+                    // But we want to visualize the frame.
+                }
+
+                // 3. Visualization
+                if (run_inference) {
+                     visualizer_->drawDetections(frame, detections);
+                     // Check alerts only on inferred frames
+                     checkAlerts(stream_id, detections, ctx->zones);
                 }
                 
-                // 2. Tracking (Per stream)
-                auto detections = ctx->tracker->update(raw_detections);
-                
-                // 3. Visualization
-                visualizer_->drawDetections(frame, detections);
                 std::vector<std::vector<cv::Point>> zone_points;
                 for (const auto& z : ctx->zones) zone_points.push_back(z.points);
                 visualizer_->drawZones(frame, zone_points);
                 
                 // Add stream name
                 cv::putText(frame, ctx->name, cv::Point(20, 40), cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(0, 255, 255), 2);
-
-                // 4. Alerting
-                checkAlerts(stream_id, detections, ctx->zones);
 
                 // 5. Update last frame for tiling
                 {

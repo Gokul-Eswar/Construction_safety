@@ -22,6 +22,7 @@ struct StreamContext {
     std::vector<ZoneConfig> zones;
     cv::Mat last_processed_frame;
     std::mutex frame_mutex;
+    uint64_t frame_count = 0;
 };
 
 class PipelineManager {

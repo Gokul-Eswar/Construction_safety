@@ -4,6 +4,9 @@ const db = require('./db');
 const fs = require('fs');
 const path = require('path');
 const { exec } = require('child_process');
+const http = require('http');
+const { Server } = require('socket.io');
+const mqtt = require('mqtt');
 
 const app = express();
 const PORT = 3001;
@@ -11,7 +14,16 @@ const PORT = 3001;
 app.use(cors());
 app.use(express.json());
 
-// Load project config to get Zone Names
+// Setup Socket.IO
+const server = http.createServer(app);
+const io = new Server(server, {
+    cors: {
+        origin: "*", // Allow all for prototype
+        methods: ["GET", "POST"]
+    }
+});
+
+// Load project config
 const configPath = path.resolve(__dirname, '../../config.json');
 let projectConfig = {};
 
@@ -23,8 +35,46 @@ const loadConfig = () => {
         console.error("Could not load config.json:", error);
     }
 };
-
 loadConfig();
+
+// Setup MQTT Client
+let mqttClient = null;
+const setupMQTT = () => {
+    if (mqttClient) mqttClient.end();
+    
+    // Determine MQTT host (ENV override or config)
+    const host = process.env.MQTT_HOST || (projectConfig.mqtt ? projectConfig.mqtt.host : 'localhost');
+    const port = projectConfig.mqtt ? projectConfig.mqtt.port : 1883;
+    const topic = projectConfig.mqtt ? projectConfig.mqtt.topic : 'safety/alerts';
+
+    console.log(`Connecting to MQTT at mqtt://${host}:${port}`);
+    mqttClient = mqtt.connect(`mqtt://${host}:${port}`);
+
+    mqttClient.on('connect', () => {
+        console.log('MQTT Connected');
+        mqttClient.subscribe(topic, (err) => {
+            if (!err) console.log(`Subscribed to ${topic}`);
+        });
+    });
+
+    mqttClient.on('message', (topic, message) => {
+        try {
+            const payload = JSON.parse(message.toString());
+            // Broadcast to all connected websocket clients
+            io.emit('violation_alert', payload);
+        } catch (e) {
+            console.error('Failed to parse MQTT message');
+        }
+    });
+};
+
+setupMQTT(); // Initial setup
+
+// Socket.IO Connection
+io.on('connection', (socket) => {
+    console.log('New client connected');
+    socket.on('disconnect', () => console.log('Client disconnected'));
+});
 
 // Helper to get zone name
 const getZoneName = (id) => {
@@ -157,8 +207,11 @@ app.post('/api/config/streams', (req, res) => {
 // API: System Restart (Mock)
 app.post('/api/system/restart', (req, res) => {
     console.log("Restart request received. In a real deployment, this would trigger a service restart.");
-    // For now, we just return success. 
-    // In a supervised environment (e.g. Systemd or PM2), we could execute a restart command.
+    // Re-init MQTT in case config changed
+    setTimeout(() => {
+        loadConfig();
+        setupMQTT();
+    }, 1000);
     res.json({ success: true, message: "Restart signal sent to system controller." });
 });
 
@@ -171,6 +224,6 @@ if (process.env.NODE_ENV === 'production') {
     });
 }
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
 });

@@ -28,6 +28,7 @@
     "model_path": "yolo11n.onnx",
     "database_path": "safety_violations.db",
     "alert_cooldown": 5000,
+    "inference_interval": 3,
     "stream_port": 8081,
     "mqtt": {
         "host": "localhost",

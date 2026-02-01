@@ -28,6 +28,7 @@ struct AppConfig {
     std::string model_path;
     std::string database_path = "safety_violations.db";
     int alert_cooldown = 5000;
+    int inference_interval = 1; // Process every Nth frame (1 = all)
     int stream_port = 8081;
     MQTTConfig mqtt;
     
