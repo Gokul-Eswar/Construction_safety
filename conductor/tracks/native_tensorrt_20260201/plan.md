@@ -17,7 +17,7 @@
 - [x] **Task:** Implement `ModelLoader::deserializeEngine` with native TRT API.
     -   *Why:* To load pre-compiled `.engine` files.
     -   *Files:* `src/inference/model_loader.cpp`
-- [ ] **Task:** Implement `ModelLoader::buildFromOnnx` with `NvOnnxParser`.
+- [x] **Task:** Implement `ModelLoader::buildFromOnnx` with `NvOnnxParser`.
     -   *Why:* To allow converting ONNX models to Engines at runtime if no Engine exists.
     -   *Files:* `src/inference/model_loader.cpp`
 

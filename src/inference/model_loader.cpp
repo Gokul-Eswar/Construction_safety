@@ -3,6 +3,10 @@
 #include <iostream>
 #include <vector>
 
+#ifdef ENABLE_TENSORRT
+#include <NvOnnxParser.h>
+#endif
+
 ModelLoader::ModelLoader(const std::string& model_path) 
     : model_path_(model_path), loaded_(false) {
 #ifdef ENABLE_TENSORRT
@@ -35,6 +39,66 @@ bool ModelLoader::load() {
 }
 
 bool ModelLoader::buildFromOnnx() {
+#ifdef ENABLE_TENSORRT
+    std::cout << "Building TensorRT Engine from ONNX: " << model_path_ << std::endl;
+    
+    auto builder = std::unique_ptr<nvinfer1::IBuilder, InferDeleter>(
+        nvinfer1::createInferBuilder(*logger_)
+    );
+    if (!builder) return false;
+
+    const auto explicitBatch = 1U << static_cast<uint32_t>(nvinfer1::NetworkDefinitionCreationFlag::kEXPLICIT_BATCH);
+    auto network = std::unique_ptr<nvinfer1::INetworkDefinition, InferDeleter>(
+        builder->createNetworkV2(explicitBatch)
+    );
+    if (!network) return false;
+
+    auto parser = std::unique_ptr<nvonnxparser::IParser, InferDeleter>(
+        nvonnxparser::createParser(*network, *logger_)
+    );
+    if (!parser) return false;
+
+    if (!parser->parseFromFile(model_path_.c_str(), static_cast<int>(nvinfer1::ILogger::Severity::kWARNING))) {
+        std::cerr << "Failed to parse ONNX file." << std::endl;
+        return false;
+    }
+
+    auto config = std::unique_ptr<nvinfer1::IBuilderConfig, InferDeleter>(
+        builder->createBuilderConfig()
+    );
+    if (!config) return false;
+
+    if (builder->platformHasFastFp16()) {
+        config->setFlag(nvinfer1::BuilderFlag::kFP16);
+        std::cout << "FP16 mode enabled." << std::endl;
+    }
+
+    std::unique_ptr<nvinfer1::IHostMemory, InferDeleter> plan{
+        builder->buildSerializedNetwork(*network, *config)
+    };
+    if (!plan) {
+        std::cerr << "Failed to build serialized network." << std::endl;
+        return false;
+    }
+
+    runtime_ = std::unique_ptr<nvinfer1::IRuntime, InferDeleter>(
+        nvinfer1::createInferRuntime(*logger_)
+    );
+    
+    engine_ = std::unique_ptr<nvinfer1::ICudaEngine, InferDeleter>(
+        runtime_->deserializeCudaEngine(plan->data(), plan->size(), nullptr)
+    );
+
+    if (!engine_) {
+        std::cerr << "Failed to create engine from plan." << std::endl;
+        return false;
+    }
+    
+    std::cout << "Successfully built and loaded TensorRT engine." << std::endl;
+    loaded_ = true;
+    return true;
+
+#else
     try {
         std::cout << "Loading ONNX model using OpenCV DNN: " << model_path_ << std::endl;
         net_ = cv::dnn::readNetFromONNX(model_path_);
@@ -61,6 +125,7 @@ bool ModelLoader::buildFromOnnx() {
         std::cerr << "OpenCV Exception loading ONNX: " << e.what() << std::endl;
         return false;
     }
+#endif
 }
 
 bool ModelLoader::deserializeEngine() {
