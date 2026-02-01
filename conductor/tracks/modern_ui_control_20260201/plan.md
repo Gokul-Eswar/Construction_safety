@@ -9,10 +9,10 @@
     -   *Files:* `web/backend/server.js`
 
 ## Phase 2: UI Modernization (Foundation)
-- [ ] **Task:** Setup MUI Dark Theme and Layout Component (Sidebar + Topbar).
+- [x] **Task:** Setup MUI Dark Theme and Layout Component (Sidebar + Topbar).
     -   *Why:* To establish the modern visual direction.
     -   *Files:* `web/frontend/src/theme.ts`, `web/frontend/src/components/Layout.tsx`, `web/frontend/src/App.tsx`
-- [ ] **Task:** Create `Dashboard` page with Tiled Feed and Status Widgets.
+- [x] **Task:** Create `Dashboard` page with Tiled Feed and Status Widgets.
     -   *Why:* To provide the main monitoring view.
     -   *Files:* `web/frontend/src/pages/Dashboard.tsx`
 
