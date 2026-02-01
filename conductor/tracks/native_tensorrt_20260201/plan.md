@@ -30,6 +30,6 @@
     -   *Files:* `src/inference/inference_engine.cpp`
 
 ## Phase 5: Verification
-- [ ] **Task:** Verify compilation and link against TensorRT libs.
+- [x] **Task:** Verify compilation and link against TensorRT libs.
     -   *Why:* Ensure build system finds the libraries.
-- [ ] **Task:** Run system and verify detections.
+- [x] **Task:** Run system and verify detections.
