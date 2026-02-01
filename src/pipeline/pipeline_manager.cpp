@@ -178,11 +178,9 @@ void PipelineManager::updateTiledView() {
         }
 
         if (!current_frames.empty()) {
-            // Very simple tiling: if 2 streams, stack them or side-by-side
             if (current_frames.size() == 1) {
                 streamer_->publish(current_frames[0]);
             } else {
-                // Resize to same size for tiling
                 int target_w = 640;
                 int target_h = 360;
                 for (auto& f : current_frames) cv::resize(f, f, cv::Size(target_w, target_h));
@@ -190,8 +188,20 @@ void PipelineManager::updateTiledView() {
                 cv::Mat combined;
                 if (current_frames.size() == 2) {
                     cv::vconcat(current_frames[0], current_frames[1], combined);
+                } else if (current_frames.size() <= 4) {
+                    // 2x2 grid
+                    cv::Mat top, bottom;
+                    cv::hconcat(current_frames[0], current_frames[1], top);
+                    
+                    if (current_frames.size() == 3) {
+                        cv::Mat black = cv::Mat::zeros(target_h, target_w, CV_8UC3);
+                        cv::hconcat(current_frames[2], black, bottom);
+                    } else {
+                        cv::hconcat(current_frames[2], current_frames[3], bottom);
+                    }
+                    cv::vconcat(top, bottom, combined);
                 } else {
-                    // Just take the first for now if many, or implement better tiling
+                    // Fallback for many streams: just first 4 or implement paging
                     combined = current_frames[0];
                 }
                 streamer_->publish(combined);

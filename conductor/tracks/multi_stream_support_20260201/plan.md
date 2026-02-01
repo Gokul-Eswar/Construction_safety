@@ -17,10 +17,10 @@
     -   *Files:* `src/utils/violation_logger.cpp`, `src/utils/alert_throttler.cpp`
 
 ## Phase 3: Visual Integration
-- [ ] **Task:** Implement a Tiled Visualizer.
+- [x] **Task:** Implement a Tiled Visualizer.
     -   *Why:* To view all streams at once on the MJPEG feed.
     -   *Files:* `src/utils/visualizer.hpp/cpp`
-- [ ] **Task:** Update `MJPEGStreamer` to accept multiple frames and tile them.
+- [x] **Task:** Update `MJPEGStreamer` to accept multiple frames and tile them.
     -   *Why:* To provide a unified preview.
     -   *Files:* `src/utils/mjpeg_streamer.cpp`
 
