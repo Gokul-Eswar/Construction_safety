@@ -3,7 +3,9 @@ import { ThemeProvider } from '@mui/material/styles';
 import { theme } from './theme';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
-import ZoneEditor from './ZoneEditor'; // Using existing for now, will move later
+import StreamManager from './pages/StreamManager';
+import Settings from './pages/Settings';
+import ZoneEditorPage from './pages/ZoneEditorPage';
 import { Typography, Box } from '@mui/material';
 
 // Placeholder pages
@@ -20,10 +22,10 @@ function App() {
   const renderContent = () => {
     switch (currentTab) {
       case 'dashboard': return <Dashboard />;
-      case 'zones': return <ZoneEditor />;
-      case 'streams': return <PlaceholderPage title="Camera Management" />;
+      case 'zones': return <ZoneEditorPage />;
+      case 'streams': return <StreamManager />;
       case 'logs': return <PlaceholderPage title="Violation Logs" />;
-      case 'settings': return <PlaceholderPage title="System Settings" />;
+      case 'settings': return <Settings />;
       default: return <Dashboard />;
     }
   };

@@ -17,16 +17,16 @@
     -   *Files:* `web/frontend/src/pages/Dashboard.tsx`
 
 ## Phase 3: System Control Features
-- [ ] **Task:** Create `StreamManager` page (List + Add/Edit Dialog).
+- [x] **Task:** Create `StreamManager` page (List + Add/Edit Dialog).
     -   *Why:* To manage multiple cameras.
     -   *Files:* `web/frontend/src/pages/StreamManager.tsx`
-- [ ] **Task:** Create `Settings` page (MQTT, Global Params).
+- [x] **Task:** Create `Settings` page (MQTT, Global Params).
     -   *Why:* To control system behavior.
     -   *Files:* `web/frontend/src/pages/Settings.tsx`
-- [ ] **Task:** Integrate `ZoneEditor` into the new layout.
+- [x] **Task:** Integrate `ZoneEditor` into the new layout.
     -   *Why:* To maintain existing functionality.
     -   *Files:* `web/frontend/src/pages/ZoneEditorPage.tsx`
 
 ## Phase 4: Verification
-- [ ] **Task:** Manual verification of all pages.
-- [ ] **Task:** Verify config updates are saved to `config.json`.
+- [x] **Task:** Manual verification of all pages.
+- [x] **Task:** Verify config updates are saved to `config.json`.
