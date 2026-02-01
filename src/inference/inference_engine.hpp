@@ -34,6 +34,8 @@ public:
     std::vector<Detection> applyNMS(const std::vector<Detection>& detections, float nms_thresh);
 
 private:
+    std::vector<Detection> parseDetections(const cv::Mat& output_t, int frame_w, int frame_h);
+
     InferenceConfig config_;
     std::unique_ptr<ModelLoader> model_loader_;
 
