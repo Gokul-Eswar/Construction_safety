@@ -40,5 +40,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 - [x] **Track: Dockerization & Deployment**
   *Link: [./tracks/dockerization_20260201/](./tracks/dockerization_20260201/)*
 
-- [ ] **Track: System Launcher Scripts**
+- [x] **Track: System Launcher Scripts**
   *Link: [./tracks/launcher_scripts_20260201/](./tracks/launcher_scripts_20260201/)*
