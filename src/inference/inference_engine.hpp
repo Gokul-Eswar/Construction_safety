@@ -4,6 +4,7 @@
 #include <memory>
 #include <opencv2/opencv.hpp>
 #include "model_loader.hpp"
+#include "trt_utils.hpp"
 
 struct InferenceConfig {
     std::string model_path;
@@ -35,4 +36,28 @@ public:
 private:
     InferenceConfig config_;
     std::unique_ptr<ModelLoader> model_loader_;
+
+#ifdef ENABLE_TENSORRT
+    struct InferDeleter {
+        template <typename T>
+        void operator()(T* obj) const {
+            if (obj) obj->destroy();
+        }
+    };
+    
+    std::unique_ptr<nvinfer1::IExecutionContext, InferDeleter> context_;
+    void* buffers_[2] = {nullptr, nullptr}; // 0: Input, 1: Output
+    
+    size_t input_bytes_ = 0;
+    size_t output_bytes_ = 0;
+    
+    // Output dimensions (assumes YOLO format)
+    int output_rows_ = 0;
+    int output_cols_ = 0;
+
+#ifdef ENABLE_CUDA
+    cudaStream_t stream_ = nullptr;
+#endif
+
+#endif
 };
