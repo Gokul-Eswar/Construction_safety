@@ -3,6 +3,8 @@
 #include <iostream>
 #include <nlohmann/json.hpp>
 
+#include <cstdlib>
+
 using json = nlohmann::json;
 
 AppConfig ConfigLoader::load(const std::string& path) {
@@ -28,6 +30,13 @@ AppConfig ConfigLoader::load(const std::string& path) {
             if (m.contains("port")) config.mqtt.port = m["port"];
             if (m.contains("topic")) config.mqtt.topic = m["topic"];
             if (m.contains("client_id")) config.mqtt.client_id = m["client_id"];
+        }
+
+        // Environment Override
+        const char* env_mqtt_host = std::getenv("MQTT_HOST");
+        if (env_mqtt_host) {
+            config.mqtt.host = env_mqtt_host;
+            std::cout << "Overriding MQTT Host from ENV: " << env_mqtt_host << std::endl;
         }
 
         if (j.contains("streams")) {

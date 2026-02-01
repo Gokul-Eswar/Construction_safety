@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  mqtt:
+    image: eclipse-mosquitto:2
+    container_name: safety-mqtt
+    ports:
+      - "1883:1883"
+    networks:
+      - safety-net
+
+  engine:
+    build:
+      context: .
+      dockerfile: Dockerfile.engine
+    container_name: safety-engine
+    depends_on:
+      - mqtt
+    ports:
+      - "8081:8081"
+    environment:
+      - MQTT_HOST=mqtt
+      - NVIDIA_VISIBLE_DEVICES=all
+    volumes:
+      - ./config.json:/app/config.json
+      - ./safety_violations.db:/app/safety_violations.db
+      - ./yolo11n.onnx:/app/yolo11n.onnx
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    networks:
+      - safety-net
+    restart: always
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    container_name: safety-web
+    depends_on:
+      - engine
+    ports:
+      - "3000:3000" # Static Frontend (if served by express via another port? No, backend is 3001)
+      - "3001:3001" # API + Static Frontend
+    volumes:
+      - ./config.json:/app/config.json
+      - ./safety_violations.db:/app/safety_violations.db
+    environment:
+      - NODE_ENV=production
+    networks:
+      - safety-net
+    restart: always
+
+networks:
+  safety-net:
+    driver: bridge
