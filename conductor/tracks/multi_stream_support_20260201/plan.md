@@ -25,5 +25,5 @@
     -   *Files:* `src/utils/mjpeg_streamer.cpp`
 
 ## Phase 4: Verification
-- [ ] **Task:** Test with 2+ mock streams.
-- [ ] **Task:** Verify dashboard correctly displays events from all stream IDs.
+- [x] **Task:** Test with 2+ mock streams.
+- [x] **Task:** Verify dashboard correctly displays events from all stream IDs.
