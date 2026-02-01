@@ -31,5 +31,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 - [x] **Track: Native TensorRT Execution**
   *Link: [./tracks/native_tensorrt_20260201/](./tracks/native_tensorrt_20260201/)*
 
-- [ ] **Track: Multi-Stream Support**
+- [x] **Track: Multi-Stream Support**
   *Link: [./tracks/multi_stream_support_20260201/](./tracks/multi_stream_support_20260201/)*
