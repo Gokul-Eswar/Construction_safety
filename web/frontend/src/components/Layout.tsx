@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { 
   AppBar, Box, CssBaseline, Drawer, IconButton, List, ListItem, 
   ListItemButton, ListItemIcon, ListItemText, Toolbar, Typography, 
-  Divider, Badge 
+  Divider 
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import DashboardIcon from '@mui/icons-material/Dashboard';
