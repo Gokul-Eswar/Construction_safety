@@ -9,7 +9,7 @@
 - [x] **Task:** Create `TRTLogger` and `TRTCommon` helper structures.
     -   *Why:* TensorRT requires a logger implementation and common CUDA error handling utilities.
     -   *Files:* `src/inference/trt_utils.hpp`, `src/inference/trt_utils.cpp`
-- [ ] **Task:** Update `ModelLoader` to hold TRT smart pointers and manage runtime.
+- [x] **Task:** Update `ModelLoader` to hold TRT smart pointers and manage runtime.
     -   *Why:* To safely manage the lifetime of `IRuntime`, `ICudaEngine`.
     -   *Files:* `src/inference/model_loader.hpp`, `src/inference/model_loader.cpp`
 

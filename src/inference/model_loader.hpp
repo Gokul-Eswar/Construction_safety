@@ -2,14 +2,8 @@
 #include <string>
 #include <vector>
 #include <memory>
-#include <opencv2/dnn.hpp> // Required for cv::dnn::Net
-
-// Forward declaration for TensorRT runtime
-namespace nvinfer1 {
-    class ICudaEngine;
-    class IRuntime;
-    class ILogger;
-}
+#include <opencv2/dnn.hpp>
+#include "trt_utils.hpp"
 
 class ModelLoader {
 public:
@@ -18,13 +12,14 @@ public:
 
     bool load();
     bool saveEngine(const std::string& engine_path);
-    
-    // In a real implementation, this would return the raw engine pointer
-    // For now, we use a boolean or void* placeholder if headers aren't available
     bool isLoaded() const;
 
-    // Get the OpenCV DNN Net object
+    // Get the OpenCV DNN Net object (for fallback/CPU)
     cv::dnn::Net& getNet() { return net_; }
+
+#ifdef ENABLE_TENSORRT
+    nvinfer1::ICudaEngine* getEngine() { return engine_.get(); }
+#endif
 
 private:
     bool buildFromOnnx();
@@ -33,11 +28,29 @@ private:
     std::string model_path_;
     bool loaded_;
     
-    cv::dnn::Net net_; // OpenCV DNN Net
+    cv::dnn::Net net_;
 
-#ifdef ENABLE_CUDA
-    std::unique_ptr<nvinfer1::IRuntime> runtime_;
-    std::shared_ptr<nvinfer1::ICudaEngine> engine_;
-    std::unique_ptr<nvinfer1::ILogger> logger_;
+#ifdef ENABLE_TENSORRT
+    struct TRTDeleter {
+        template <typename T>
+        void operator()(T* obj) const {
+            if (obj) delete obj; // Helper classes might not have destroy(), usually IRuntime/ICudaEngine do.
+            // Wait, standard TRT classes use destroy(), but ILogger usually doesn't need to be destroyed if stack allocated or unique_ptr handles it.
+            // Actually, IRuntime and ICudaEngine usually have destroy() and are created via create...() functions.
+            // But strict unique_ptr with deleter is better.
+        }
+    };
+    
+    // Use specific deleters for TRT objects that require destroy()
+    struct InferDeleter {
+        template <typename T>
+        void operator()(T* obj) const {
+            if (obj) obj->destroy();
+        }
+    };
+
+    std::unique_ptr<nvinfer1::IRuntime, InferDeleter> runtime_;
+    std::unique_ptr<nvinfer1::ICudaEngine, InferDeleter> engine_;
+    std::unique_ptr<trt::Logger> logger_;
 #endif
 };

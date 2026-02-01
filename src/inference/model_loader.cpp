@@ -1,17 +1,17 @@
 #include "model_loader.hpp"
 #include <fstream>
 #include <iostream>
-
-#ifdef ENABLE_CUDA
-#include <NvInfer.h>
-#endif
+#include <vector>
 
 ModelLoader::ModelLoader(const std::string& model_path) 
     : model_path_(model_path), loaded_(false) {
+#ifdef ENABLE_TENSORRT
+    logger_ = std::make_unique<trt::Logger>();
+#endif
 }
 
 ModelLoader::~ModelLoader() {
-    // Cleanup logic
+    // unique_ptr handles cleanup
 }
 
 bool ModelLoader::load() {
@@ -64,17 +64,20 @@ bool ModelLoader::buildFromOnnx() {
 }
 
 bool ModelLoader::deserializeEngine() {
-#ifdef ENABLE_CUDA
-    // Real implementation would:
-    // 1. Read file into memory
-    // 2. Create runtime
-    // 3. deserializeCudaEngine
+#ifdef ENABLE_TENSORRT
+    std::cout << "Deserializing TensorRT engine from: " << model_path_ << std::endl;
+    // Implementation to follow in next phase
+    // We need to read the file, create runtime, and deserialize
+    return false; // Placeholder
+#elif defined(ENABLE_CUDA)
     std::cout << "[Mock] Deserializing TensorRT engine..." << std::endl;
-#else
-    std::cout << "[Mock] CUDA disabled. Skipping actual deserialization." << std::endl;
-#endif
     loaded_ = true;
     return true;
+#else
+    std::cout << "[Mock] CUDA/TRT disabled. Skipping actual deserialization." << std::endl;
+    loaded_ = true;
+    return true;
+#endif
 }
 
 bool ModelLoader::saveEngine(const std::string& engine_path) {
