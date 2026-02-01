@@ -33,3 +33,6 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [x] **Track: Multi-Stream Support**
   *Link: [./tracks/multi_stream_support_20260201/](./tracks/multi_stream_support_20260201/)*
+
+- [ ] **Track: Modern Web UI & System Control**
+  *Link: [./tracks/modern_ui_control_20260201/](./tracks/modern_ui_control_20260201/)*
