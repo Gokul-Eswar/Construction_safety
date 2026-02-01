@@ -66,9 +66,42 @@ bool ModelLoader::buildFromOnnx() {
 bool ModelLoader::deserializeEngine() {
 #ifdef ENABLE_TENSORRT
     std::cout << "Deserializing TensorRT engine from: " << model_path_ << std::endl;
-    // Implementation to follow in next phase
-    // We need to read the file, create runtime, and deserialize
-    return false; // Placeholder
+    
+    std::ifstream file(model_path_, std::ios::binary | std::ios::ate);
+    if (!file.good()) {
+        std::cerr << "Error reading engine file: " << model_path_ << std::endl;
+        return false;
+    }
+    std::streamsize size = file.tellg();
+    file.seekg(0, std::ios::beg);
+
+    std::vector<char> buffer(size);
+    if (!file.read(buffer.data(), size)) {
+        std::cerr << "Error reading engine file content." << std::endl;
+        return false;
+    }
+
+    runtime_ = std::unique_ptr<nvinfer1::IRuntime, InferDeleter>(
+        nvinfer1::createInferRuntime(*logger_)
+    );
+    if (!runtime_) {
+        std::cerr << "Failed to create TensorRT Runtime." << std::endl;
+        return false;
+    }
+
+    engine_ = std::unique_ptr<nvinfer1::ICudaEngine, InferDeleter>(
+        runtime_->deserializeCudaEngine(buffer.data(), size, nullptr)
+    );
+
+    if (!engine_) {
+        std::cerr << "Failed to deserialize CUDA Engine." << std::endl;
+        return false;
+    }
+
+    std::cout << "TensorRT Engine loaded successfully." << std::endl;
+    loaded_ = true;
+    return true;
+
 #elif defined(ENABLE_CUDA)
     std::cout << "[Mock] Deserializing TensorRT engine..." << std::endl;
     loaded_ = true;

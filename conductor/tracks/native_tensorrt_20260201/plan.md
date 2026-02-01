@@ -14,7 +14,7 @@
     -   *Files:* `src/inference/model_loader.hpp`, `src/inference/model_loader.cpp`
 
 ## Phase 3: Engine Management
-- [ ] **Task:** Implement `ModelLoader::deserializeEngine` with native TRT API.
+- [x] **Task:** Implement `ModelLoader::deserializeEngine` with native TRT API.
     -   *Why:* To load pre-compiled `.engine` files.
     -   *Files:* `src/inference/model_loader.cpp`
 - [ ] **Task:** Implement `ModelLoader::buildFromOnnx` with `NvOnnxParser`.
