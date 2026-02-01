@@ -1,7 +1,7 @@
 # Implementation Plan: Native TensorRT Execution
 
 ## Phase 1: Build System & Dependencies
-- [~] **Task:** Update `CMakeLists.txt` to find and link TensorRT libraries (`nvinfer`, `nvonnxparser`).
+- [x] **Task:** Update `CMakeLists.txt` to find and link TensorRT libraries (`nvinfer`, `nvonnxparser`).
     -   *Why:* Necessary to use the TRT API.
     -   *Files:* `CMakeLists.txt`
 

@@ -15,6 +15,18 @@ if(CMAKE_CUDA_COMPILER)
     add_compile_definitions(ENABLE_CUDA)
     find_package(CUDA REQUIRED)
     message(STATUS "CUDA Found. Enabling CUDA support.")
+
+    # TensorRT
+    find_library(TENSORRT_LIBRARY nvinfer)
+    find_library(TENSORRT_PARSER_LIBRARY nvonnxparser)
+    
+    if(TENSORRT_LIBRARY AND TENSORRT_PARSER_LIBRARY)
+        message(STATUS "TensorRT Found: ${TENSORRT_LIBRARY}")
+        add_compile_definitions(ENABLE_TENSORRT)
+        set(TENSORRT_LIBS ${TENSORRT_LIBRARY} ${TENSORRT_PARSER_LIBRARY})
+    else()
+        message(STATUS "TensorRT Not Found. Native TRT execution will be disabled.")
+    endif()
 else()
     message(STATUS "CUDA Not Found. Disabling CUDA support.")
 endif()
@@ -138,6 +150,7 @@ target_link_libraries(main_app PRIVATE
     nlohmann_json::nlohmann_json
     paho-mqttpp3
     SQLite::SQLite3
+    ${TENSORRT_LIBS}
 )
 if(WIN32)
     target_link_libraries(main_app PRIVATE ws2_32)
@@ -169,6 +182,7 @@ target_link_libraries(unit_tests PRIVATE
     nlohmann_json::nlohmann_json
     paho-mqttpp3
     SQLite::SQLite3
+    ${TENSORRT_LIBS}
 )
 if(WIN32)
     target_link_libraries(unit_tests PRIVATE ws2_32)
