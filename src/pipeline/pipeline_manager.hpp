@@ -11,6 +11,18 @@
 #include "utils/mjpeg_streamer.hpp"
 #include <memory>
 #include <mutex>
+#include <vector>
+#include <map>
+
+struct StreamContext {
+    std::string id;
+    std::string name;
+    std::unique_ptr<RTSPSource> source;
+    std::unique_ptr<SortTracker> tracker;
+    std::vector<ZoneConfig> zones;
+    cv::Mat last_processed_frame;
+    std::mutex frame_mutex;
+};
 
 class PipelineManager {
 public:
@@ -22,21 +34,23 @@ public:
     void stop();
 
 private:
-    void onFrameReceived(GstSample* sample);
-    void checkAlerts(const std::vector<Detection>& detections);
+    void onFrameReceived(const std::string& stream_id, GstSample* sample);
+    void checkAlerts(const std::string& stream_id, const std::vector<Detection>& detections, const std::vector<ZoneConfig>& zones);
+    void updateTiledView();
 
     AppConfig config_;
 
-    std::unique_ptr<RTSPSource> source_;
+    std::map<std::string, std::unique_ptr<StreamContext>> streams_;
+    
     std::unique_ptr<InferenceEngine> engine_;
-    std::unique_ptr<SpatialMapper> spatial_mapper_;
     std::unique_ptr<Visualizer> visualizer_;
     std::unique_ptr<MQTTClient> mqtt_client_;
     std::unique_ptr<safety::ViolationLogger> violation_logger_;
     std::unique_ptr<safety::AlertThrottler> alert_throttler_;
-    std::unique_ptr<SortTracker> tracker_;
     std::unique_ptr<MJPEGStreamer> streamer_;
 
     bool running_;
     std::mutex mutex_;
+    
+    std::thread tiling_thread_;
 };

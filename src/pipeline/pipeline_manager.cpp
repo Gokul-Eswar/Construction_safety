@@ -12,70 +12,77 @@ PipelineManager::~PipelineManager() {
 }
 
 bool PipelineManager::init() {
-    // 1. Init Engine
+    // 1. Init Engine (Shared)
     InferenceConfig inf_config;
     inf_config.model_path = config_.model_path;
     engine_ = std::make_unique<InferenceEngine>(inf_config);
     if (!engine_->init()) return false;
 
-    // 2. Init Source
-    source_ = std::make_unique<RTSPSource>(config_.rtsp_uri);
-    source_->setFrameCallback([this](GstSample* sample) {
-        this->onFrameReceived(sample);
-    });
-
-    // 3. Init Spatial Mapper
-    spatial_mapper_ = std::make_unique<SpatialMapper>();
-    // Default calibration or loaded from config could go here
-
-    // 4. Init Visualizer
-    visualizer_ = std::make_unique<Visualizer>();
-
-    // 5. Init Persistence & Alerting
+    // 2. Init Shared Utilities
     violation_logger_ = std::make_unique<safety::ViolationLogger>();
     if (!violation_logger_->init(config_.database_path)) {
-        std::cerr << "Failed to initialize violation logger at " << config_.database_path << std::endl;
+        std::cerr << "Failed to initialize violation logger." << std::endl;
         return false;
     }
 
     alert_throttler_ = std::make_unique<safety::AlertThrottler>();
     alert_throttler_->set_cooldown(config_.alert_cooldown);
 
-    // 6. Init Tracker
-    tracker_ = std::make_unique<SortTracker>();
-
-    // 7. Init Streamer
+    visualizer_ = std::make_unique<Visualizer>();
+    
     streamer_ = std::make_unique<MJPEGStreamer>();
-    streamer_->start(8081); // Default streaming port
+    streamer_->start(config_.stream_port);
 
-    // 8. Init MQTT
     if (!config_.mqtt.host.empty()) {
         mqtt_client_ = std::make_unique<MQTTClient>(config_.mqtt.client_id);
         mqtt_client_->connect(config_.mqtt.host, config_.mqtt.port);
+    }
+
+    // 3. Init Streams
+    for (const auto& sc : config_.streams) {
+        auto ctx = std::make_unique<StreamContext>();
+        ctx->id = sc.id;
+        ctx->name = sc.name;
+        ctx->zones = sc.zones;
+        ctx->tracker = std::make_unique<SortTracker>();
+        ctx->source = std::make_unique<RTSPSource>(sc.rtsp_uri);
+        
+        ctx->source->setFrameCallback([this, id = sc.id](GstSample* sample) {
+            this->onFrameReceived(id, sample);
+        });
+
+        streams_[sc.id] = std::move(ctx);
     }
 
     return true;
 }
 
 void PipelineManager::start() {
-    if (source_ && source_->start()) {
-        running_ = true;
-        std::cout << "Pipeline started." << std::endl;
+    running_ = true;
+    for (auto& pair : streams_) {
+        if (!pair.second->source->start()) {
+            std::cerr << "Failed to start stream: " << pair.first << std::endl;
+        }
     }
+    
+    tiling_thread_ = std::thread(&PipelineManager::updateTiledView, this);
+    std::cout << "All pipelines started." << std::endl;
 }
 
 void PipelineManager::stop() {
-    if (source_) {
-        source_->stop();
+    running_ = false;
+    if (tiling_thread_.joinable()) tiling_thread_.join();
+
+    for (auto& pair : streams_) {
+        pair.second->source->stop();
     }
     if (mqtt_client_) {
         mqtt_client_->disconnect();
     }
-    running_ = false;
-    std::cout << "Pipeline stopped." << std::endl;
+    std::cout << "All pipelines stopped." << std::endl;
 }
 
-void PipelineManager::onFrameReceived(GstSample* sample) {
+void PipelineManager::onFrameReceived(const std::string& stream_id, GstSample* sample) {
     if (!running_) return;
 
     GstCaps* caps = gst_sample_get_caps(sample);
@@ -96,55 +103,101 @@ void PipelineManager::onFrameReceived(GstSample* sample) {
         }
 
         if (!frame.empty()) {
-            auto raw_detections = engine_->runInference(frame);
-            
-            // Apply Tracking
-            auto detections = tracker_->update(raw_detections);
-            
-            // Draw detections
-            visualizer_->drawDetections(frame, detections);
-            
-            // Draw zones
-            {
-                std::vector<std::vector<cv::Point>> all_zones;
-                for (const auto& z : config_.zones) all_zones.push_back(z.points);
-                visualizer_->drawZones(frame, all_zones);
-            }
+            auto it = streams_.find(stream_id);
+            if (it != streams_.end()) {
+                auto& ctx = it->second;
 
-            // Check alerts
-            checkAlerts(detections);
+                // 1. Inference (Shared engine is thread-safe if it uses separate execution contexts, 
+                // but currently we might need a mutex or multiple TRT contexts if running in parallel.
+                // For simplicity in prototype, we'll mutex the inference forward pass.)
+                std::vector<Detection> raw_detections;
+                {
+                    std::lock_guard<std::mutex> lock(mutex_);
+                    raw_detections = engine_->runInference(frame);
+                }
+                
+                // 2. Tracking (Per stream)
+                auto detections = ctx->tracker->update(raw_detections);
+                
+                // 3. Visualization
+                visualizer_->drawDetections(frame, detections);
+                std::vector<std::vector<cv::Point>> zone_points;
+                for (const auto& z : ctx->zones) zone_points.push_back(z.points);
+                visualizer_->drawZones(frame, zone_points);
+                
+                // Add stream name
+                cv::putText(frame, ctx->name, cv::Point(20, 40), cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(0, 255, 255), 2);
+
+                // 4. Alerting
+                checkAlerts(stream_id, detections, ctx->zones);
+
+                // 5. Update last frame for tiling
+                {
+                    std::lock_guard<std::mutex> lock(ctx->frame_mutex);
+                    ctx->last_processed_frame = frame.clone();
+                }
+            }
         }
 
         gst_buffer_unmap(buffer, &map);
     }
 }
 
-void PipelineManager::checkAlerts(const std::vector<Detection>& detections) {
-    if (config_.zones.empty()) return;
-
+void PipelineManager::checkAlerts(const std::string& stream_id, const std::vector<Detection>& detections, const std::vector<ZoneConfig>& zones) {
     for (const auto& det : detections) {
-        // Use center of bottom of box for ground-plane check
         cv::Point feet(det.box.x + det.box.width / 2, det.box.y + det.box.height);
         
-        for (const auto& zone : config_.zones) {
+        for (const auto& zone : zones) {
             double dist = cv::pointPolygonTest(zone.points, feet, false);
-            if (dist >= 0) { // Inside or on edge
-                
-                // 1. Log to Database (Persistent Record)
+            if (dist >= 0) {
                 if (violation_logger_) {
                     violation_logger_->log_violation(zone.id, det.confidence, det.track_id);
                 }
 
-                // 2. Check Throttler before Alerting
                 if (alert_throttler_ && alert_throttler_->should_alert(zone.id, det.track_id)) {
                     if (mqtt_client_ && mqtt_client_->isConnected()) {
-                        std::string alert = "{\"alert\": \"zone_violation\", \"zone_name\": \"" + zone.name + 
-                                        "\", \"class_id\": " + std::to_string(det.class_id) + 
-                                        ", \"track_id\": " + std::to_string(det.track_id) + "}";
+                        std::string alert = "{\"alert\": \"zone_violation\", \"stream_id\": \"" + stream_id + 
+                                        "\", \"zone_name\": \"" + zone.name + 
+                                        "\", \"track_id\": " + std::to_string(det.track_id) + "}";
                         mqtt_client_->publish(config_.mqtt.topic, alert);
                     }
                 }
             }
         }
+    }
+}
+
+void PipelineManager::updateTiledView() {
+    while (running_) {
+        std::vector<cv::Mat> current_frames;
+        for (auto& pair : streams_) {
+            std::lock_guard<std::mutex> lock(pair.second->frame_mutex);
+            if (!pair.second->last_processed_frame.empty()) {
+                current_frames.push_back(pair.second->last_processed_frame.clone());
+            }
+        }
+
+        if (!current_frames.empty()) {
+            // Very simple tiling: if 2 streams, stack them or side-by-side
+            if (current_frames.size() == 1) {
+                streamer_->publish(current_frames[0]);
+            } else {
+                // Resize to same size for tiling
+                int target_w = 640;
+                int target_h = 360;
+                for (auto& f : current_frames) cv::resize(f, f, cv::Size(target_w, target_h));
+
+                cv::Mat combined;
+                if (current_frames.size() == 2) {
+                    cv::vconcat(current_frames[0], current_frames[1], combined);
+                } else {
+                    // Just take the first for now if many, or implement better tiling
+                    combined = current_frames[0];
+                }
+                streamer_->publish(combined);
+            }
+        }
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
 }

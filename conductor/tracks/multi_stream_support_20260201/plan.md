@@ -9,10 +9,10 @@
     -   *Files:* `src/utils/config_loader.cpp`
 
 ## Phase 2: Pipeline Orchestration
-- [ ] **Task:** Refactor `PipelineManager` to manage a vector of stream contexts.
+- [x] **Task:** Refactor `PipelineManager` to manage a vector of stream contexts.
     -   *Why:* To handle multiple parallel pipelines.
     -   *Files:* `src/pipeline/pipeline_manager.hpp`, `src/pipeline/pipeline_manager.cpp`
-- [ ] **Task:** Ensure thread-safety in shared components (AlertThrottler, ViolationLogger).
+- [x] **Task:** Ensure thread-safety in shared components (AlertThrottler, ViolationLogger).
     -   *Why:* Multiple threads will be reporting violations simultaneously.
     -   *Files:* `src/utils/violation_logger.cpp`, `src/utils/alert_throttler.cpp`
 

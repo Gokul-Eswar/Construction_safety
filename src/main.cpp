@@ -26,9 +26,10 @@ int main(int argc, char* argv[]) {
 
     AppConfig config = ConfigLoader::load(config_path);
     
-    // Provide some overrides or defaults if config is empty
-    if (config.rtsp_uri.empty()) config.rtsp_uri = "rtsp://127.0.0.1:8554/live";
-    if (config.model_path.empty()) config.model_path = "yolov11n.engine";
+    if (config.streams.empty()) {
+        std::cerr << "No streams configured in " << config_path << std::endl;
+    }
+    if (config.model_path.empty()) config.model_path = "yolo11n.onnx";
 
     gst_init(&argc, &argv);
 
