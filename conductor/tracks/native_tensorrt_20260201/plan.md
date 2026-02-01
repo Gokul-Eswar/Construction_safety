@@ -6,7 +6,7 @@
     -   *Files:* `CMakeLists.txt`
 
 ## Phase 2: TensorRT Wrapper Classes
-- [ ] **Task:** Create `TRTLogger` and `TRTCommon` helper structures.
+- [x] **Task:** Create `TRTLogger` and `TRTCommon` helper structures.
     -   *Why:* TensorRT requires a logger implementation and common CUDA error handling utilities.
     -   *Files:* `src/inference/trt_utils.hpp`, `src/inference/trt_utils.cpp`
 - [ ] **Task:** Update `ModelLoader` to hold TRT smart pointers and manage runtime.

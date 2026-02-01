@@ -130,6 +130,7 @@ set(COMMON_SOURCES
     src/pipeline/pipeline_manager.cpp
     src/inference/model_loader.cpp
     src/inference/inference_engine.cpp
+    src/inference/trt_utils.cpp
     src/spatial/spatial_mapper.cpp
     src/tracking/kalman_box_tracker.cpp
     src/tracking/sort_tracker.cpp
