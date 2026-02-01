@@ -1,10 +1,10 @@
 # Implementation Plan: Multi-Stream Support
 
 ## Phase 1: Configuration Refactoring
-- [ ] **Task:** Update `config.json` schema to use a `streams` array.
+- [x] **Task:** Update `config.json` schema to use a `streams` array.
     -   *Why:* To allow defining multiple camera sources.
     -   *Files:* `config.json`, `src/utils/config_loader.hpp/cpp`
-- [ ] **Task:** Update `ConfigLoader` to support the new schema.
+- [x] **Task:** Update `ConfigLoader` to support the new schema.
     -   *Why:* To load multiple stream configurations.
     -   *Files:* `src/utils/config_loader.cpp`
 

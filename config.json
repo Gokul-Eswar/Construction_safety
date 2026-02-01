@@ -1,19 +1,38 @@
 {
-    "rtsp_uri": "rtsp://127.0.0.1:8554/live",
+    "streams": [
+        {
+            "id": "cam_01",
+            "name": "Front Gate Camera",
+            "rtsp_uri": "rtsp://127.0.0.1:8554/cam1",
+            "zones": [
+                {
+                    "id": 1,
+                    "name": "Entrance Danger Zone",
+                    "points": [[100, 100], [540, 100], [540, 380], [100, 380]]
+                }
+            ]
+        },
+        {
+            "id": "cam_02",
+            "name": "Rear Storage Camera",
+            "rtsp_uri": "rtsp://127.0.0.1:8554/cam2",
+            "zones": [
+                {
+                    "id": 2,
+                    "name": "Hazardous Area 2",
+                    "points": [[50, 50], [300, 50], [300, 300], [50, 300]]
+                }
+            ]
+        }
+    ],
     "model_path": "yolo11n.onnx",
     "database_path": "safety_violations.db",
     "alert_cooldown": 5000,
+    "stream_port": 8081,
     "mqtt": {
         "host": "localhost",
         "port": 1883,
         "topic": "safety/alerts",
-        "client_id": "safety_system_p1"
-    },
-    "zones": [
-        {
-            "id": 1,
-            "name": "Primary Hazardous Zone",
-            "points": [[100, 100], [540, 100], [540, 380], [100, 380]]
-        }
-    ]
+        "client_id": "safety_system_multi"
+    }
 }

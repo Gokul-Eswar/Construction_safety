@@ -16,13 +16,20 @@ struct ZoneConfig {
     std::vector<cv::Point> points;
 };
 
-struct AppConfig {
+struct StreamConfig {
+    std::string id;
+    std::string name;
     std::string rtsp_uri;
+    std::vector<ZoneConfig> zones;
+};
+
+struct AppConfig {
+    std::vector<StreamConfig> streams;
     std::string model_path;
     std::string database_path = "safety_violations.db";
     int alert_cooldown = 5000;
+    int stream_port = 8081;
     MQTTConfig mqtt;
-    std::vector<ZoneConfig> zones;
     
     // Default constructor
     AppConfig() = default;
