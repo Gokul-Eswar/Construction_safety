@@ -1,94 +1,92 @@
-# 🛡️ Industrial Sentinel AI
+# Sentinel: Construction Safety Inference System
 
-### **High-Precision Geofencing for Hazardous Environments**
+**A high-performance, real-time AI system for monitoring industrial safety zones.**
 
-**Industrial Sentinel AI** is a software-defined safety engine designed to transform existing CCTV infrastructure into an active safety layer. Built for the high-stakes environments of petrochemical plants and oil rigs, the system leverages **OpenCV DNN** (with **TensorRT** upgrade path) and **Spatial Homography** to detect and prevent "Red Zone" breaches with near-zero latency.
-
----
-
-## 🚀 Key Features
-
-* **Real-Time AI:** Uses **YOLOv11** via **OpenCV DNN** for universal compatibility (CPU/CUDA), deployable anywhere.
-* **Multi-Object Tracking:** Integrated **SORT Tracker** assigns persistent IDs to workers, enabling intelligent "Time-in-Zone" analysis and occlusion handling.
-* **Perspective-Corrected Geofencing:** Uses a **3x3 Homography Matrix** to map camera coordinates to a 2D floor plane, ensuring accuracy regardless of camera tilt.
-* **Visual Zone Editor:** Intuitive, web-based drag-and-drop interface to define safety zones directly on the video feed.
-* **Live Web Stream:** Low-latency **MJPEG Stream** broadcasts processed video with AI overlays directly to the dashboard.
-* **Foot-Anchor Tracking:** Intelligent logic that ignores upper-body movement and triggers alerts only when a worker's feet physically enter a restricted polygon.
-* **Temporal Validation:** Implements a "5-Frame Consistency" rule to eliminate false positives.
-* **Industrial Alerting:** Integrated **MQTT** support for sub-millisecond automated emergency stops (E-Stops).
-* **Real-Time Dashboard:** Web-based visualization for live violation monitoring, historical auditing, and configuration.
+Sentinel detects personnel in hazardous areas using advanced computer vision and instantly alerts safety supervisors. It features native TensorRT inference, multi-camera support, and a modern web dashboard for complete system management.
 
 ---
 
-## 🛠️ Tech Stack
+## 🚀 Quick Start (One-Click)
 
-### Core Engine
-* **Language:** C++ (Core Engine)
-* **AI Inference:** OpenCV DNN (supporting ONNX) / Ready for TensorRT
-* **Video Pipeline:** GStreamer
-* **Spatial Math:** OpenCV (Point-in-Polygon & Homography)
-* **Messaging:** MQTT (Mosquitto)
+**Prerequisites:**
+1.  **Docker Desktop** (Installed and Running).
+2.  **NVIDIA GPU** (Recommended for performance).
 
-### Web Dashboard
-* **Frontend:** React + Vite + Material UI (Canvas-based Editor)
-* **Backend:** Node.js + Express
-* **Database:** SQLite (Shared with C++ Engine)
+**To Start:**
+1.  Double-click **`start_system.bat`** (Windows) or run `./start_system.sh` (Linux).
+2.  Wait for the system to initialize (first run takes a few minutes to build).
+3.  The **Web Dashboard** will open automatically in your browser (`http://localhost:3001`).
+
+**To Stop:**
+1.  Double-click **`stop_system.bat`**.
 
 ---
 
-## 📂 Project Structure
+## ✨ Key Features
 
-```text
-/construction-safety
-├── /calibration       # Tools for Homography Matrix generation
-├── /conductor         # Project architecture and tracking documentation
-├── /configs           # JSON definitions for Camera ROIs
-├── /models            # YOLO ONNX/Engine models
-├── /src               # High-speed C++ source code
-├── /web               # Web Dashboard & Zone Editor
-│   ├── /backend       # Node.js API
-│   └── /frontend      # React UI
-├── build_engine.bat   # One-click C++ build script
-├── run_engine.bat     # One-click C++ run script
-└── start_dashboard.bat# One-click Dashboard launcher
+-   **👁️ Multi-Camera Surveillance:** Monitor up to 4 RTSP feeds simultaneously in a unified grid view.
+-   **🧠 High-Performance AI:** Uses **TensorRT** (C++ Native) for sub-millisecond inference on NVIDIA GPUs.
+-   **🚧 Interactive Zone Editor:** Draw custom safety zones directly on the video feed via the Web UI.
+-   **⚡ Real-Time Alerting:** Detects zone violations instantly and throttles alerts to prevent fatigue.
+-   **📊 Modern Dashboard:** Dark-themed UI with real-time health metrics, violation logs, and camera management.
+-   **🐳 Dockerized Deployment:** "Write once, run anywhere" architecture for easy deployment on Edge devices (Jetson/x86).
+
+---
+
+## 🖥️ Web Interface Guide
+
+### 1. Dashboard
+-   View the live **Tiled Feed** of all active cameras.
+-   Monitor system health (Online/Offline status) and today's violation statistics.
+
+### 2. Cameras (Stream Manager)
+-   **Add Camera:** Click "Add Camera" and enter the RTSP URI (e.g., `rtsp://user:pass@ip:554/feed`).
+-   **Edit/Delete:** Manage your existing camera inventory.
+
+### 3. Safety Zones
+-   Select a camera from the dropdown.
+-   Click on the canvas to draw a polygonal **Safety Zone**.
+-   Click **"Save Changes"** to apply the zone immediately.
+
+### 4. Settings
+-   **Global:** Configure the AI Model path and Alert Cooldown (ms).
+-   **MQTT:** Configure your MQTT Broker connection details for external alerting.
+-   **System:** Restart the core service to apply major configuration changes.
+
+---
+
+## 🛠️ Developer Guide (Manual Build)
+
+If you wish to develop or modify the source code without Docker:
+
+### Prerequisites
+-   CMake 3.18+
+-   GStreamer 1.0 (Development Libraries)
+-   OpenCV 4.x
+-   CUDA Toolkit & TensorRT (Optional, for GPU acceleration)
+-   Node.js 18+ (For Web UI)
+
+### Building the Engine (C++)
+```bash
+mkdir build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release
+cmake --build . --config Release
+```
+
+### Building the Web UI
+```bash
+cd web/frontend
+npm install && npm run build
+cd ../backend
+npm install
+node server.js
 ```
 
 ---
 
-## ⚡ Getting Started
+## 🏗️ Architecture
 
-### 1. Prerequisites
-*   **System:** Windows (tested) or Linux.
-*   **Software:** CMake, C++ Compiler (MSVC/GCC), Node.js (v18+), Python (for fetching models).
-*   **Optional:** NVIDIA GPU + CUDA for acceleration.
-
-### 2. Setup & Run
-
-**Step A: Get the Model**
-Ensure `yolo11n.onnx` is in the project root.
-```powershell
-Invoke-WebRequest -Uri "https://github.com/ultralytics/assets/releases/download/v8.3.0/yolo11n.onnx" -OutFile "yolo11n.onnx"
-```
-
-**Step B: Build & Run Engine**
-```cmd
-build_engine.bat
-run_engine.bat
-```
-*The engine will start, load the ONNX model, and monitor the RTSP feed defined in `config.json`.*
-
-**Step C: Start Dashboard**
-```cmd
-start_dashboard.bat
-```
-*Opens `http://localhost:3000`. Go to "Zone Editor" tab to draw safety zones.*
-
----
-
-## 📈 Performance Metrics (Benchmarked on RTX 30-Series)
-
-| Metric | Result |
-| --- | --- |
-| **Inference Speed** | ~8ms per frame (CUDA) / ~50ms (CPU) |
-| **End-to-End Latency** | < 100ms |
-| **Detection Accuracy** | 96.4% mAP (Person Class) |
+-   **Inference Engine:** C++17, TensorRT, GStreamer, OpenCV.
+-   **Web Backend:** Node.js, Express, SQLite3.
+-   **Web Frontend:** React, TypeScript, Material UI (MUI v5).
+-   **Communication:** MQTT (Alerts), MJPEG (Video Stream).
