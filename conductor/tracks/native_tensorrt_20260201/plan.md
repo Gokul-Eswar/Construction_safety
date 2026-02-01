@@ -25,7 +25,7 @@
 - [x] **Task:** Update `InferenceEngine` to manage CUDA buffers.
     -   *Why:* TRT requires explicit memory allocation on GPU.
     -   *Files:* `src/inference/inference_engine.hpp`
-- [ ] **Task:** Implement `InferenceEngine::runInference` using TRT Context.
+- [x] **Task:** Implement `InferenceEngine::runInference` using TRT Context.
     -   *Why:* To perform the actual forward pass (H2D, Execute, D2H).
     -   *Files:* `src/inference/inference_engine.cpp`
 

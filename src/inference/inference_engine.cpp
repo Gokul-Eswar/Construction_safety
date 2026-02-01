@@ -1,10 +1,21 @@
 #include "inference_engine.hpp"
 #include <iostream>
 
+#ifdef ENABLE_CUDA
+#include <cuda_runtime_api.h>
+#endif
+
 InferenceEngine::InferenceEngine(const InferenceConfig& config) : config_(config) {
 }
 
 InferenceEngine::~InferenceEngine() {
+#ifdef ENABLE_TENSORRT
+#ifdef ENABLE_CUDA
+    if (stream_) cudaStreamDestroy(stream_);
+    if (buffers_[0]) cudaFree(buffers_[0]);
+    if (buffers_[1]) cudaFree(buffers_[1]);
+#endif
+#endif
 }
 
 bool InferenceEngine::init() {
@@ -13,66 +24,116 @@ bool InferenceEngine::init() {
         std::cerr << "Failed to load model: " << config_.model_path << std::endl;
         return false;
     }
+
+#ifdef ENABLE_TENSORRT
+    if (auto engine = model_loader_->getEngine()) {
+        context_ = std::unique_ptr<nvinfer1::IExecutionContext, InferDeleter>(
+            engine->createExecutionContext()
+        );
+        if (!context_) return false;
+
+        // Allocate memory & Stream
+        int nbBindings = engine->getNbBindings();
+        for (int i = 0; i < nbBindings; ++i) {
+            nvinfer1::Dims dims = engine->getBindingDimensions(i);
+            
+            // Calculate size
+            size_t vol = 1; 
+            for (int j = 0; j < dims.nbDims; ++j) {
+                vol *= dims.d[j] > 0 ? dims.d[j] : 1; 
+            }
+            size_t size = vol * sizeof(float);
+
+            if (engine->bindingIsInput(i)) {
+                input_bytes_ = size;
+                cudaMalloc(&buffers_[i], input_bytes_);
+            } else {
+                output_bytes_ = size;
+                cudaMalloc(&buffers_[i], output_bytes_);
+                
+                // Assuming [1, 84, 8400]
+                if (dims.nbDims >= 3) {
+                     output_rows_ = dims.d[1];
+                     output_cols_ = dims.d[2];
+                }
+            }
+        }
+
+        cudaStreamCreate(&stream_);
+        std::cout << "TensorRT Execution Context initialized." << std::endl;
+        return true;
+    }
+#endif
+    
+    // Check for OpenCV Net
+    if (model_loader_->getNet().empty()) return false;
     return true;
 }
 
 std::vector<Detection> InferenceEngine::runInference(const cv::Mat& frame) {
     if (frame.empty()) return {};
 
-    // 1. Preprocess
     cv::Mat input_blob;
     preprocess(frame, input_blob);
-    
-    // 2. Inference
-    if (!model_loader_ || !model_loader_->isLoaded()) {
-        std::cerr << "Model not loaded!" << std::endl;
-        return {};
-    }
 
+#ifdef ENABLE_TENSORRT
+    if (context_) {
+        // TRT Inference
+        if (!input_bytes_ || !output_bytes_) return {};
+
+        cudaMemcpyAsync(buffers_[0], input_blob.ptr<float>(), input_bytes_, cudaMemcpyHostToDevice, stream_);
+        context_->enqueueV2(buffers_, stream_, nullptr);
+        
+        std::vector<float> cpu_output(output_bytes_ / sizeof(float));
+        cudaMemcpyAsync(cpu_output.data(), buffers_[1], output_bytes_, cudaMemcpyDeviceToHost, stream_);
+        cudaStreamSynchronize(stream_);
+
+        // Wrap in Mat [rows, cols]
+        cv::Mat output_2d(output_rows_, output_cols_, CV_32F, cpu_output.data());
+        cv::Mat output_t = output_2d.t(); 
+        
+        return applyNMS(parseDetections(output_t, frame.cols, frame.rows), config_.nms_threshold);
+    }
+#endif
+
+    // OpenCV DNN Fallback
     auto& net = model_loader_->getNet();
+    if (net.empty()) return {};
+
     net.setInput(input_blob);
     
     std::vector<cv::Mat> outputs;
     net.forward(outputs, net.getUnconnectedOutLayersNames());
 
-    // 3. Parse Output (YOLOv8/v11 format: [1, 84, 8400] -> [1, 4+classes, anchors])
-    // We need to handle the output format. Usually it's 1x84x8400.
     if (outputs.empty()) return {};
 
-    cv::Mat& output = outputs[0]; // Take the first output
-    // Transpose to (anchors, 84) for easier access: 1x84x8400 -> 8400x84
-    // Reshape to 2D first: 84 x 8400
-    int dimensions = output.dims;
-    int rows = output.size[1]; // 84
-    int cols = output.size[2]; // 8400
-    
-    // If the output is actually [1, 8400, 84] (some exporters do this), check dims
-    // Standard YOLOv8 export is [1, 84, 8400]
+    cv::Mat& output = outputs[0]; 
+    int rows = output.size[1]; 
+    int cols = output.size[2]; 
     
     cv::Mat output_2d(rows, cols, CV_32F, output.ptr<float>());
-    cv::Mat output_t = output_2d.t(); // Transpose to 8400 x 84
+    cv::Mat output_t = output_2d.t(); 
 
+    return applyNMS(parseDetections(output_t, frame.cols, frame.rows), config_.nms_threshold);
+}
+
+std::vector<Detection> InferenceEngine::parseDetections(const cv::Mat& output_t, int frame_w, int frame_h) {
     std::vector<Detection> raw_detections;
     float* data = (float*)output_t.data;
     
-    float x_scale = (float)frame.cols / config_.input_width;
-    float y_scale = (float)frame.rows / config_.input_height;
+    int rows = output_t.rows; // 8400
+    int cols = output_t.cols; // 84
 
-    for (int i = 0; i < cols; ++i) {
-        float* row_ptr = data + (i * rows);
+    float x_scale = (float)frame_w / config_.input_width;
+    float y_scale = (float)frame_h / config_.input_height;
+
+    for (int i = 0; i < rows; ++i) {
+        float* row_ptr = data + (i * cols);
         
-        // Structure: [x, y, w, h, class0_conf, class1_conf, ...]
-        // Find best class score
         float max_score = 0.0f;
         int class_id = -1;
         
-        // Person class is usually index 0 in COCO. 
-        // We only care about Person (class 0) for this safety app.
-        // But let's generalise slightly or just check index 4 (first class score).
-        
-        // Loop through classes (starting at index 4)
-        // For COCO (80 classes), rows = 84.
-        for (int c = 4; c < rows; ++c) {
+        for (int c = 4; c < cols; ++c) {
             float score = row_ptr[c];
             if (score > max_score) {
                 max_score = score;
@@ -81,8 +142,7 @@ std::vector<Detection> InferenceEngine::runInference(const cv::Mat& frame) {
         }
 
         if (max_score >= config_.conf_threshold) {
-            // Only keeping "Person" class (ID 0)
-            if (class_id == 0) {
+            if (class_id == 0) { // Person
                 float cx = row_ptr[0];
                 float cy = row_ptr[1];
                 float w = row_ptr[2];
@@ -101,16 +161,11 @@ std::vector<Detection> InferenceEngine::runInference(const cv::Mat& frame) {
             }
         }
     }
-    
-    // 4. Postprocess (NMS)
-    return applyNMS(raw_detections, config_.nms_threshold);
+    return raw_detections;
 }
 
 void InferenceEngine::preprocess(const cv::Mat& input, cv::Mat& output) {
     if (input.empty()) return;
-    
-    // Create 4D blob (NCHW)
-    // SwapRB=true, Crop=false
     cv::dnn::blobFromImage(input, output, 1.0/255.0, 
         cv::Size(config_.input_width, config_.input_height), 
         cv::Scalar(), true, false);
