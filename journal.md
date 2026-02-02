@@ -3,6 +3,17 @@
 ## 1. Abstract
 Sentinel is a high-performance, real-time computer vision system designed for autonomous safety monitoring in industrial environments. It leverages a heterogeneous software stack (C++, Python, TensorRT, GStreamer) to detect personnel in hazardous zones with sub-millisecond inference latency. This document details the granular mechanics of the system, from raw byte ingestion to distributed alerting.
 
+```mermaid
+graph TD
+    A[CCTV Camera] -->|RTSP| B(GStreamer Pipeline)
+    B -->|Raw Frames| C{Inference Engine}
+    C -->|YOLOv11/TensorRT| D(Object Tracking)
+    D -->|SORT Algorithm| E{Spatial Logic}
+    E -->|Violation Detected| F[MQTT Alert / SQLite]
+    E -->|Safe| G[Dashboard Stream]
+    F --> H[Web UI / Notification]
+```
+
 ---
 
 ## 2. Multimedia Pipeline (GStreamer Orchestration)
@@ -14,6 +25,16 @@ The system utilizes **GStreamer 1.0** for hardware-accelerated video ingestion. 
 - **Real-Time Constraint Logic:** To prevent backlog, we employ a **Leaky Queue** strategy:
   - `queue max-size-buffers=1 leaky=2`: Discards the oldest buffer if the processing thread is busy.
   - `appsink max-buffers=1 drop=true`: Ensures that the `on_new_sample` callback always receives the freshest frame.
+
+```mermaid
+graph LR
+    RTSP[rtspsrc] --> DEP[rtph264depay]
+    DEP --> PARSE[h264parse]
+    PARSE --> DEC[nvv4l2decoder]
+    DEC --> CONV[nvvideoconvert]
+    CONV --> QUEUE[[Leaky Queue]]
+    QUEUE --> SINK[appsink]
+```
 
 ### 2.2 Data Transition
 The raw GStreamer buffer is mapped into an `OpenCV Mat` container. If the format is YUV (I420), it is converted to BGR via `cv::cvtColor` before entering the inference engine.
@@ -68,6 +89,25 @@ Sentinel utilizes an asynchronous, thread-safe architecture:
 - **Mutex Isolation:** Each `StreamContext` contains a `frame_mutex` to protect `last_processed_frame`, ensuring the `Tiling Engine` (Thread 3) never reads a partially written buffer from the `Inference Engine` (Thread 2).
 - **Atomic Control:** Global state (e.g., `keep_running`) is managed via `std::atomic<bool>` to ensure deterministic shutdown across heterogeneous threads.
 
+```mermaid
+sequenceDiagram
+    participant GS as GStreamer Thread
+    participant INF as Inference Thread
+    participant TILE as Tiling/Web Thread
+    
+    GS->>INF: Push New Frame (Queue)
+    Note over INF: TensorRT Forward Pass
+    Note over INF: SORT Tracking
+    INF->>INF: Lock frame_mutex
+    INF->>INF: Update last_processed_frame
+    INF->>INF: Unlock frame_mutex
+    
+    TILE->>TILE: Lock frame_mutex
+    TILE->>TILE: Read last_processed_frame
+    TILE->>TILE: Unlock frame_mutex
+    TILE->>TILE: Composite 2x2 Grid
+```
+
 ### 5.2 Software Tiling & MJPEG Streaming
 For visualization of up to 4 streams, the system perform dynamic compositing and serves it via a custom **MJPEG HTTP Server**:
 - **Protocol:** Uses `multipart/x-mixed-replace` with a boundary mechanism (`--boundary`).
@@ -96,3 +136,28 @@ The codebase adheres to industry-standard C++20 conventions.
 4. **Tracks** → Spatial Mapper → **Zone Intersection Check**.
 5. **Violation** → Alert Throttler → **MQTT Alert & SQLite Log**.
 6. **Alert** → Backend Bridge → **WebSocket** → **React Dashboard Notification**.
+
+```mermaid
+flowchart LR
+    subgraph Data_Ingestion
+    RTSP[RTSP Stream] --> GS[GStreamer]
+    end
+    
+    subgraph Vision_Core
+    GS --> Y[YOLOv11 TensorRT]
+    Y --> S[SORT Tracker]
+    end
+    
+    subgraph Logic_Alerting
+    S --> SP[Spatial Mapper]
+    SP -->|Violation| AT[Alert Throttler]
+    AT --> MQ[MQTT / DB]
+    end
+    
+    subgraph UX
+    MQ --> WS[WebSocket Bridge]
+    WS --> UI[React Dashboard]
+    GS --> MJ[MJPEG Streamer]
+    MJ --> UI
+    end
+```
