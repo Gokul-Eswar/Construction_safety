@@ -22,12 +22,14 @@ public:
 
 private:
     LatencyLogger() = default;
+    void cleanupOldTimers(const std::string& key, uint64_t current_frame_id);
     
     struct TimerData {
         std::chrono::high_resolution_clock::time_point start;
     };
 
     std::mutex mutex_;
+    const size_t MAX_STALE_TIMERS = 500;
     std::unordered_map<std::string, std::unordered_map<uint64_t, TimerData>> active_timers_;
     std::unordered_map<std::string, std::vector<double>> stats_;
 };

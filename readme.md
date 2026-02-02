@@ -26,6 +26,8 @@ Sentinel detects personnel in hazardous areas using advanced computer vision and
 
 -   **👁️ Multi-Camera Surveillance:** Monitor up to 4 RTSP feeds simultaneously in a unified grid view.
 -   **🧠 High-Performance AI:** Uses **TensorRT** (C++ Native) for sub-millisecond inference on NVIDIA GPUs.
+-   **⏱️ Low-Latency Optimization:** GStreamer pipeline tuned for zero-latency frame delivery and real-time responsiveness.
+-   **📈 Performance Monitoring:** Integrated **LatencyLogger** for tracking end-to-end processing times and pipeline health.
 -   **🚧 Interactive Zone Editor:** Draw custom safety zones directly on the video feed via the Web UI.
 -   **⚡ Real-Time Alerting:** Detects zone violations instantly and throttles alerts to prevent fatigue.
 -   **📊 Modern Dashboard:** Dark-themed UI with real-time health metrics, violation logs, and camera management.

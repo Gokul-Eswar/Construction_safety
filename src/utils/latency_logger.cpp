@@ -4,7 +4,23 @@
 
 void LatencyLogger::startTimer(const std::string& key, uint64_t frame_id) {
     std::lock_guard<std::mutex> lock(mutex_);
+    cleanupOldTimers(key, frame_id);
     active_timers_[key][frame_id] = {std::chrono::high_resolution_clock::now()};
+}
+
+void LatencyLogger::cleanupOldTimers(const std::string& key, uint64_t current_frame_id) {
+    auto& timers = active_timers_[key];
+    if (timers.size() > MAX_STALE_TIMERS) {
+        // Remove timers that are significantly older than the current frame ID
+        // (Assuming frame IDs are monotonically increasing)
+        for (auto it = timers.begin(); it != timers.end(); ) {
+            if (it->first < current_frame_id && (current_frame_id - it->first) > MAX_STALE_TIMERS) {
+                it = timers.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
 }
 
 void LatencyLogger::stopTimer(const std::string& key, uint64_t frame_id) {
