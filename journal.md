@@ -22,14 +22,12 @@ The raw GStreamer buffer is mapped into an `OpenCV Mat` container. If the format
 
 ## 3. Computer Vision Subsystem (Inference & Tracking)
 
-### 3.1 Object Detection: YOLOv11-Nano
-The system employs **YOLOv11 (Nano variant)**.
-- **Model Architecture:** A standard CSP (Cross Stage Partial) backbone with a specialized head for person detection.
-- **Optimization:** The model is executed via **NVIDIA TensorRT**.
-- **Code Logic:** The `InferenceEngine` class handles:
-  1. **Preprocessing:** Resizing to 640x640, normalization (1/255.0), and BGR-to-RGB permutation.
-  2. **Execution:** `forward` pass on the GPU.
-  3. **Post-processing:** Non-Maximum Suppression (NMS) with configurable confidence and IOU thresholds to eliminate redundant bounding boxes.
+### 3.1 Object Detection: YOLOv11-Nano via TensorRT
+The system employs **YOLOv11 (Nano variant)** for person detection.
+- **Optimization:** Execution is accelerated via **NVIDIA TensorRT 10.x**. 
+- **Memory Orchestration:** To minimize the performance penalty of CPU-GPU synchronization, the system utilizes **Asynchronous Memory Transfers** (`cudaMemcpyAsync`) and **CUDA Streams**. This allows the CPU to continue GStreamer buffer management while the GPU performs the forward pass.
+- **Post-processing:** The model output (shape: $[1 \times 84 \times 8400]$) is parsed using a specialized scaling kernel that maps normalized coordinates back to the source frame resolution:
+  $$x_{pixel} = x_{norm} \times \frac{Width_{source}}{640}$$ 
 
 ### 3.2 Temporal Analysis: SORT Tracking
 To maintain identity across frames and reduce false alerts, we implement the **SORT (Simple Online and Realtime Tracking)** algorithm. 
@@ -42,6 +40,7 @@ Where:
 - $s$ is the scale (area).
 - $r$ is the aspect ratio.
 - $(\dot{u}, \dot{v}, \dot{s})$ are the respective velocities.
+The system assumes a **Constant Velocity Model** with a transition matrix $F$ that propagates the state to $t+1$.
 
 #### 3.2.2 Data Association (Hungarian Algorithm)
 Data association is performed by calculating an **IOU (Intersection over Union) Distance Matrix** between the predicted Kalman states and newly detected bounding boxes. The Hungarian Algorithm solves the assignment problem to minimize the total cost (1 - IOU), ensuring optimal identity persistence.
@@ -52,7 +51,7 @@ Data association is performed by calculating an **IOU (Intersection over Union) 
 
 ### 4.1 Homography & Mapping
 The `SpatialMapper` utility allows for "Image-to-World" coordinate transformation using a $3 \times 3$ matrix $H$:
-$$\begin{bmatrix} x_{world} \ y_{world} \ 1 \end{bmatrix} = H \begin{bmatrix} x_{image} \ y_{image} \ 1 \end{bmatrix}$$
+$$\begin{bmatrix} x_{world} \\ y_{world} \\ 1 \end{bmatrix} = H \begin{bmatrix} x_{image} \\ y_{image} \\ 1 \end{bmatrix}$$
 This enables the system to calculate personnel proximity to hazards in real-world meters, compensating for perspective distortion.
 
 ### 4.2 Geofencing Logic (Point-in-Polygon)
@@ -69,16 +68,16 @@ Sentinel utilizes an asynchronous, thread-safe architecture:
 - **Mutex Isolation:** Each `StreamContext` contains a `frame_mutex` to protect `last_processed_frame`, ensuring the `Tiling Engine` (Thread 3) never reads a partially written buffer from the `Inference Engine` (Thread 2).
 - **Atomic Control:** Global state (e.g., `keep_running`) is managed via `std::atomic<bool>` to ensure deterministic shutdown across heterogeneous threads.
 
-### 5.2 Software Tiling Engine
-For visualization of $N$ streams, the system performs dynamic spatial compositing:
-- **Low-Density (N=1):** Pass-through of raw frame.
-- **High-Density (N=2 to 4):** Frames are downsampled to $640 \times 360$ and concatenated using `cv::hconcat` and `cv::vconcat` to form a unified $1280 \times 720$ monitoring grid.
+### 5.2 Software Tiling & MJPEG Streaming
+For visualization of up to 4 streams, the system perform dynamic compositing and serves it via a custom **MJPEG HTTP Server**:
+- **Protocol:** Uses `multipart/x-mixed-replace` with a boundary mechanism (`--boundary`).
+- **Performance:** Frames are JPEG-encoded at 80% quality using OpenCV's `imencode` and pushed at a throttled rate of 30 FPS to minimize network overhead while maintaining visual clarity.
 
 ---
 
 ## 6. Resilience & Reliability
 
-### 6.1 Stream Recovery logic
+### 6.1 Stream Recovery Logic
 The system utilizes the GStreamer **Bus Watch** mechanism. If a `GST_MESSAGE_ERROR` or `GST_MESSAGE_EOS` (End of Stream) is detected (indicating RTSP timeout), the `PipelineManager` triggers an automatic teardown and re-initialization of that specific stream context without interrupting the inference of other active cameras.
 
 ---
