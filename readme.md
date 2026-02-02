@@ -86,7 +86,50 @@ node server.js
 
 ## 🏗️ Architecture
 
--   **Inference Engine:** C++17, TensorRT, GStreamer, OpenCV.
--   **Web Backend:** Node.js, Express, SQLite3.
--   **Web Frontend:** React, TypeScript, Material UI (MUI v5).
--   **Communication:** MQTT (Alerts), MJPEG (Video Stream).
+- **Inference Engine:** C++17, TensorRT, GStreamer, OpenCV.
+
+- **Web Backend:** Node.js, Express, SQLite3.
+
+- **Web Frontend:** React, TypeScript, Material UI (MUI v5).
+
+- **Communication:** MQTT (Alerts), MJPEG (Video Stream).
+
+
+
+---
+
+
+
+## 📚 References
+
+
+
+### Project Documentation
+
+- [**Project Checklist**](checklist.md) - Tracking features and progress.
+
+- [**Edge Cases**](edge_cases.md) - Known limitations and handled scenarios.
+
+- [**Development Journal**](journal.md) - Daily logs and architectural decisions.
+
+- [**Web README**](web/README.md) - Details on the Dashboard and Backend.
+
+
+
+### Conductor (Project Management)
+
+- [**Conductor Hub**](conductor/index.md) - Central entry point for project structure.
+
+- [**Product Definition**](conductor/product.md) - Vision and core requirements.
+
+- [**System Architecture**](conductor/architecture.md) - High-level system design.
+
+- [**Tech Stack**](conductor/tech-stack.md) - Detailed breakdown of libraries and tools.
+
+- [**Workflow**](conductor/workflow.md) - Standards for development and PRs.
+
+- [**Product Guidelines**](conductor/product-guidelines.md) - UX and code quality principles.
+
+- [**Tracks Registry**](conductor/tracks.md) - Status of all feature development tracks.
+
+
