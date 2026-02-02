@@ -6,6 +6,7 @@
 - [x] **Modular CMake Project:** Support for GStreamer, OpenCV, CUDA, and TensorRT.
 - [x] **Dependency Management:** Automatic fetching of `googletest` and `nlohmann_json`.
 - [x] **Environment Validation:** `env_check` utility for system capability reporting.
+- [x] **Static Analysis:** Clang-Tidy integration with `lint.bat` and compilation database.
 
 ### 📹 Video Ingestion Pipeline
 - [x] **RTSP Source:** Support for hardware decoding (`nvv4l2decoder`) via GStreamer.
@@ -34,11 +35,11 @@
 
 ---
 
-## 🛠️ Pending / Future Roadmap (Milestone 2: Production Readiness)
+## ✅ Completed (Milestone 2: Production Readiness)
 
 ### ⚡ Hardware Optimization
 - [x] **OpenCV DNN Inference:** Implemented generic ONNX inference backend (CPU/CUDA) as a functional baseline.
-- [ ] **Native TensorRT Execution:** Transition from mocked inference to actual GPU execution (requires CUDA environment).
+- [x] **Native TensorRT Execution:** Transition from mocked inference to actual GPU execution (requires CUDA environment).
 - [x] **Paho MQTT Integration:** Replace mock client with actual Paho C++ library for broker communication.
 
 ### 📊 Data & Throttling
@@ -52,5 +53,15 @@
 
 ### 🔄 Advanced Features
 - [x] **Multi-Object Tracking:** Assign persistent IDs to detections (SORT/DeepSORT).
-- [ ] **Multi-Stream Support:** Orchestrate multiple RTSP feeds in a single instance.
-- [ ] **Dockerization:** NVIDIA Container Toolkit integration for edge deployment.
+- [x] **Multi-Stream Support:** Orchestrate multiple RTSP feeds in a single instance.
+- [x] **Dockerization:** NVIDIA Container Toolkit integration for edge deployment.
+
+---
+
+## 🛠️ Pending / Future Roadmap (Milestone 3: Refinement)
+
+### 🚀 Optimization
+- [ ] **System Optimization:** Profiling GStreamer pipeline and reducing end-to-end latency.
+- [ ] **Cloud Sync:** Sync violation logs to a central cloud dashboard.
+- [ ] **Auth:** Add login/password protection to the Web UI.
+
