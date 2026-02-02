@@ -143,6 +143,7 @@ set(COMMON_SOURCES
     src/utils/violation_logger.cpp
     src/utils/alert_throttler.cpp
     src/utils/mjpeg_streamer.cpp
+    src/utils/latency_logger.cpp
 )
 
 # Main Application

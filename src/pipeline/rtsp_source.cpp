@@ -12,9 +12,15 @@ RTSPSource::~RTSPSource() {
 
 std::string RTSPSource::getPipelineString() const {
     if (uri_ == "test") {
-        return "videotestsrc num-buffers=100 ! video/x-raw,format=I420,framerate=30/1 ! appsink name=mysink emit-signals=true";
+        return "videotestsrc num-buffers=100 ! video/x-raw,format=I420,framerate=30/1 ! appsink name=mysink emit-signals=true max-buffers=1 drop=true";
     }
-    return "rtspsrc location=" + uri_ + " latency=0 ! rtph264depay ! h264parse ! nvv4l2decoder ! appsink name=mysink emit-signals=true";
+    // Optimized RTSP pipeline:
+    // - latency=100: balance between stability and jitter
+    // - queue leaky=2: always keep the latest frame
+    // - max-buffers=1 drop=true: ensure real-time delivery to appsink
+    return "rtspsrc location=" + uri_ + " latency=100 ! rtph264depay ! h264parse ! nvv4l2decoder ! "
+           "queue max-size-buffers=1 leaky=2 ! "
+           "appsink name=mysink emit-signals=true max-buffers=1 drop=true";
 }
 
 void RTSPSource::setFrameCallback(FrameCallback callback) {

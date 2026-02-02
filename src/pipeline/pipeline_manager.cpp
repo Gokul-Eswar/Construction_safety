@@ -2,6 +2,7 @@
 #include <iostream>
 #include <gst/video/video.h>
 #include <gst/app/gstappsink.h>
+#include "utils/latency_logger.hpp"
 
 PipelineManager::PipelineManager(const AppConfig& config)
     : config_(config), running_(false) {
@@ -108,6 +109,9 @@ void PipelineManager::onFrameReceived(const std::string& stream_id, GstSample* s
                 auto& ctx = it->second;
                 ctx->frame_count++;
 
+                // Start Latency Timer
+                LatencyLogger::getInstance().startTimer("processing", ctx->frame_count);
+
                 // Determine if we run inference
                 bool run_inference = true;
                 if (config_.inference_interval > 1) {
@@ -128,15 +132,6 @@ void PipelineManager::onFrameReceived(const std::string& stream_id, GstSample* s
                     
                     // 2. Tracking (Per stream)
                     detections = ctx->tracker->update(raw_detections);
-                } else {
-                    // Skip inference, but update tracker with empty detections (prediction step only)
-                    // Note: SORT implementation usually requires detections. 
-                    // If we skip inference, we might skip tracking update or just visualize old detections?
-                    // Better to skip tracking update or predict.
-                    // For simplicity in this optimization, we skip processing entirely but we must visualize SOMETHING.
-                    // We can reuse last known detections or just draw nothing? 
-                    // Let's NOT call tracker->update() to avoid "lost" tracks due to missing detections.
-                    // But we want to visualize the frame.
                 }
 
                 // 3. Visualization
@@ -158,6 +153,10 @@ void PipelineManager::onFrameReceived(const std::string& stream_id, GstSample* s
                     std::lock_guard<std::mutex> lock(ctx->frame_mutex);
                     ctx->last_processed_frame = frame.clone();
                 }
+
+                // Stop Latency Timer
+                LatencyLogger::getInstance().stopTimer("processing", ctx->frame_count);
+                LatencyLogger::getInstance().logStats();
             }
         }
 

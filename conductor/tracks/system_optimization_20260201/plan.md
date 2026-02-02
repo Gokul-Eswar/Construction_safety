@@ -24,3 +24,15 @@
 
 ## Phase 4: Verification
 - [x] **Task:** Verify "One-Click" build still works with new dependencies.
+
+## Phase 5: Deep Profiling & Optimization (Active)
+- [ ] **Task:** Implement `LatencyLogger` in `RTSPSource` and `PipelineManager`.
+    -   *Why:* To measure "Frame Arrival -> Inference Complete" latency.
+    -   *Files:* `src/utils/latency_logger.hpp`, `src/pipeline/pipeline_manager.cpp`
+- [ ] **Task:** Profile GStreamer pipeline latency.
+    -   *Why:* Ensure sub-500ms glass-to-glass latency.
+    -   *Details:* Tune `latency` property on `rtspsrc` and queue sizes.
+- [ ] **Task:** Verify Memory Stability.
+    -   *Why:* Ensure no leaks in long-running 24/7 scenarios.
+    -   *Tools:* Visual inspection of `docker stats` during load test.
+

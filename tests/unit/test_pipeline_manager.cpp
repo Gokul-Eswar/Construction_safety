@@ -13,7 +13,11 @@ TEST(PipelineManagerTest, InitializationFailsWithInvalidModel) {
     f.close();
 
     AppConfig config;
-    config.rtsp_uri = "test";
+    StreamConfig sc;
+    sc.id = "cam1";
+    sc.rtsp_uri = "test";
+    config.streams.push_back(sc);
+    
     config.model_path = dummy_model;
     config.database_path = "pm_test_db.sqlite";
 
