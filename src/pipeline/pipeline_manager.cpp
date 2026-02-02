@@ -46,7 +46,7 @@ bool PipelineManager::init() {
         ctx->name = sc.name;
         ctx->zones = sc.zones;
         ctx->tracker = std::make_unique<SortTracker>();
-        ctx->source = std::make_unique<RTSPSource>(sc.rtsp_uri);
+        ctx->source = std::make_unique<RTSPSource>(sc.id, sc.rtsp_uri);
         
         ctx->source->setFrameCallback([this, id = sc.id](GstSample* sample) {
             this->onFrameReceived(id, sample);
@@ -109,8 +109,11 @@ void PipelineManager::onFrameReceived(const std::string& stream_id, GstSample* s
                 auto& ctx = it->second;
                 ctx->frame_count++;
 
-                // Start Latency Timer
-                LatencyLogger::getInstance().startTimer("processing", ctx->frame_count);
+                // Start Processing Timer
+                std::string key_proc = stream_id + "_processing";
+                std::string key_e2e = stream_id + "_e2e";
+                
+                LatencyLogger::getInstance().startTimer(key_proc, ctx->frame_count);
 
                 // Determine if we run inference
                 bool run_inference = true;
@@ -154,8 +157,9 @@ void PipelineManager::onFrameReceived(const std::string& stream_id, GstSample* s
                     ctx->last_processed_frame = frame.clone();
                 }
 
-                // Stop Latency Timer
-                LatencyLogger::getInstance().stopTimer("processing", ctx->frame_count);
+                // Stop Timers
+                LatencyLogger::getInstance().stopTimer(key_proc, ctx->frame_count);
+                LatencyLogger::getInstance().stopTimer(key_e2e, ctx->frame_count);
                 LatencyLogger::getInstance().logStats();
             }
         }

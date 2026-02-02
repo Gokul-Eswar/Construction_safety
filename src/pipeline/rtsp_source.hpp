@@ -15,7 +15,7 @@ struct SourceStats {
 
 class RTSPSource {
 public:
-    RTSPSource(const std::string& uri);
+    RTSPSource(const std::string& id, const std::string& uri);
     ~RTSPSource();
 
     std::string getPipelineString() const;
@@ -31,6 +31,7 @@ private:
     static GstFlowReturn on_new_sample(GstElement* sink, gpointer user_data);
     void updateStats();
 
+    std::string id_;
     std::string uri_;
     GstElement* pipeline_;
     FrameCallback frame_callback_;

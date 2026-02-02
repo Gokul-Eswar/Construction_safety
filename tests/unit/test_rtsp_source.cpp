@@ -3,7 +3,7 @@
 
 TEST(RTSPSourceTest, PipelineStringGeneration) {
     std::string rtsp_url = "rtsp://192.168.1.10:554/stream";
-    RTSPSource source(rtsp_url);
+    RTSPSource source("test_id", rtsp_url);
     
     std::string pipeline = source.getPipelineString();
     
@@ -21,7 +21,7 @@ TEST(RTSPSourceTest, PipelineStringGeneration) {
 TEST(RTSPSourceTest, SourceStats) {
     gst_init(nullptr, nullptr);
     
-    RTSPSource source("test");
+    RTSPSource source("test_id", "test");
     ASSERT_TRUE(source.start());
     
     // Wait for at least 1.1 seconds to allow FPS calculation
@@ -41,7 +41,7 @@ TEST(RTSPSourceTest, SourceStats) {
 TEST(RTSPSourceTest, FrameCallback) {
     gst_init(nullptr, nullptr);
     
-    RTSPSource source("test");
+    RTSPSource source("test_id", "test");
     int frame_count = 0;
     
     source.setFrameCallback([&frame_count](GstSample* sample) {
@@ -69,7 +69,7 @@ TEST(RTSPSourceTest, Initialization) {
     // Initialize GStreamer
     gst_init(nullptr, nullptr);
     
-    RTSPSource source("rtsp://127.0.0.1:554/test");
+    RTSPSource source("test_id", "rtsp://127.0.0.1:554/test");
     // We don't necessarily expect start() to succeed without the actual plugins 
     // or a valid RTSP stream, but we check it doesn't crash.
     // In a CI environment without NVIDIA plugins, it might fail.
