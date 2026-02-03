@@ -201,41 +201,55 @@ $DoInstall = {
             &$Log "Created directory: $Dest"
         }
 
-        # Check for existing installation (Fastrack)
+        # Check for existing installation
         if (Test-Path "$Dest\start_system.bat") {
-             &$Log "Existing installation detected. Fast-tracking..."
-             $ProgressBar.Value = 100
-             Start-Sleep -Milliseconds 500
+             &$Log "Existing installation detected. Updating files..."
         }
-        else {
-            $Files = Get-ChildItem -Path $SourceDir -Exclude $Excludes
-            $Total = $Files.Count
-            $Count = 0
 
-            foreach ($Item in $Files) {
-                $Count++
-                $Percent = [int](($Count / $Total) * 100)
-                $ProgressBar.Value = $Percent
-                $LblStatus.Text = "Copying $($Item.Name)..."
-                &$Log "Copying $($Item.Name)..."
-                [System.Windows.Forms.Application]::DoEvents()
-                
-                Copy-Item -Path $Item.FullName -Destination $Dest -Recurse -Force
-                Start-Sleep -Milliseconds 50 # Artifical delay for UX
+        # --- Phase 1: File Discovery (0-5%) ---
+        $LblStatus.Text = "Analyzing files..."
+        &$Log "Scanning source files..."
+        $AllItems = Get-ChildItem -Path $SourceDir -Exclude $Excludes -Recurse
+        $TotalItems = $AllItems.Count
+        $ProgressBar.Value = 5
+        [System.Windows.Forms.Application]::DoEvents()
+
+        # --- Phase 2: Copying (5-90%) ---
+        $Count = 0
+        foreach ($Item in $AllItems) {
+            $Count++
+            # Map $Count/$TotalItems to the 5-90 range
+            $Progress = 5 + [int](($Count / $TotalItems) * 85)
+            $ProgressBar.Value = $Progress
+            
+            $RelativePath = $Item.FullName.Substring($SourceDir.FullName.Length + 1)
+            $TargetPath = Join-Path $Dest $RelativePath
+            
+            if ($Item.PSIsContainer) {
+                if (-not (Test-Path $TargetPath)) {
+                    New-Item -ItemType Directory -Path $TargetPath -Force | Out-Null
+                }
+            } else {
+                $LblStatus.Text = "Copying: $($Item.Name)"
+                Copy-Item -Path $Item.FullName -Destination $TargetPath -Force
             }
+            
+            if ($Count % 10 -eq 0) { [System.Windows.Forms.Application]::DoEvents() }
         }
-        
-        # Create Desktop Shortcut
+
+        # --- Phase 3: System Configuration (90-95%) ---
+        $ProgressBar.Value = 90
+        $LblStatus.Text = "Configuring system shortcuts..."
         &$Log "Creating Desktop Shortcut..."
         $WshShell = New-Object -ComObject WScript.Shell
         $ShortcutPath = "$Home\Desktop\Sentinel Safety.lnk"
         $Shortcut = $WshShell.CreateShortcut($ShortcutPath)
         $Shortcut.TargetPath = "$Dest\start_system.bat"
         $Shortcut.WorkingDirectory = "$Dest"
-        $Shortcut.IconLocation = "shell32.dll, 15" # Generic network icon
+        $Shortcut.IconLocation = "shell32.dll, 15"
         $Shortcut.Save()
         
-        # Create Start Menu Shortcut
+        $ProgressBar.Value = 93
         &$Log "Creating Start Menu Shortcut..."
         $StartMenuPath = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Sentinel Safety.lnk"
         $Shortcut = $WshShell.CreateShortcut($StartMenuPath)
@@ -244,6 +258,7 @@ $DoInstall = {
         $Shortcut.IconLocation = "shell32.dll, 15"
         $Shortcut.Save()
 
+        # --- Phase 4: Finalizing (95-100%) ---
         $ProgressBar.Value = 100
         $LblStatus.Text = "Completed"
         &$Log "Installation Successful."
@@ -254,7 +269,7 @@ $DoInstall = {
         $PanelFinish.Visible = $true
         $BtnNext.Text = "Finish"
         $BtnNext.Enabled = $true
-        $BtnCancel.Enabled = $false # Cannot cancel anymore
+        $BtnCancel.Enabled = $false
         $script:CurrentStep = 4
 
     } catch {
