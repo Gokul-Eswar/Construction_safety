@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Grid, Card, CardContent, Typography, Box, CircularProgress, Chip, Alert, Snackbar } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import VideocamOffIcon from '@mui/icons-material/VideocamOff';
 import axios from 'axios';
 import io from 'socket.io-client';
+import MJPEGPlayer from '../components/MJPEGPlayer';
 
 interface Stats {
   today_violations: number;
@@ -101,36 +101,10 @@ export default function Dashboard() {
               <Chip icon={<CheckCircleIcon />} label="Live" color="success" size="small" variant="outlined" />
             </Box>
             
-            <Box 
-              display="flex" 
-              justifyContent="center" 
-              alignItems="center"
-              bgcolor="#000" 
-              borderRadius={1} 
-              overflow="hidden"
-              sx={{ minHeight: 480, aspectRatio: '16/9', position: 'relative' }}
-            >
-              <img 
-                src={`http://${window.location.hostname}:8081`}
-                alt="Live Stream" 
-                style={{ width: '100%', height: '100%', objectFit: 'contain' }} 
-                onError={(e: any) => {
-                  e.target.style.display = 'none';
-                  e.target.nextSibling.style.display = 'flex';
-                }}
-              />
-              <Box 
-                display="none" 
-                flexDirection="column"
-                alignItems="center"
-                justifyContent="center"
-                sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', color: 'grey.700' }}
-              >
-                <VideocamOffIcon sx={{ fontSize: 60, mb: 2 }} />
-                <Typography variant="h6">Stream Offline</Typography>
-                <Typography variant="body2">Waiting for connection...</Typography>
-              </Box>
-            </Box>
+            <MJPEGPlayer 
+                url={`http://${window.location.hostname}:8081`} 
+                label="Primary Site Camera"
+            />
           </CardContent>
         </Card>
       </Grid>
