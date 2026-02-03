@@ -272,6 +272,32 @@ $BtnNext.Add_Click({
         $script:CurrentStep = 2
     }
     elseif ($script:CurrentStep -eq 2) {
+        # --- Pre-Install Checks ---
+        $MissingReqs = @()
+        
+        # Check 1: Docker
+        try {
+            $dockerCheck = Get-Command docker -ErrorAction Stop
+        } catch {
+            $MissingReqs += "Docker Desktop is not installed or not in PATH."
+        }
+
+        # Check 2: NVIDIA Driver (Simple check for nvidia-smi)
+        try {
+            $gpuCheck = Get-Command nvidia-smi -ErrorAction Stop
+        } catch {
+            $MissingReqs += "NVIDIA Drivers (nvidia-smi) not found."
+        }
+
+        if ($MissingReqs.Count -gt 0) {
+            $Msg = "Warning: Missing Prerequisites!`n`n" + ($MissingReqs -join "`n") + "`n`nThe system requires these to run. You can install them after this setup, but the application will not start without them.`n`nDo you want to proceed anyway?"
+            $Result = [System.Windows.Forms.MessageBox]::Show($Msg, "Prerequisites Missing", "YesNo", "Warning")
+            
+            if ($Result -eq "No") {
+                return # Stay on this page
+            }
+        }
+        
         &$DoInstall
     }
     elseif ($script:CurrentStep -eq 4) {
