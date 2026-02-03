@@ -209,7 +209,28 @@ $DoInstall = {
         # --- Phase 1: File Discovery (0-5%) ---
         $LblStatus.Text = "Analyzing files..."
         &$Log "Scanning source files..."
-        $AllItems = Get-ChildItem -Path $SourceDir -Exclude $Excludes -Recurse
+        
+        # Robust filtering: Get all items, then filter based on relative path
+        # This prevents "installer" contents from being included if "installer" folder is excluded
+        $AllItemsRaw = Get-ChildItem -Path $SourceDir -Recurse
+        $AllItems = $AllItemsRaw | Where-Object {
+            $ItemPath = $_.FullName
+            # Safe relative path calculation
+            if ($ItemPath.StartsWith($SourceDir.FullName)) {
+                $RelPath = $ItemPath.Substring($SourceDir.FullName.Length).TrimStart('\', '/')
+            } else {
+                return $true # Should not happen, but keep if weird
+            }
+            
+            # Check against excludes
+            # We treat excludes as top-level folders/files relative to source, or any file name matching
+            $FirstPart = $RelPath.Split('\/')[0]
+            if ($Excludes -contains $FirstPart) { return $false }
+            if ($Excludes -contains $_.Name) { return $false } # Also exclude matching names deeper in tree (like .git)
+            
+            return $true
+        }
+
         $TotalItems = $AllItems.Count
         $ProgressBar.Value = 5
         [System.Windows.Forms.Application]::DoEvents()
@@ -219,7 +240,11 @@ $DoInstall = {
         foreach ($Item in $AllItems) {
             $Count++
             # Map $Count/$TotalItems to the 5-90 range
-            $Progress = 5 + [int](($Count / $TotalItems) * 85)
+            if ($TotalItems -gt 0) {
+                $Progress = 5 + [int](($Count / $TotalItems) * 85)
+            } else {
+                $Progress = 90
+            }
             $ProgressBar.Value = $Progress
             
             # Robust relative path calculation
@@ -229,26 +254,31 @@ $DoInstall = {
             if ($ItemPathStr.StartsWith($SourcePathStr)) {
                 $RelativePath = $ItemPathStr.Substring($SourcePathStr.Length).TrimStart('\', '/')
             } else {
-                # Fallback: Just use name if path structure doesn't match (unlikely)
                 $RelativePath = $Item.Name
             }
             
-            # Skip invalid paths
             if ([string]::IsNullOrWhiteSpace($RelativePath)) { continue }
 
             try {
                 $TargetPath = Join-Path $Dest $RelativePath
-            } catch {
-                 throw "Path join failed for Item: '$ItemPathStr' Relative: '$RelativePath' Dest: '$Dest'. Error: $($_.Exception.Message)"
-            }
-
-            if ($Item.PSIsContainer) {
-                if (-not (Test-Path $TargetPath)) {
-                    New-Item -ItemType Directory -Path $TargetPath -Force | Out-Null
+                
+                if ($Item.PSIsContainer) {
+                    if (-not (Test-Path $TargetPath)) {
+                        New-Item -ItemType Directory -Path $TargetPath -Force | Out-Null
+                    }
+                } else {
+                    $LblStatus.Text = "Copying: $($Item.Name)"
+                    
+                    # Safety: Ensure parent directory exists
+                    $ParentDir = Split-Path -Parent $TargetPath
+                    if (-not (Test-Path $ParentDir)) {
+                        New-Item -ItemType Directory -Path $ParentDir -Force | Out-Null
+                    }
+                    
+                    Copy-Item -Path $Item.FullName -Destination $TargetPath -Force
                 }
-            } else {
-                $LblStatus.Text = "Copying: $($Item.Name)"
-                Copy-Item -Path $Item.FullName -Destination $TargetPath -Force
+            } catch {
+                 throw "Copy failed for Item: '$ItemPathStr' to '$TargetPath'. Error: $($_.Exception.Message)"
             }
             
             if ($Count % 10 -eq 0) { [System.Windows.Forms.Application]::DoEvents() }

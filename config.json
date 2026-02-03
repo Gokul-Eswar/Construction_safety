@@ -2,25 +2,30 @@
     "streams": [
         {
             "id": "cam_01",
-            "name": "Front Gate Camera",
-            "rtsp_uri": "rtsp://127.0.0.1:8554/cam1",
+            "name": "Simulation Feed",
+            "rtsp_uri": "test",
             "zones": [
                 {
                     "id": 1,
-                    "name": "Entrance Danger Zone",
-                    "points": [[100, 100], [540, 100], [540, 380], [100, 380]]
-                }
-            ]
-        },
-        {
-            "id": "cam_02",
-            "name": "Rear Storage Camera",
-            "rtsp_uri": "rtsp://127.0.0.1:8554/cam2",
-            "zones": [
-                {
-                    "id": 2,
-                    "name": "Hazardous Area 2",
-                    "points": [[50, 50], [300, 50], [300, 300], [50, 300]]
+                    "name": "Danger Zone",
+                    "points": [
+                        [
+                            100,
+                            100
+                        ],
+                        [
+                            540,
+                            100
+                        ],
+                        [
+                            540,
+                            380
+                        ],
+                        [
+                            100,
+                            380
+                        ]
+                    ]
                 }
             ]
         }
@@ -34,6 +39,6 @@
         "host": "localhost",
         "port": 1883,
         "topic": "safety/alerts",
-        "client_id": "safety_system_multi"
+        "client_id": "safety_system_single"
     }
 }

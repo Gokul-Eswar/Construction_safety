@@ -1,9 +1,0 @@
-{
-  "id": "dockerization_20260201",
-  "name": "Dockerization & Deployment",
-  "description": "Containerize the entire application stack (C++ Engine, Web UI, MQTT) for reliable deployment on NVIDIA Jetson/Edge devices.",
-  "status": "completed",
-  "owner": "Gemini",
-  "created_at": "2026-02-01",
-  "milestone": "Production Readiness"
-}

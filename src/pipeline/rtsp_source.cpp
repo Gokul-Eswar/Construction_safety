@@ -13,14 +13,15 @@ RTSPSource::~RTSPSource() {
 
 std::string RTSPSource::getPipelineString() const {
     if (uri_ == "test") {
-        return "videotestsrc num-buffers=100 ! video/x-raw,format=I420,framerate=30/1 ! appsink name=mysink emit-signals=true max-buffers=1 drop=true";
+        return "videotestsrc ! video/x-raw,format=I420,framerate=30/1 ! appsink name=mysink emit-signals=true max-buffers=1 drop=true";
     }
     // Optimized RTSP pipeline:
     // - latency=0: minimize latency (requires stable network)
     // - drop-on-latency=true: skip late packets
     // - queue leaky=2: always keep the latest frame
     // - max-buffers=1 drop=true: ensure real-time delivery to appsink
-    return "rtspsrc location=" + uri_ + " latency=0 drop-on-latency=true ! rtph264depay ! h264parse ! nvv4l2decoder ! "
+    // Using decodebin for better cross-platform compatibility (Windows/Linux) vs nvv4l2decoder
+    return "rtspsrc location=" + uri_ + " latency=0 drop-on-latency=true ! rtph264depay ! h264parse ! decodebin ! "
            "queue max-size-buffers=1 leaky=2 ! "
            "appsink name=mysink emit-signals=true max-buffers=1 drop=true";
 }
