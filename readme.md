@@ -108,6 +108,8 @@ node server.js
 
 ### Project Documentation
 
+- [**User Manual**](user_manual.md) - Comprehensive guide for operators and admins.
+
 - [**Project Checklist**](checklist.md) - Tracking features and progress.
 
 - [**Edge Cases**](edge_cases.md) - Known limitations and handled scenarios.
