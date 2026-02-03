@@ -33,6 +33,11 @@ const connect = () => {
         mqttClient.subscribe('safety/heartbeat', (err) => {
             if (!err) console.log(`[MQTT] Subscribed to safety/heartbeat`);
         });
+
+        // Subscribe to Telemetry
+        mqttClient.subscribe('safety/telemetry', (err) => {
+            if (!err) console.log(`[MQTT] Subscribed to safety/telemetry`);
+        });
     });
 
     mqttClient.on('message', (topic, message) => {
@@ -43,6 +48,8 @@ const connect = () => {
             
             if (topic === 'safety/heartbeat') {
                 ioInstance.emit('system_heartbeat', payload);
+            } else if (topic === 'safety/telemetry') {
+                ioInstance.emit('system_telemetry', payload);
             } else {
                 // Default: Violation Alert
                 ioInstance.emit('violation_alert', payload);

@@ -50,3 +50,17 @@ void LatencyLogger::logStats(int interval) {
         }
     }
 }
+
+std::unordered_map<std::string, double> LatencyLogger::getAndClearStats() {
+    std::lock_guard<std::mutex> lock(mutex_);
+    std::unordered_map<std::string, double> results;
+    
+    for (auto& [key, latencies] : stats_) {
+        if (!latencies.empty()) {
+            double sum = std::accumulate(latencies.begin(), latencies.end(), 0.0);
+            results[key] = sum / latencies.size();
+            latencies.clear();
+        }
+    }
+    return results;
+}

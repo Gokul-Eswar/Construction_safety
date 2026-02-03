@@ -19,6 +19,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [recentAlert, setRecentAlert] = useState<string | null>(null);
   const [systemOnline, setSystemOnline] = useState(false); // Default false until heartbeat
+  const [telemetry, setTelemetry] = useState<any>(null);
   const lastHeartbeat = useRef<number>(0);
 
   useEffect(() => {
@@ -61,12 +62,17 @@ export default function Dashboard() {
         setSystemOnline(true);
     });
 
+    socket.on('system_telemetry', (data: any) => {
+        setTelemetry(data);
+    });
+
     return () => {
         clearInterval(interval);
         clearInterval(watchdog);
         socket.off('connect');
         socket.off('violation_alert');
         socket.off('system_heartbeat');
+        socket.off('system_telemetry');
     };
   }, []);
 
@@ -126,13 +132,41 @@ export default function Dashboard() {
           <CardContent>
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
               <Typography variant="h6">Live Surveillance Grid</Typography>
-              <Chip icon={<CheckCircleIcon />} label="Live" color="success" size="small" variant="outlined" />
+              <Box display="flex" gap={2}>
+                {telemetry && Object.entries(telemetry.streams || {}).map(([key, val]: any) => (
+                    <Chip 
+                        key={key} 
+                        label={`${key}: ${val.fps.toFixed(1)} FPS`} 
+                        color={val.active ? "success" : "default"} 
+                        variant="outlined" 
+                        size="small" 
+                    />
+                ))}
+                {telemetry && telemetry.latency && (
+                    <Chip 
+                        label={`Latency: ${(Object.values((telemetry as any).latency) as number[]).reduce((a,b)=>a+b,0).toFixed(1)}ms`} 
+                        color="warning" 
+                        variant="outlined" 
+                        size="small" 
+                    />
+                )}
+                <Chip icon={<CheckCircleIcon />} label="Live" color="success" size="small" variant="outlined" />
+              </Box>
             </Box>
             
             <MJPEGPlayer 
                 url={`http://${window.location.hostname}:8081`} 
                 label="Primary Site Camera"
             />
+            
+            {/* Detailed Telemetry (Hidden in collapse or bottom) */}
+            {telemetry && (
+                <Box mt={2} p={1} bgcolor="background.paper" borderRadius={1} fontSize="0.75rem" fontFamily="monospace" color="text.secondary">
+                    Inference Latency: {telemetry.latency && telemetry.latency['stream1_processing'] ? `${telemetry.latency['stream1_processing'].toFixed(1)}ms` : 'N/A'} | 
+                    E2E Latency: {telemetry.latency && telemetry.latency['stream1_e2e'] ? `${telemetry.latency['stream1_e2e'].toFixed(1)}ms` : 'N/A'}
+                </Box>
+            )}
+
           </CardContent>
         </Card>
       </Grid>

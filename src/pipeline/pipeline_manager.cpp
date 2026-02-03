@@ -5,6 +5,9 @@
 #include <gst/video/video.h>
 #include <gst/app/gstappsink.h>
 #include "utils/latency_logger.hpp"
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
 
 PipelineManager::PipelineManager(const AppConfig& config)
     : config_(config), running_(false), last_activity_(std::time(nullptr)) {
@@ -261,6 +264,32 @@ void PipelineManager::updateTiledView() {
                 mqtt_client_->publish("safety/heartbeat", beat);
             }
             last_beat = now_beat;
+        }
+
+        // --- TELEMETRY (1Hz) ---
+        static auto last_telemetry = std::chrono::steady_clock::now();
+        if (std::chrono::duration_cast<std::chrono::seconds>(now_beat - last_telemetry).count() >= 1) {
+            if (mqtt_client_ && mqtt_client_->isConnected()) {
+                json j;
+                j["timestamp"] = std::time(nullptr);
+                
+                // Stream Stats
+                for (auto& pair : streams_) {
+                    auto stats = pair.second->source->getStats();
+                    j["streams"][pair.first] = {
+                        {"fps", stats.fps},
+                        {"active", stats.active},
+                        {"frame_count", stats.frame_count}
+                    };
+                }
+
+                // Latency Stats
+                auto latencies = LatencyLogger::getInstance().getAndClearStats();
+                j["latency"] = latencies;
+
+                mqtt_client_->publish("safety/telemetry", j.dump());
+            }
+            last_telemetry = now_beat;
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(50));

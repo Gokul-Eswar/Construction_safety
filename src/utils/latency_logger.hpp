@@ -20,6 +20,9 @@ public:
     // Logs average latency every 'interval' frames
     void logStats(int interval = 100);
 
+    // Returns average latency for all keys and clears the buffer
+    std::unordered_map<std::string, double> getAndClearStats();
+
 private:
     LatencyLogger() = default;
     void cleanupOldTimers(const std::string& key, uint64_t current_frame_id);
