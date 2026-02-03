@@ -12,7 +12,7 @@ export default function MJPEGPlayer({ url, aspectRatio = '16/9', label }: MJPEGP
     const [status, setStatus] = useState<'loading' | 'live' | 'error'>('loading');
     const [retryCount, setRetryCount] = useState(0);
     const imgRef = useRef<HTMLImageElement>(null);
-    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // Effect to handle URL changes or retries
     useEffect(() => {
