@@ -14,6 +14,25 @@ const PORT = 3001;
 app.use(cors());
 app.use(express.json());
 
+// Basic Auth Middleware
+const authMiddleware = (req, res, next) => {
+    loadConfig(); // Ensure fresh config
+    if (!projectConfig.auth || !projectConfig.auth.username) return next();
+
+    const b64auth = (req.headers.authorization || '').split(' ')[1] || '';
+    const [login, password] = Buffer.from(b64auth, 'base64').toString().split(':');
+
+    if (login && password && login === projectConfig.auth.username && password === projectConfig.auth.password) {
+        return next();
+    }
+
+    res.set('WWW-Authenticate', 'Basic realm="Sentinel Safety Dashboard"');
+    res.status(401).send('Authentication required.');
+};
+
+// Protect API
+app.use('/api', authMiddleware);
+
 // Setup Socket.IO
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -204,15 +223,28 @@ app.post('/api/config/streams', (req, res) => {
     }
 });
 
-// API: System Restart (Mock)
+// API: System Restart (Real)
 app.post('/api/system/restart', (req, res) => {
-    console.log("Restart request received. In a real deployment, this would trigger a service restart.");
-    // Re-init MQTT in case config changed
-    setTimeout(() => {
-        loadConfig();
-        setupMQTT();
-    }, 1000);
-    res.json({ success: true, message: "Restart signal sent to system controller." });
+    console.log("Restart request received. Sending signal to Engine via MQTT...");
+    
+    if (mqttClient && mqttClient.connected) {
+        mqttClient.publish('safety/control', JSON.stringify({ command: 'restart', initiator: 'web_ui' }), (err) => {
+            if (err) {
+                console.error("Failed to publish restart command:", err);
+                return res.status(500).json({ error: "Failed to send restart signal" });
+            }
+            
+            // Also reload local config
+            setTimeout(() => {
+                loadConfig();
+                setupMQTT();
+            }, 2000);
+            
+            res.json({ success: true, message: "Restart signal sent. Engine should reboot shortly." });
+        });
+    } else {
+        res.status(503).json({ error: "MQTT not connected. Cannot send restart signal." });
+    }
 });
 
 // Serve Frontend in Production

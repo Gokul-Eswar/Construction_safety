@@ -24,6 +24,7 @@ $Includes = @(
     "conductor",
     "config.json",
     "docker-compose.yml",
+    "docker-compose.prod.yml",
     "Dockerfile.engine",
     "Dockerfile.web",
     "checklist.md",

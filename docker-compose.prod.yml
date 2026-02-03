@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  mqtt:
+    image: eclipse-mosquitto:2
+    container_name: safety-mqtt
+    ports:
+      - "1883:1883"
+    networks:
+      - safety-net
+    restart: always
+    volumes:
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_log:/mosquitto/log
+
+  engine:
+    build:
+      context: .
+      dockerfile: Dockerfile.engine
+    container_name: safety-engine
+    depends_on:
+      - mqtt
+    ports:
+      - "8081:8081" # Stream port
+    environment:
+      - MQTT_HOST=mqtt
+      - NVIDIA_VISIBLE_DEVICES=all
+      - ALERTS_TOPIC=safety/alerts
+      - CONTROL_TOPIC=safety/control
+    volumes:
+      - ./config.json:/app/config.json
+      - ./safety_violations.db:/app/safety_violations.db
+      - ./models:/app/models # Persist compiled engines
+      - ./logs:/app/logs
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    networks:
+      - safety-net
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "grep -q '1' /app/health || exit 1"] # Placeholder for internal health file if implemented
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    container_name: safety-web
+    depends_on:
+      - engine
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./config.json:/app/config.json
+      - ./safety_violations.db:/app/safety_violations.db
+    environment:
+      - NODE_ENV=production
+      - MQTT_HOST=mqtt
+    networks:
+      - safety-net
+    restart: always
+
+networks:
+  safety-net:
+    driver: bridge
+
+volumes:
+  mosquitto_data:
+  mosquitto_log:

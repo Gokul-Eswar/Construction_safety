@@ -13,6 +13,8 @@
 #include <mutex>
 #include <vector>
 #include <map>
+#include <atomic>
+#include <ctime>
 
 struct StreamContext {
     std::string id;
@@ -52,6 +54,7 @@ private:
 
     bool running_;
     std::mutex mutex_;
+    std::atomic<std::time_t> last_activity_;
     
     std::thread tiling_thread_;
 };

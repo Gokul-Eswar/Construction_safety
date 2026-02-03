@@ -25,7 +25,11 @@ bool ViolationLogger::init(const std::string& db_path) {
         return false;
     }
 
-    return create_tables_if_not_exist();
+    if (!create_tables_if_not_exist()) return false;
+    
+    // Cleanup old logs
+    cleanup_old_logs(30);
+    return true;
 }
 
 bool ViolationLogger::create_tables_if_not_exist() {
@@ -77,6 +81,25 @@ bool ViolationLogger::log_violation(int zone_id, float confidence, int object_id
     }
 
     return true;
+}
+
+void ViolationLogger::cleanup_old_logs(int days) {
+    std::lock_guard<std::mutex> lock(db_mutex_);
+    if (!db_) return;
+
+    std::stringstream sql;
+    sql << "DELETE FROM violations WHERE timestamp < date('now', '-" << days << " days');";
+    
+    std::string query = sql.str();
+    char* zErrMsg = 0;
+    int rc = sqlite3_exec(db_, query.c_str(), 0, 0, &zErrMsg);
+    
+    if (rc != SQLITE_OK) {
+        std::cerr << "DB Cleanup Error: " << zErrMsg << std::endl;
+        sqlite3_free(zErrMsg);
+    } else {
+        std::cout << "Database cleanup completed. Logs older than " << days << " days removed." << std::endl;
+    }
 }
 
 } // namespace safety

@@ -35,6 +35,10 @@
     "alert_cooldown": 5000,
     "inference_interval": 3,
     "stream_port": 8081,
+    "auth": {
+        "username": "admin",
+        "password": "password"
+    },
     "mqtt": {
         "host": "localhost",
         "port": 1883,

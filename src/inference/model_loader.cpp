@@ -96,6 +96,11 @@ bool ModelLoader::buildFromOnnx() {
     
     std::cout << "Successfully built and loaded TensorRT engine." << std::endl;
     loaded_ = true;
+
+    // Auto-save engine
+    std::string engine_path = model_path_.substr(0, model_path_.find_last_of('.')) + ".engine";
+    saveEngine(engine_path);
+
     return true;
 
 #else
@@ -179,12 +184,30 @@ bool ModelLoader::deserializeEngine() {
 }
 
 bool ModelLoader::saveEngine(const std::string& engine_path) {
-    if (!loaded_) return false;
-    // Mock save
-    std::ofstream f(engine_path);
-    f << "TRT-ENGINE-MOCK-DATA";
+#ifdef ENABLE_TENSORRT
+    if (!engine_) return false;
+    
+    std::cout << "Serializing TensorRT engine to: " << engine_path << std::endl;
+    std::unique_ptr<nvinfer1::IHostMemory, InferDeleter> plan{ engine_->serialize() };
+    if (!plan) {
+        std::cerr << "Failed to serialize engine." << std::endl;
+        return false;
+    }
+
+    std::ofstream f(engine_path, std::ios::binary);
+    if (!f.good()) {
+        std::cerr << "Cannot open file for writing: " << engine_path << std::endl;
+        return false;
+    }
+    f.write(reinterpret_cast<const char*>(plan->data()), plan->size());
     f.close();
+    std::cout << "Engine saved successfully." << std::endl;
     return true;
+#else
+    // If TRT is not enabled, we can't save a TRT engine.
+    std::cerr << "Cannot save TensorRT engine: TRT disabled." << std::endl;
+    return false;
+#endif
 }
 
 bool ModelLoader::isLoaded() const {

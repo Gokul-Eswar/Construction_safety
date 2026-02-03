@@ -39,6 +39,24 @@ bool MQTTClient::publish(const std::string& topic, const std::string& payload) {
     }
 }
 
+bool MQTTClient::subscribe(const std::string& topic, std::function<void(const std::string&, const std::string&)> callback) {
+    if (!client_ || !client_->is_connected()) return false;
+
+    try {
+        std::cout << "Subscribing to topic: " << topic << std::endl;
+        client_->subscribe(topic, 1)->wait();
+        
+        client_->set_message_callback([callback](mqtt::const_message_ptr msg) {
+            callback(msg->get_topic(), msg->to_string());
+        });
+        
+        return true;
+    } catch (const mqtt::exception& exc) {
+        std::cerr << "MQTT Subscribe Error: " << exc.what() << std::endl;
+        return false;
+    }
+}
+
 void MQTTClient::disconnect() {
     if (client_ && client_->is_connected()) {
         try {

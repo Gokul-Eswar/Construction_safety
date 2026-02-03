@@ -32,6 +32,12 @@ public:
      */
     bool log_violation(int zone_id, float confidence, int object_id = -1);
 
+    /**
+     * @brief Delete logs older than the specified number of days.
+     * @param days Number of days to keep.
+     */
+    void cleanup_old_logs(int days = 30);
+
 private:
     sqlite3* db_ = nullptr;
     std::string db_path_;

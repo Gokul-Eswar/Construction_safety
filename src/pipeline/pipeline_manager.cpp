@@ -1,11 +1,13 @@
 #include "pipeline_manager.hpp"
 #include <iostream>
+#include <csignal>
+#include <fstream>
 #include <gst/video/video.h>
 #include <gst/app/gstappsink.h>
 #include "utils/latency_logger.hpp"
 
 PipelineManager::PipelineManager(const AppConfig& config)
-    : config_(config), running_(false) {
+    : config_(config), running_(false), last_activity_(std::time(nullptr)) {
 }
 
 PipelineManager::~PipelineManager() {
@@ -36,7 +38,15 @@ bool PipelineManager::init() {
 
     if (!config_.mqtt.host.empty()) {
         mqtt_client_ = std::make_unique<MQTTClient>(config_.mqtt.client_id);
-        mqtt_client_->connect(config_.mqtt.host, config_.mqtt.port);
+        if (mqtt_client_->connect(config_.mqtt.host, config_.mqtt.port)) {
+            // Subscribe to control topic
+            mqtt_client_->subscribe("safety/control", [this](const std::string& topic, const std::string& payload) {
+                 if (payload.find("restart") != std::string::npos) {
+                     std::cout << "Received restart command via MQTT. Initiating shutdown..." << std::endl;
+                     std::raise(SIGTERM);
+                 }
+            });
+        }
     }
 
     // 3. Init Streams
@@ -104,6 +114,7 @@ void PipelineManager::onFrameReceived(const std::string& stream_id, GstSample* s
         }
 
         if (!frame.empty()) {
+            last_activity_ = std::time(nullptr);
             auto it = streams_.find(stream_id);
             if (it != streams_.end()) {
                 auto& ctx = it->second;
@@ -194,6 +205,13 @@ void PipelineManager::checkAlerts(const std::string& stream_id, const std::vecto
 
 void PipelineManager::updateTiledView() {
     while (running_) {
+        // Health Check
+        auto now = std::time(nullptr);
+        if (now - last_activity_ < 30) {
+             std::ofstream health_file("/app/health");
+             if (health_file.good()) health_file << "1";
+        }
+
         std::vector<cv::Mat> current_frames;
         for (auto& pair : streams_) {
             std::lock_guard<std::mutex> lock(pair.second->frame_mutex);

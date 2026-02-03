@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <memory>
+#include <functional>
 
 namespace mqtt {
     class async_client;
@@ -11,6 +12,7 @@ public:
     virtual ~IMQTTClient() = default;
     virtual bool connect(const std::string& host, int port) = 0;
     virtual bool publish(const std::string& topic, const std::string& payload) = 0;
+    virtual bool subscribe(const std::string& topic, std::function<void(const std::string&, const std::string&)> callback) = 0;
     virtual void disconnect() = 0;
     virtual bool isConnected() const = 0;
 };
@@ -22,6 +24,7 @@ public:
 
     bool connect(const std::string& host, int port) override;
     bool publish(const std::string& topic, const std::string& payload) override;
+    bool subscribe(const std::string& topic, std::function<void(const std::string&, const std::string&)> callback) override;
     void disconnect() override;
     bool isConnected() const override;
 
