@@ -44,7 +44,7 @@ else()
     include(FetchContent)
     FetchContent_Declare(
       sqlite3
-      URL https://www.sqlite.org/2023/sqlite-amalgamation-3430000.zip
+      URL https://github.com/sqlite/sqlite/archive/refs/tags/version-3.43.0.zip
     )
     FetchContent_MakeAvailable(sqlite3)
     add_library(SQLite::SQLite3 INTERFACE IMPORTED)

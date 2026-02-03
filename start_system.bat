@@ -32,7 +32,7 @@ if %errorlevel% neq 0 (
 
 echo.
 echo [3/4] Waiting for services to initialize...
-timeout /t 10 /nobreak >nul
+timeout /t 20 /nobreak >nul
 
 echo.
 echo [4/4] Opening Dashboard...
