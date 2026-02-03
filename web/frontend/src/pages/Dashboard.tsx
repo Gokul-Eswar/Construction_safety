@@ -144,7 +144,11 @@ export default function Dashboard() {
                 ))}
                 {telemetry && telemetry.latency && (
                     <Chip 
-                        label={`Latency: ${(Object.values((telemetry as any).latency) as number[]).reduce((a,b)=>a+b,0).toFixed(1)}ms`} 
+                        label={`Latency (P99): ${
+                            telemetry.latency['stream1_processing'] 
+                            ? telemetry.latency['stream1_processing'].p99.toFixed(1) 
+                            : '0.0'
+                        }ms`} 
                         color="warning" 
                         variant="outlined" 
                         size="small" 
@@ -159,11 +163,23 @@ export default function Dashboard() {
                 label="Primary Site Camera"
             />
             
-            {/* Detailed Telemetry (Hidden in collapse or bottom) */}
-            {telemetry && (
+            {/* Detailed Telemetry */}
+            {telemetry && telemetry.latency && (
                 <Box mt={2} p={1} bgcolor="background.paper" borderRadius={1} fontSize="0.75rem" fontFamily="monospace" color="text.secondary">
-                    Inference Latency: {telemetry.latency && telemetry.latency['stream1_processing'] ? `${telemetry.latency['stream1_processing'].toFixed(1)}ms` : 'N/A'} | 
-                    E2E Latency: {telemetry.latency && telemetry.latency['stream1_e2e'] ? `${telemetry.latency['stream1_e2e'].toFixed(1)}ms` : 'N/A'}
+                   <Grid container spacing={2}>
+                        <Grid item>
+                            <strong>Inference:</strong> {telemetry.latency['stream1_inference']?.avg.toFixed(1) || '-'}ms (avg)
+                        </Grid>
+                        <Grid item>
+                            <strong>Tracking:</strong> {telemetry.latency['stream1_tracking']?.avg.toFixed(1) || '-'}ms
+                        </Grid>
+                        <Grid item>
+                            <strong>Render:</strong> {telemetry.latency['stream1_render']?.avg.toFixed(1) || '-'}ms
+                        </Grid>
+                        <Grid item>
+                             <strong>E2E P99:</strong> {telemetry.latency['stream1_e2e']?.p99.toFixed(1) || '-'}ms
+                        </Grid>
+                   </Grid>
                 </Box>
             )}
 

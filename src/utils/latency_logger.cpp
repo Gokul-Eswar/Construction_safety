@@ -51,14 +51,26 @@ void LatencyLogger::logStats(int interval) {
     }
 }
 
-std::unordered_map<std::string, double> LatencyLogger::getAndClearStats() {
+std::unordered_map<std::string, LatencyStats> LatencyLogger::getAndClearStats() {
     std::lock_guard<std::mutex> lock(mutex_);
-    std::unordered_map<std::string, double> results;
+    std::unordered_map<std::string, LatencyStats> results;
     
     for (auto& [key, latencies] : stats_) {
         if (!latencies.empty()) {
+            // Sort to calculate percentiles and min/max
+            std::sort(latencies.begin(), latencies.end());
+            
             double sum = std::accumulate(latencies.begin(), latencies.end(), 0.0);
-            results[key] = sum / latencies.size();
+            double avg = sum / latencies.size();
+            double min = latencies.front();
+            double max = latencies.back();
+            
+            // P99 Calculation
+            size_t p99_idx = static_cast<size_t>(std::ceil(0.99 * latencies.size())) - 1;
+            if (p99_idx >= latencies.size()) p99_idx = latencies.size() - 1;
+            double p99 = latencies[p99_idx];
+
+            results[key] = {avg, min, max, p99};
             latencies.clear();
         }
     }

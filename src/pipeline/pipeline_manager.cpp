@@ -125,6 +125,9 @@ void PipelineManager::onFrameReceived(const std::string& stream_id, GstSample* s
 
                 // Start Processing Timer
                 std::string key_proc = stream_id + "_processing";
+                std::string key_inf = stream_id + "_inference";
+                std::string key_track = stream_id + "_tracking";
+                std::string key_render = stream_id + "_render";
                 std::string key_e2e = stream_id + "_e2e";
                 
                 LatencyLogger::getInstance().startTimer(key_proc, ctx->frame_count);
@@ -141,17 +144,22 @@ void PipelineManager::onFrameReceived(const std::string& stream_id, GstSample* s
                 
                 if (run_inference) {
                     // 1. Inference
+                    LatencyLogger::getInstance().startTimer(key_inf, ctx->frame_count);
                     std::vector<Detection> raw_detections;
                     {
                         std::lock_guard<std::mutex> lock(mutex_);
                         raw_detections = engine_->runInference(frame);
                     }
+                    LatencyLogger::getInstance().stopTimer(key_inf, ctx->frame_count);
                     
                     // 2. Tracking (Per stream)
+                    LatencyLogger::getInstance().startTimer(key_track, ctx->frame_count);
                     detections = ctx->tracker->update(raw_detections);
+                    LatencyLogger::getInstance().stopTimer(key_track, ctx->frame_count);
                 }
 
                 // 3. Visualization
+                LatencyLogger::getInstance().startTimer(key_render, ctx->frame_count);
                 if (run_inference) {
                      visualizer_->drawDetections(frame, detections);
                      // Check alerts only on inferred frames
@@ -164,6 +172,7 @@ void PipelineManager::onFrameReceived(const std::string& stream_id, GstSample* s
                 
                 // Add stream name
                 cv::putText(frame, ctx->name, cv::Point(20, 40), cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(0, 255, 255), 2);
+                LatencyLogger::getInstance().stopTimer(key_render, ctx->frame_count);
 
                 // 5. Update last frame for tiling
                 {
@@ -285,7 +294,14 @@ void PipelineManager::updateTiledView() {
 
                 // Latency Stats
                 auto latencies = LatencyLogger::getInstance().getAndClearStats();
-                j["latency"] = latencies;
+                for (const auto& [key, val] : latencies) {
+                    j["latency"][key] = {
+                        {"avg", val.avg},
+                        {"min", val.min},
+                        {"max", val.max},
+                        {"p99", val.p99}
+                    };
+                }
 
                 mqtt_client_->publish("safety/telemetry", j.dump());
             }

@@ -6,6 +6,15 @@
 #include <iostream>
 #include <mutex>
 #include <unordered_map>
+#include <algorithm>
+#include <cmath>
+
+struct LatencyStats {
+    double avg;
+    double min;
+    double max;
+    double p99;
+};
 
 class LatencyLogger {
 public:
@@ -20,8 +29,8 @@ public:
     // Logs average latency every 'interval' frames
     void logStats(int interval = 100);
 
-    // Returns average latency for all keys and clears the buffer
-    std::unordered_map<std::string, double> getAndClearStats();
+    // Returns detailed stats for all keys and clears the buffer
+    std::unordered_map<std::string, LatencyStats> getAndClearStats();
 
 private:
     LatencyLogger() = default;
