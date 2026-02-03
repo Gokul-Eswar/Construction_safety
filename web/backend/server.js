@@ -74,15 +74,25 @@ const setupMQTT = () => {
         mqttClient.subscribe(topic, (err) => {
             if (!err) console.log(`Subscribed to ${topic}`);
         });
+        // Subscribe to Heartbeat
+        mqttClient.subscribe('safety/heartbeat', (err) => {
+            if (!err) console.log(`Subscribed to safety/heartbeat`);
+        });
     });
 
     mqttClient.on('message', (topic, message) => {
         try {
             const payload = JSON.parse(message.toString());
-            // Broadcast to all connected websocket clients
-            io.emit('violation_alert', payload);
+            
+            if (topic === 'safety/heartbeat') {
+                io.emit('system_heartbeat', payload);
+            } else {
+                // Default: Violation Alert
+                // Broadcast to all connected websocket clients
+                io.emit('violation_alert', payload);
+            }
         } catch (e) {
-            console.error('Failed to parse MQTT message');
+            console.error('Failed to parse MQTT message from', topic);
         }
     });
 };

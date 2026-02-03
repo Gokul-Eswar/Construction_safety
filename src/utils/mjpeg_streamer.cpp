@@ -5,7 +5,7 @@
 #pragma comment(lib, "ws2_32.lib")
 #endif
 
-MJPEGStreamer::MJPEGStreamer() : port_(0), running_(false), server_socket_(INVALID_SOCKET) {
+MJPEGStreamer::MJPEGStreamer() : port_(0), running_(false), server_socket_(INVALID_SOCKET), frame_sequence_(0) {
 #ifdef _WIN32
     WSADATA wsaData;
     WSAStartup(MAKEWORD(2, 2), &wsaData);
@@ -44,6 +44,7 @@ bool MJPEGStreamer::start(int port) {
 
 void MJPEGStreamer::stop() {
     running_ = false;
+    frame_cond_.notify_all(); // Wake up any sleeping clients so they can exit
 #ifdef _WIN32
     closesocket(server_socket_);
 #else
@@ -56,13 +57,16 @@ void MJPEGStreamer::publish(const cv::Mat& frame) {
     if (frame.empty()) return;
 
     std::vector<uchar> buffer;
+    // Lower quality slightly for speed if needed, 80 is fine for LAN
     std::vector<int> params = {cv::IMWRITE_JPEG_QUALITY, 80};
     cv::imencode(".jpg", frame, buffer, params);
 
     {
         std::lock_guard<std::mutex> lock(frame_mutex_);
         last_frame_data_ = std::move(buffer);
+        frame_sequence_++;
     }
+    frame_cond_.notify_all();
 }
 
 void MJPEGStreamer::listenThread() {
@@ -91,16 +95,25 @@ void MJPEGStreamer::clientThread(SOCKET client_socket) {
     
     send(client_socket, header.c_str(), header.size(), 0);
 
+    uint64_t last_sent_seq = 0;
+
     while (running_) {
         std::vector<uchar> frame_to_send;
+        
         {
-            std::lock_guard<std::mutex> lock(frame_mutex_);
-            if (last_frame_data_.empty()) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(30));
-                continue;
-            }
+            std::unique_lock<std::mutex> lock(frame_mutex_);
+            // Wait for a new frame
+            frame_cond_.wait(lock, [this, last_sent_seq] { 
+                return !running_ || frame_sequence_ > last_sent_seq; 
+            });
+
+            if (!running_) break;
+
             frame_to_send = last_frame_data_;
+            last_sent_seq = frame_sequence_;
         }
+
+        if (frame_to_send.empty()) continue;
 
         std::string part_header = 
             "--boundary\r\n"
@@ -110,8 +123,6 @@ void MJPEGStreamer::clientThread(SOCKET client_socket) {
         if (send(client_socket, part_header.c_str(), part_header.size(), 0) <= 0) break;
         if (send(client_socket, (const char*)frame_to_send.data(), frame_to_send.size(), 0) <= 0) break;
         if (send(client_socket, "\r\n", 2, 0) <= 0) break;
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(30)); // Limit to ~30 FPS
     }
 
 #ifdef _WIN32

@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Grid, Card, CardContent, Typography, Box, CircularProgress, Chip, Alert, Snackbar } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import VideocamOffIcon from '@mui/icons-material/VideocamOff';
 import axios from 'axios';
 import io from 'socket.io-client';
 import MJPEGPlayer from '../components/MJPEGPlayer';
@@ -17,6 +18,8 @@ export default function Dashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [recentAlert, setRecentAlert] = useState<string | null>(null);
+  const [systemOnline, setSystemOnline] = useState(false); // Default false until heartbeat
+  const lastHeartbeat = useRef<number>(0);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -34,6 +37,13 @@ export default function Dashboard() {
     // Keep polling for stats as backup/sync, but slower
     const interval = setInterval(fetchStats, 10000); 
 
+    // Watchdog for Heartbeat
+    const watchdog = setInterval(() => {
+        if (Date.now() - lastHeartbeat.current > 5000) {
+            setSystemOnline(false);
+        }
+    }, 1000);
+
     // Socket.IO Listeners
     socket.on('connect', () => {
         console.log('Connected to WebSocket');
@@ -46,10 +56,17 @@ export default function Dashboard() {
         setStats(prev => prev ? { ...prev, today_violations: prev.today_violations + 1 } : null);
     });
 
+    socket.on('system_heartbeat', () => {
+        lastHeartbeat.current = Date.now();
+        setSystemOnline(true);
+    });
+
     return () => {
         clearInterval(interval);
+        clearInterval(watchdog);
         socket.off('connect');
         socket.off('violation_alert');
+        socket.off('system_heartbeat');
     };
   }, []);
 
@@ -57,6 +74,17 @@ export default function Dashboard() {
 
   return (
     <Grid container spacing={3}>
+      {!systemOnline && (
+          <Grid item xs={12}>
+              <Alert severity="error" variant="filled" icon={<VideocamOffIcon fontSize="inherit" />}>
+                  <Typography variant="subtitle1" fontWeight="bold">
+                      SYSTEM OFFLINE
+                  </Typography>
+                  The inference engine is not reachable. Live streams and alerts may be unavailable.
+              </Alert>
+          </Grid>
+      )}
+
       <Snackbar open={!!recentAlert} autoHideDuration={6000} onClose={() => setRecentAlert(null)} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
         <Alert severity="error" variant="filled" sx={{ width: '100%' }}>
           {recentAlert}

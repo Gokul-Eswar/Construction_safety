@@ -251,6 +251,18 @@ void PipelineManager::updateTiledView() {
             }
         }
 
+        // --- HEARTBEAT ---
+        static auto last_beat = std::chrono::steady_clock::now();
+        auto now_beat = std::chrono::steady_clock::now();
+        if (std::chrono::duration_cast<std::chrono::seconds>(now_beat - last_beat).count() >= 2) {
+            if (mqtt_client_ && mqtt_client_->isConnected()) {
+                std::string beat = "{\"status\":\"online\", "
+                                   "\"timestamp\":" + std::to_string(std::time(nullptr)) + "}";
+                mqtt_client_->publish("safety/heartbeat", beat);
+            }
+            last_beat = now_beat;
+        }
+
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
 }
