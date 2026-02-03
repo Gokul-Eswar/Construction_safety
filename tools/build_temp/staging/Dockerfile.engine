@@ -1,0 +1,54 @@
+# Use NVIDIA TensorRT base image (Ubuntu 22.04 + CUDA + TensorRT)
+FROM nvcr.io/nvidia/tensorrt:23.05-py3
+
+# Install system dependencies
+# - GStreamer for video ingestion
+# - OpenCV (dev) for image processing
+# - CMake/Build-essential for compilation
+# - Paho MQTT dependencies
+# - SQLite3
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    cmake \
+    git \
+    pkg-config \
+    libopencv-dev \
+    libgstreamer1.0-dev \
+    libgstreamer-plugins-base1.0-dev \
+    libgstreamer-plugins-bad1.0-dev \
+    gstreamer1.0-plugins-base \
+    gstreamer1.0-plugins-good \
+    gstreamer1.0-plugins-bad \
+    gstreamer1.0-plugins-ugly \
+    gstreamer1.0-libav \
+    gstreamer1.0-tools \
+    libsqlite3-dev \
+    libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Copy CMake configuration
+COPY CMakeLists.txt .
+
+# Copy source code
+COPY src/ ./src/
+COPY tests/ ./tests/
+
+# Copy config/model placeholders (Actual config mounted via volume at runtime)
+# We copy them just so build doesn't fail if it checks existence, though cmake usually doesn't.
+# COPY config.json .
+# COPY yolo11n.onnx .
+
+# Build the application
+RUN mkdir build && cd build && \
+    cmake .. -DCMAKE_BUILD_TYPE=Release -DENABLE_CUDA=ON && \
+    cmake --build . --config Release --parallel $(nproc)
+
+# Expose Stream Port
+EXPOSE 8081
+
+# Entrypoint
+# We assume config.json and models are mounted to /app/
+CMD ["./build/main_app", "config.json"]

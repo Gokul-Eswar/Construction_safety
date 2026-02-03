@@ -1,0 +1,11 @@
+{
+  "id": "web_dashboard_20260129",
+  "name": "Web Dashboard & Visualization",
+  "description": "Implementation of a React-based dashboard to view real-time safety alerts and historical violation data.",
+  "status": "active",
+  "startDate": "2026-01-29",
+  "owner": "Gemini",
+  "dependencies": [
+    "persistence_alerting_20260129"
+  ]
+}

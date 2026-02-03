@@ -1,0 +1,25 @@
+# Implementation Plan: System Integration & Alerting
+
+## Phase 1: MQTT Client Implementation [checkpoint: d134340]
+- [x] Task: MQTT Client Wrapper [cbc8e1b]
+    - [x] Write unit tests for connection, publishing, and disconnection (using a mock or embedded broker if possible, or just interface mocking)
+    - [x] Implement `MQTTClient` class using a standard C++ MQTT library (e.g., Paho MQTT C++)
+- [ ] Task: Conductor - User Manual Verification 'Phase 1: MQTT Client Implementation' (Protocol in workflow.md)
+
+## Phase 2: Pipeline Orchestration [checkpoint: e8121ff]
+- [x] Task: Pipeline Manager Core [07bfe16]
+    - [x] Write tests for component initialization and data flow
+    - [x] Implement `PipelineManager` to link `RTSPSource` callbacks to `InferenceEngine` execution
+- [x] Task: Integration of Spatial & Visualizer [07bfe16]
+    - [x] Write tests for the full processing chain (Source -> Detect -> Map -> Visualize)
+    - [x] Update `PipelineManager` to include `SpatialMapper` and `Visualizer` steps
+- [ ] Task: Conductor - User Manual Verification 'Phase 2: Pipeline Orchestration' (Protocol in workflow.md)
+
+## Phase 3: Application Entry Point & Alerting Logic [checkpoint: c8bb3b4]
+- [x] Task: Alert Generation Logic [01adffb]
+    - [x] Write tests for zone violation checks and alert throttling
+    - [x] Implement logic to trigger MQTT alerts based on `SpatialMapper` results (e.g., "Person in Zone A")
+- [x] Task: Main Application (`main.cpp`) [01adffb]
+    - [x] Implement command-line argument parsing (config path, debug mode)
+    - [x] Wire up the `PipelineManager` and start the main loop
+- [x] Task: Conductor - User Manual Verification 'Phase 3: Application Entry Point & Alerting Logic' (Protocol in workflow.md) [c8bb3b4]
