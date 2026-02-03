@@ -172,11 +172,11 @@ $PanelFinish.Visible = $false
 $CurrentStep = 1
 
 $BtnBack.Add_Click({
-    if ($CurrentStep -eq 2) {
+    if ($script:CurrentStep -eq 2) {
         $PanelDir.Visible = $false
         $PanelWelcome.Visible = $true
         $BtnBack.Enabled = $false
-        $CurrentStep = 1
+        $script:CurrentStep = 1
     }
 })
 
@@ -186,7 +186,7 @@ $DoInstall = {
     $BtnBack.Enabled = $false
     $BtnNext.Enabled = $false
     $BtnCancel.Enabled = $false
-    $CurrentStep = 3
+    $script:CurrentStep = 3
 
     # START INSTALLATION
     $Dest = $TxtDir.Text
@@ -211,6 +211,7 @@ $DoInstall = {
             $ProgressBar.Value = $Percent
             $LblStatus.Text = "Copying $($Item.Name)..."
             &$Log "Copying $($Item.Name)..."
+            [System.Windows.Forms.Application]::DoEvents()
             
             Copy-Item -Path $Item.FullName -Destination $Dest -Recurse -Force
             Start-Sleep -Milliseconds 50 # Artifical delay for UX
@@ -246,7 +247,7 @@ $DoInstall = {
         $BtnNext.Text = "Finish"
         $BtnNext.Enabled = $true
         $BtnCancel.Enabled = $false # Cannot cancel anymore
-        $CurrentStep = 4
+        $script:CurrentStep = 4
 
     } catch {
         &$Log "ERROR: $($_.Exception.Message)"
@@ -256,16 +257,16 @@ $DoInstall = {
 }
 
 $BtnNext.Add_Click({
-    if ($CurrentStep -eq 1) {
+    if ($script:CurrentStep -eq 1) {
         $PanelWelcome.Visible = $false
         $PanelDir.Visible = $true
         $BtnBack.Enabled = $true
-        $CurrentStep = 2
+        $script:CurrentStep = 2
     }
-    elseif ($CurrentStep -eq 2) {
+    elseif ($script:CurrentStep -eq 2) {
         &$DoInstall
     }
-    elseif ($CurrentStep -eq 4) {
+    elseif ($script:CurrentStep -eq 4) {
         if ($ChkLaunch.Checked) {
             Start-Process "$($TxtDir.Text)\start_system.bat"
         }
