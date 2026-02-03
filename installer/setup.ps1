@@ -201,20 +201,28 @@ $DoInstall = {
             &$Log "Created directory: $Dest"
         }
 
-        $Files = Get-ChildItem -Path $SourceDir -Exclude $Excludes
-        $Total = $Files.Count
-        $Count = 0
+        # Check for existing installation (Fastrack)
+        if (Test-Path "$Dest\start_system.bat") {
+             &$Log "Existing installation detected. Fast-tracking..."
+             $ProgressBar.Value = 100
+             Start-Sleep -Milliseconds 500
+        }
+        else {
+            $Files = Get-ChildItem -Path $SourceDir -Exclude $Excludes
+            $Total = $Files.Count
+            $Count = 0
 
-        foreach ($Item in $Files) {
-            $Count++
-            $Percent = [int](($Count / $Total) * 100)
-            $ProgressBar.Value = $Percent
-            $LblStatus.Text = "Copying $($Item.Name)..."
-            &$Log "Copying $($Item.Name)..."
-            [System.Windows.Forms.Application]::DoEvents()
-            
-            Copy-Item -Path $Item.FullName -Destination $Dest -Recurse -Force
-            Start-Sleep -Milliseconds 50 # Artifical delay for UX
+            foreach ($Item in $Files) {
+                $Count++
+                $Percent = [int](($Count / $Total) * 100)
+                $ProgressBar.Value = $Percent
+                $LblStatus.Text = "Copying $($Item.Name)..."
+                &$Log "Copying $($Item.Name)..."
+                [System.Windows.Forms.Application]::DoEvents()
+                
+                Copy-Item -Path $Item.FullName -Destination $Dest -Recurse -Force
+                Start-Sleep -Milliseconds 50 # Artifical delay for UX
+            }
         }
         
         # Create Desktop Shortcut
