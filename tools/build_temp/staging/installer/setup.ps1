@@ -4,7 +4,7 @@ Add-Type -AssemblyName System.Drawing
 # --- Configuration ---
 $AppName = "Sentinel Safety System"
 $DefaultInstallDir = "C:\SentinelSafety"
-$SourceDir = Resolve-Path "$PSScriptRoot\.."
+$SourceDir = Get-Item -LiteralPath (Resolve-Path "$PSScriptRoot\..").Path
 
 # --- GUI Setup ---
 $Form = New-Object System.Windows.Forms.Form
@@ -222,9 +222,26 @@ $DoInstall = {
             $Progress = 5 + [int](($Count / $TotalItems) * 85)
             $ProgressBar.Value = $Progress
             
-            $RelativePath = $Item.FullName.Substring($SourceDir.FullName.Length + 1)
-            $TargetPath = Join-Path $Dest $RelativePath
+            # Robust relative path calculation
+            $SourcePathStr = $SourceDir.FullName
+            $ItemPathStr = $Item.FullName
             
+            if ($ItemPathStr.StartsWith($SourcePathStr)) {
+                $RelativePath = $ItemPathStr.Substring($SourcePathStr.Length).TrimStart('\', '/')
+            } else {
+                # Fallback: Just use name if path structure doesn't match (unlikely)
+                $RelativePath = $Item.Name
+            }
+            
+            # Skip invalid paths
+            if ([string]::IsNullOrWhiteSpace($RelativePath)) { continue }
+
+            try {
+                $TargetPath = Join-Path $Dest $RelativePath
+            } catch {
+                 throw "Path join failed for Item: '$ItemPathStr' Relative: '$RelativePath' Dest: '$Dest'. Error: $($_.Exception.Message)"
+            }
+
             if ($Item.PSIsContainer) {
                 if (-not (Test-Path $TargetPath)) {
                     New-Item -ItemType Directory -Path $TargetPath -Force | Out-Null
@@ -273,8 +290,10 @@ $DoInstall = {
         $script:CurrentStep = 4
 
     } catch {
-        &$Log "ERROR: $($_.Exception.Message)"
-        [System.Windows.Forms.MessageBox]::Show("Installation Failed: $($_.Exception.Message)", "Error", "OK", "Error")
+        $ErrorMsg = "Installation Failed.`nError: $($_.Exception.Message)"
+        if ($Item) { $ErrorMsg += "`nLast File: $($Item.FullName)" }
+        &$Log "ERROR: $ErrorMsg"
+        [System.Windows.Forms.MessageBox]::Show($ErrorMsg, "Error", "OK", "Error")
         $Form.Close()
     }
 }
