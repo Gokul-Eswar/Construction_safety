@@ -3,15 +3,18 @@
 #include <atomic>
 #include "pipeline/pipeline_manager.hpp"
 #include "utils/config_loader.hpp"
+#include "utils/logger.hpp"
 
 std::atomic<bool> keep_running(true);
 
 void signalHandler(int signum) {
-    std::cout << "Interrupt signal (" << signum << ") received.\n";
+    spdlog::info("Interrupt signal ({}) received.", signum);
     keep_running = false;
 }
 
 int main(int argc, char* argv[]) {
+    Logger::init();
+    
     // Register signal handler for graceful shutdown
     std::signal(SIGINT, signalHandler);
     std::signal(SIGTERM, signalHandler);
@@ -21,13 +24,13 @@ int main(int argc, char* argv[]) {
         config_path = argv[1];
     }
     
-    std::cout << "Starting Construction Safety Inference System..." << std::endl;
-    std::cout << "Loading configuration from: " << config_path << std::endl;
+    spdlog::info("Starting Construction Safety Inference System...");
+    spdlog::info("Loading configuration from: {}", config_path);
 
     AppConfig config = ConfigLoader::load(config_path);
     
     if (config.streams.empty()) {
-        std::cerr << "No streams configured in " << config_path << std::endl;
+        spdlog::warn("No streams configured in {}", config_path);
     }
     if (config.model_path.empty()) config.model_path = "yolo11n.onnx";
 
@@ -36,19 +39,19 @@ int main(int argc, char* argv[]) {
     PipelineManager manager(config);
 
     if (!manager.init()) {
-        std::cerr << "Failed to initialize pipeline manager." << std::endl;
+        spdlog::error("Failed to initialize pipeline manager.");
         return 1;
     }
 
     manager.start();
 
-    std::cout << "System is running. Press Ctrl+C to stop." << std::endl;
+    spdlog::info("System is running. Press Ctrl+C to stop.");
 
     while (keep_running) {
         g_usleep(100000); // 100ms
     }
 
-    std::cout << "Stopping system..." << std::endl;
+    spdlog::info("Stopping system...");
     manager.stop();
 
     return 0;

@@ -100,6 +100,12 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(json)
 
 FetchContent_Declare(
+    spdlog
+    URL https://github.com/gabime/spdlog/archive/refs/tags/v1.12.0.zip
+)
+FetchContent_MakeAvailable(spdlog)
+
+FetchContent_Declare(
     PahoMqttC
     GIT_REPOSITORY https://github.com/eclipse/paho.mqtt.c.git
     GIT_TAG v1.3.13
@@ -154,6 +160,7 @@ target_link_libraries(main_app PRIVATE
     ${GST_LIBRARIES} 
     ${OpenCV_LIBS}
     nlohmann_json::nlohmann_json
+    spdlog::spdlog
     paho-mqttpp3
     SQLite::SQLite3
     ${TENSORRT_LIBS}
@@ -186,6 +193,7 @@ target_link_libraries(unit_tests PRIVATE
     ${GST_LIBRARIES} 
     ${OpenCV_LIBS}
     nlohmann_json::nlohmann_json
+    spdlog::spdlog
     paho-mqttpp3
     SQLite::SQLite3
     ${TENSORRT_LIBS}
