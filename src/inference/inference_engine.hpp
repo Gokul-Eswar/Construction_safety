@@ -10,8 +10,8 @@ struct InferenceConfig {
     std::string model_path;
     int input_width = 640;
     int input_height = 640;
-    float conf_threshold = 0.25f;
-    float nms_threshold = 0.45f;
+    float conf_threshold = 0.20f; // Lowered for higher recall (Safety Critical)
+    float nms_threshold = 0.50f;  // Adjusted for crowded scenes
 };
 
 struct Detection {

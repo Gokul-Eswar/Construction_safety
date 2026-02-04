@@ -124,8 +124,16 @@ std::vector<Detection> InferenceEngine::parseDetections(const cv::Mat& output_t,
     int rows = output_t.rows; // 8400
     int cols = output_t.cols; // 84
 
-    float x_scale = (float)frame_w / config_.input_width;
-    float y_scale = (float)frame_h / config_.input_height;
+    // Calculate scaling params (matching preprocess logic)
+    float ratio_w = (float)config_.input_width / frame_w;
+    float ratio_h = (float)config_.input_height / frame_h;
+    float scale = std::min(ratio_w, ratio_h);
+    
+    float new_unpad_w = frame_w * scale;
+    float new_unpad_h = frame_h * scale;
+    
+    float dw = (config_.input_width - new_unpad_w) / 2.0f;
+    float dh = (config_.input_height - new_unpad_h) / 2.0f;
 
     for (int i = 0; i < rows; ++i) {
         float* row_ptr = data + (i * cols);
@@ -148,10 +156,16 @@ std::vector<Detection> InferenceEngine::parseDetections(const cv::Mat& output_t,
                 float w = row_ptr[2];
                 float h = row_ptr[3];
 
-                int left = int((cx - 0.5 * w) * x_scale);
-                int top = int((cy - 0.5 * h) * y_scale);
-                int width = int(w * x_scale);
-                int height = int(h * y_scale);
+                // Remap from Letterbox -> Original
+                float cx_orig = (cx - dw) / scale;
+                float cy_orig = (cy - dh) / scale;
+                float w_orig = w / scale;
+                float h_orig = h / scale;
+
+                int left = int(cx_orig - 0.5 * w_orig);
+                int top = int(cy_orig - 0.5 * h_orig);
+                int width = int(w_orig);
+                int height = int(h_orig);
 
                 Detection det;
                 det.class_id = class_id;
@@ -166,9 +180,31 @@ std::vector<Detection> InferenceEngine::parseDetections(const cv::Mat& output_t,
 
 void InferenceEngine::preprocess(const cv::Mat& input, cv::Mat& output) {
     if (input.empty()) return;
-    cv::dnn::blobFromImage(input, output, 1.0/255.0, 
-        cv::Size(config_.input_width, config_.input_height), 
-        cv::Scalar(), true, false);
+    
+    // Letterbox Resize
+    int iw = input.cols;
+    int ih = input.rows;
+    int w = config_.input_width;
+    int h = config_.input_height;
+    
+    float scale = std::min((float)w / iw, (float)h / ih);
+    int nw = int(iw * scale);
+    int nh = int(ih * scale);
+    
+    cv::Mat resized;
+    cv::resize(input, resized, cv::Size(nw, nh));
+    
+    // Create canvas with padding (114 is YOLO grey)
+    cv::Mat canvas(h, w, CV_8UC3, cv::Scalar(114, 114, 114));
+    
+    // Center the image
+    int dx = (w - nw) / 2;
+    int dy = (h - nh) / 2;
+    
+    resized.copyTo(canvas(cv::Rect(dx, dy, nw, nh)));
+    
+    // Normalize [0,1] and NCHW
+    cv::dnn::blobFromImage(canvas, output, 1.0/255.0, cv::Size(), cv::Scalar(), true, false);
 }
 
 std::vector<Detection> InferenceEngine::applyNMS(const std::vector<Detection>& detections, float nms_thresh) {

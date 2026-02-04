@@ -308,6 +308,7 @@ void PipelineManager::updateTiledView() {
             last_telemetry = now_beat;
         }
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        // Reduced sleep for higher visual FPS (10ms ~= 100 FPS target)
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 }
