@@ -15,15 +15,32 @@ RTSPSource::~RTSPSource() {
 
 std::string RTSPSource::getPipelineString() const {
     if (uri_ == "test") {
-        return "videotestsrc ! video/x-raw,format=I420,framerate=30/1 ! appsink name=mysink emit-signals=true max-buffers=1 drop=true";
+        return "videotestsrc ! video/x-raw,format=I420,width=1280,height=720,framerate=30/1 ! appsink name=mysink emit-signals=true max-buffers=1 drop=true";
     }
-    // Optimized RTSP pipeline with rtspsrc specific retry/timeout properties
-    // udp-reconnect=1: reconnect on UDP timeout
-    // timeout=5000000: 5 second timeout (in microseconds)
-    return "rtspsrc location=" + uri_ + " latency=0 drop-on-latency=true udp-reconnect=1 timeout=5000000 ! "
-           "rtph264depay ! h264parse ! decodebin ! "
-           "queue max-size-buffers=1 leaky=2 ! "
-           "appsink name=mysink emit-signals=true max-buffers=1 drop=true";
+
+    // High-performance industrial pipeline
+    // We use a flexible string that can be tuned for NVIDIA hardware
+    std::string pipeline;
+    
+    // Check if we are in a Docker environment with NVIDIA support (common for this project)
+    const char* use_nv = std::getenv("USE_NVIDIA_HW");
+    bool nvidia_hw = (use_nv && std::string(use_nv) == "1");
+
+    if (nvidia_hw) {
+        pipeline = "rtspsrc location=" + uri_ + " latency=100 drop-on-latency=true ! "
+                   "rtph264depay ! h264parse ! nvv4l2decoder ! "
+                   "nvvideoconvert ! video/x-raw,format=BGR ! "
+                   "queue max-size-buffers=1 leaky=2 ! "
+                   "appsink name=mysink emit-signals=true max-buffers=1 drop=true";
+    } else {
+        pipeline = "rtspsrc location=" + uri_ + " latency=100 drop-on-latency=true ! "
+                   "rtph264depay ! h264parse ! decodebin ! "
+                   "videoconvert ! video/x-raw,format=BGR ! "
+                   "queue max-size-buffers=1 leaky=2 ! "
+                   "appsink name=mysink emit-signals=true max-buffers=1 drop=true";
+    }
+
+    return pipeline;
 }
 
 void RTSPSource::setFrameCallback(FrameCallback callback) {

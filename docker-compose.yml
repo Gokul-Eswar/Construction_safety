@@ -21,6 +21,7 @@ services:
     environment:
       - MQTT_HOST=mqtt
       - NVIDIA_VISIBLE_DEVICES=all
+      - USE_NVIDIA_HW=1
     volumes:
       - ./config.json:/app/config.json
       - ./safety_violations.db:/app/safety_violations.db
