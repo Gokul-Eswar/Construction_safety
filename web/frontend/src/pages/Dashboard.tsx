@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { Grid, Card, CardContent, Typography, Box, CircularProgress, Chip, Alert, Snackbar } from '@mui/material';
+import { Grid, Card, CardContent, Typography, Box, CircularProgress, Chip, Alert, Snackbar, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Divider } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import VideocamOffIcon from '@mui/icons-material/VideocamOff';
 import axios from 'axios';
@@ -145,8 +145,8 @@ export default function Dashboard() {
                 {telemetry && telemetry.latency && (
                     <Chip 
                         label={`Latency (P99): ${
-                            telemetry.latency['stream1_processing'] 
-                            ? telemetry.latency['stream1_processing'].p99.toFixed(1) 
+                            Object.values(telemetry.latency).find((l: any) => l.p99) 
+                            ? (Object.values(telemetry.latency)[0] as any).p99.toFixed(1) 
                             : '0.0'
                         }ms`} 
                         color="warning" 
@@ -162,27 +162,104 @@ export default function Dashboard() {
                 url={`http://${window.location.hostname}:8081`} 
                 label="Primary Site Camera"
             />
-            
-            {/* Detailed Telemetry */}
-            {telemetry && telemetry.latency && (
-                <Box mt={2} p={1} bgcolor="background.paper" borderRadius={1} fontSize="0.75rem" fontFamily="monospace" color="text.secondary">
-                   <Grid container spacing={2}>
-                        <Grid item>
-                            <strong>Inference:</strong> {telemetry.latency['stream1_inference']?.avg.toFixed(1) || '-'}ms (avg)
-                        </Grid>
-                        <Grid item>
-                            <strong>Tracking:</strong> {telemetry.latency['stream1_tracking']?.avg.toFixed(1) || '-'}ms
-                        </Grid>
-                        <Grid item>
-                            <strong>Render:</strong> {telemetry.latency['stream1_render']?.avg.toFixed(1) || '-'}ms
-                        </Grid>
-                        <Grid item>
-                             <strong>E2E P99:</strong> {telemetry.latency['stream1_e2e']?.p99.toFixed(1) || '-'}ms
-                        </Grid>
-                   </Grid>
-                </Box>
-            )}
+          </CardContent>
+        </Card>
+      </Grid>
 
+      {/* Detailed Metrics Section */}
+      <Grid item xs={12}>
+        <Card>
+          <CardContent>
+             <Typography variant="h6" gutterBottom>System Metrics</Typography>
+             <Typography variant="body2" color="text.secondary" paragraph>
+                Real-time performance statistics from the inference engine.
+             </Typography>
+             
+             <Grid container spacing={3}>
+                {/* Operation Stats */}
+                <Grid item xs={12} md={6}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>Operation Statistics</Typography>
+                    <TableContainer component={Paper} variant="outlined">
+                        <Table size="small">
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell>Stream ID</TableCell>
+                                    <TableCell align="right">Status</TableCell>
+                                    <TableCell align="right">FPS</TableCell>
+                                    <TableCell align="right">Frames Processed</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {telemetry && telemetry.streams ? (
+                                    Object.entries(telemetry.streams).map(([key, val]: any) => (
+                                        <TableRow key={key}>
+                                            <TableCell component="th" scope="row">{key}</TableCell>
+                                            <TableCell align="right">
+                                                <Chip 
+                                                    label={val.active ? "Active" : "Inactive"} 
+                                                    color={val.active ? "success" : "error"} 
+                                                    size="small" 
+                                                    sx={{ height: 20, fontSize: '0.7rem' }}
+                                                />
+                                            </TableCell>
+                                            <TableCell align="right">{val.fps.toFixed(1)}</TableCell>
+                                            <TableCell align="right">{val.frame_count.toLocaleString()}</TableCell>
+                                        </TableRow>
+                                    ))
+                                ) : (
+                                    <TableRow>
+                                        <TableCell colSpan={4} align="center">No telemetry data</TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
+                </Grid>
+
+                {/* Model Stats */}
+                <Grid item xs={12} md={6}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>Model Latency (ms)</Typography>
+                    <TableContainer component={Paper} variant="outlined">
+                        <Table size="small">
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell>Component</TableCell>
+                                    <TableCell align="right">Avg</TableCell>
+                                    <TableCell align="right">Min</TableCell>
+                                    <TableCell align="right">Max</TableCell>
+                                    <TableCell align="right">P99</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {telemetry && telemetry.latency ? (
+                                    Object.entries(telemetry.latency).map(([key, val]: any) => {
+                                        // Clean up key name for display (e.g. "cam_01_inference" -> "Inference")
+                                        const parts = key.split('_');
+                                        const label = parts[parts.length - 1].charAt(0).toUpperCase() + parts[parts.length - 1].slice(1);
+                                        const stream = parts.slice(0, -1).join('_');
+
+                                        return (
+                                            <TableRow key={key}>
+                                                <TableCell component="th" scope="row">
+                                                    {label} <Typography variant="caption" color="text.secondary">({stream})</Typography>
+                                                </TableCell>
+                                                <TableCell align="right">{val.avg.toFixed(2)}</TableCell>
+                                                <TableCell align="right">{val.min.toFixed(2)}</TableCell>
+                                                <TableCell align="right">{val.max.toFixed(2)}</TableCell>
+                                                <TableCell align="right" sx={{ fontWeight: 'bold' }}>{val.p99.toFixed(2)}</TableCell>
+                                            </TableRow>
+                                        );
+                                    })
+                                ) : (
+                                    <TableRow>
+                                        <TableCell colSpan={5} align="center">No latency data</TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
+                </Grid>
+             </Grid>
           </CardContent>
         </Card>
       </Grid>
