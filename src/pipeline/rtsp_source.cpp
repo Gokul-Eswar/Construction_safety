@@ -128,7 +128,7 @@ SourceStats RTSPSource::getStats() const {
     const_cast<RTSPSource*>(this)->updateStats();
     // Active if running AND not currently waiting to reconnect
     bool is_active = is_running_ && !should_reconnect_;
-    return {frame_count_.load(), current_fps_, is_active};
+    return {frame_count_.load(), current_fps_, is_active, is_running_};
 }
 
 void RTSPSource::updateStats() {

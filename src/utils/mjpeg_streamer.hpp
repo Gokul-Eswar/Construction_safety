@@ -12,7 +12,7 @@
 #include <winsock2.h>
 #else
 #include <sys/socket.h>
-#netinet/in.h>
+#include <netinet/in.h>
 #include <unistd.h>
 typedef int SOCKET;
 #define INVALID_SOCKET -1

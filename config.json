@@ -1,48 +1,48 @@
 {
-    "streams": [
-        {
-            "id": "cam_01",
-            "name": "Simulation Feed",
-            "rtsp_uri": "test",
-            "zones": [
-                {
-                    "id": 1,
-                    "name": "Danger Zone",
-                    "points": [
-                        [
-                            100,
-                            100
-                        ],
-                        [
-                            540,
-                            100
-                        ],
-                        [
-                            540,
-                            380
-                        ],
-                        [
-                            100,
-                            380
-                        ]
-                    ]
-                }
-            ]
-        }
-    ],
-    "model_path": "yolo11n.onnx",
-    "database_path": "safety_violations.db",
-    "alert_cooldown": 5000,
-    "inference_interval": 3,
-    "stream_port": 8081,
-    "auth": {
-        "username": "admin",
-        "password": "password"
-    },
-    "mqtt": {
-        "host": "localhost",
-        "port": 1883,
-        "topic": "safety/alerts",
-        "client_id": "safety_system_single"
-    }
+    "streams":  [
+                    {
+                        "id":  "cam_01",
+                        "name":  "Simulation Feed",
+                        "rtsp_uri":  "test",
+                        "zones":  [
+                                      {
+                                          "id":  1,
+                                          "name":  "Danger Zone",
+                                          "points":  [
+                                                         [
+                                                             100,
+                                                             100
+                                                         ],
+                                                         [
+                                                             540,
+                                                             100
+                                                         ],
+                                                         [
+                                                             540,
+                                                             380
+                                                         ],
+                                                         [
+                                                             100,
+                                                             380
+                                                         ]
+                                                     ]
+                                      }
+                                  ]
+                    }
+                ],
+    "model_path":  "yolo11n.onnx",
+    "database_path":  "safety_violations.db",
+    "alert_cooldown":  3000,
+    "inference_interval":  1,
+    "stream_port":  8081,
+    "auth":  {
+                 "username":  "admin",
+                 "password":  "password"
+             },
+    "mqtt":  {
+                 "host":  "localhost",
+                 "port":  1883,
+                 "topic":  "safety/alerts",
+                 "client_id":  "safety_system_single"
+             }
 }

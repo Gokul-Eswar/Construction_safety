@@ -110,16 +110,18 @@ FetchContent_Declare(
     GIT_REPOSITORY https://github.com/eclipse/paho.mqtt.c.git
     GIT_TAG v1.3.13
 )
-set(PAHO_BUILD_STATIC ON CACHE BOOL "")
-set(PAHO_ENABLE_SSL OFF CACHE BOOL "")
-set(PAHO_ENABLE_TESTING OFF CACHE BOOL "")
+set(PAHO_BUILD_STATIC ON CACHE BOOL "" FORCE)
+set(PAHO_BUILD_SHARED OFF CACHE BOOL "" FORCE)
+set(PAHO_ENABLE_SSL OFF CACHE BOOL "" FORCE)
+set(PAHO_ENABLE_TESTING OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(PahoMqttC)
 
 set(PahoMqttC_FOUND TRUE CACHE BOOL "" FORCE)
 if(WIN32)
     set(PAHO_MQTT_C_LIBRARIES ${pahomqttc_BINARY_DIR}/src/libpaho-mqtt3a.dll.a CACHE STRING "" FORCE)
 else()
-    set(PAHO_MQTT_C_LIBRARIES ${pahomqttc_BINARY_DIR}/src/libpaho-mqtt3a.a CACHE STRING "" FORCE)
+    # Use target name for Linux to ensure correct dependency tracking
+    set(PAHO_MQTT_C_LIBRARIES paho-mqtt3a-static CACHE STRING "" FORCE)
 endif()
 set(PAHO_MQTT_C_INCLUDE_DIRS ${pahomqttc_SOURCE_DIR}/src CACHE STRING "" FORCE)
 
@@ -128,10 +130,11 @@ FetchContent_Declare(
     GIT_REPOSITORY https://github.com/eclipse/paho.mqtt.cpp.git
     GIT_TAG v1.2.0
 )
-set(PAHO_WITH_SSL OFF CACHE BOOL "")
-set(PAHO_BUILD_STATIC ON CACHE BOOL "")
-set(PAHO_BUILD_DOCUMENTATION OFF CACHE BOOL "")
-set(PAHO_BUILD_SAMPLES OFF CACHE BOOL "")
+set(PAHO_WITH_SSL OFF CACHE BOOL "" FORCE)
+set(PAHO_BUILD_STATIC ON CACHE BOOL "" FORCE)
+set(PAHO_BUILD_SHARED OFF CACHE BOOL "" FORCE)
+set(PAHO_BUILD_DOCUMENTATION OFF CACHE BOOL "" FORCE)
+set(PAHO_BUILD_SAMPLES OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(PahoMqttCpp)
 
 if(WIN32)
@@ -159,7 +162,14 @@ set(COMMON_SOURCES
 
 # Main Application
 add_executable(main_app src/main.cpp ${COMMON_SOURCES})
-target_include_directories(main_app PRIVATE src)
+target_include_directories(main_app PRIVATE 
+    src 
+    ${pahomqttcpp_SOURCE_DIR}/src
+    ${pahomqttc_SOURCE_DIR}/src
+)
+if(CMAKE_CUDA_COMPILER)
+    target_include_directories(main_app PRIVATE ${CUDA_INCLUDE_DIRS})
+endif()
 target_link_libraries(main_app PRIVATE 
     ${GST_LIBRARIES} 
     ${OpenCV_LIBS}
@@ -191,7 +201,14 @@ add_executable(unit_tests
     tests/unit/test_sort_tracker.cpp
     ${COMMON_SOURCES}
 )
-target_include_directories(unit_tests PRIVATE src)
+target_include_directories(unit_tests PRIVATE 
+    src 
+    ${pahomqttcpp_SOURCE_DIR}/src
+    ${pahomqttc_SOURCE_DIR}/src
+)
+if(CMAKE_CUDA_COMPILER)
+    target_include_directories(unit_tests PRIVATE ${CUDA_INCLUDE_DIRS})
+endif()
 target_link_libraries(unit_tests PRIVATE 
     GTest::gtest_main 
     ${GST_LIBRARIES} 
@@ -216,6 +233,7 @@ if(GST_FOUND OR GSTREAMER_FOUND)
     target_link_libraries(env_check PRIVATE ${GST_LIBRARIES})
 endif()
 if(CMAKE_CUDA_COMPILER)
+    target_include_directories(env_check PRIVATE ${CUDA_INCLUDE_DIRS})
     target_link_libraries(env_check PRIVATE ${CUDA_CUDART_LIBRARY}) 
 endif()
 

@@ -12,6 +12,7 @@ struct SourceStats {
     uint64_t frame_count;
     double fps;
     bool active;
+    bool is_running;
 };
 
 class RTSPSource {
@@ -25,9 +26,9 @@ public:
     void stop();
     void setFrameCallback(FrameCallback callback);
     SourceStats getStats() const;
+    std::string getPipelineString() const;
 
 private:
-    std::string getPipelineString() const;
     static GstFlowReturn on_new_sample(GstElement* sink, gpointer user_data);
     static gboolean on_bus_message(GstBus* bus, GstMessage* msg, gpointer data);
     
