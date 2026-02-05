@@ -116,7 +116,11 @@ set(PAHO_ENABLE_TESTING OFF CACHE BOOL "")
 FetchContent_MakeAvailable(PahoMqttC)
 
 set(PahoMqttC_FOUND TRUE CACHE BOOL "" FORCE)
-set(PAHO_MQTT_C_LIBRARIES ${pahomqttc_BINARY_DIR}/src/libpaho-mqtt3a.dll.a CACHE STRING "" FORCE)
+if(WIN32)
+    set(PAHO_MQTT_C_LIBRARIES ${pahomqttc_BINARY_DIR}/src/libpaho-mqtt3a.dll.a CACHE STRING "" FORCE)
+else()
+    set(PAHO_MQTT_C_LIBRARIES ${pahomqttc_BINARY_DIR}/src/libpaho-mqtt3a.a CACHE STRING "" FORCE)
+endif()
 set(PAHO_MQTT_C_INCLUDE_DIRS ${pahomqttc_SOURCE_DIR}/src CACHE STRING "" FORCE)
 
 FetchContent_Declare(
