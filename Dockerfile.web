@@ -10,6 +10,9 @@ RUN npm run build
 FROM node:18-alpine as production-stage
 WORKDIR /app/backend
 
+# Install build dependencies for native modules (like sqlite3)
+RUN apk add --no-cache python3 make g++
+
 # Install Backend Deps
 COPY web/backend/package*.json ./
 RUN npm install --only=production
@@ -25,9 +28,8 @@ EXPOSE 3001
 
 # Set Environment
 ENV NODE_ENV=production
+ENV CONFIG_PATH=/app/config.json
+ENV DB_PATH=/app/safety_violations.db
 
-# Mount Config via Volume (expected at /app/config.json relative to server.js resolution which is ../../config.json)
-# Server.js resolves path.resolve(__dirname, '../../config.json') -> /app/config.json if WORKDIR is /app/backend
-# So we need config.json at /app/config.json
-
+# Mount Config via Volume (mapped in docker-compose)
 CMD ["node", "server.js"]

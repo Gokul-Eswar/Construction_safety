@@ -1,16 +1,21 @@
 const fs = require('fs');
 const path = require('path');
 
-const configPath = path.resolve(__dirname, '../../../config.json');
+// Use CONFIG_PATH env var if available, otherwise resolve relative to project root
+const configPath = process.env.CONFIG_PATH || path.resolve(process.cwd(), '../../config.json');
 let projectConfig = {};
 
 const loadConfig = () => {
     try {
+        if (!fs.existsSync(configPath)) {
+            console.warn(`Config file not found at ${configPath}. Using empty config.`);
+            return {};
+        }
         const rawData = fs.readFileSync(configPath);
         projectConfig = JSON.parse(rawData);
         return projectConfig;
     } catch (error) {
-        console.error("Could not load config.json:", error);
+        console.error(`Could not load config.json from ${configPath}:`, error);
         return {};
     }
 };

@@ -1,0 +1,17 @@
+**/node_modules
+**/dist
+**/build
+.git
+.gitignore
+*.md
+docker-compose*.yml
+Dockerfile*
+Setup.bat
+start_system.*
+stop_system.*
+build_engine.bat
+lint.bat
+run_demo.bat
+safety_violations.db
+yolo11n.engine
+yolo11n.onnx

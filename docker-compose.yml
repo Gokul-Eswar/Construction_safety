@@ -1,8 +1,6 @@
-version: '3.8'
-
 services:
   mqtt:
-    image: eclipse-mosquitto:2
+    image: eclipse-mosquitto:1.6
     container_name: safety-mqtt
     ports:
       - "1883:1883"
@@ -45,13 +43,13 @@ services:
     depends_on:
       - engine
     ports:
-      - "3000:3000" # Static Frontend (if served by express via another port? No, backend is 3001)
-      - "3001:3001" # API + Static Frontend
+      - "3001:3001" 
     volumes:
       - ./config.json:/app/config.json
       - ./safety_violations.db:/app/safety_violations.db
     environment:
       - NODE_ENV=production
+      - MQTT_HOST=mqtt
     networks:
       - safety-net
     restart: always
