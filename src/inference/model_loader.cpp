@@ -87,6 +87,31 @@ bool ModelLoader::buildFromOnnx() {
         std::cout << "FP16 mode enabled." << std::endl;
     }
 
+    // Dynamic Shape Support (Required for YOLO models with dynamic axes)
+    // We create a profile that forces a standard resolution for optimization
+    auto profile = builder->createOptimizationProfile();
+    // Assuming standard YOLO input "images" - checking first input usually works
+    if (network->getNbInputs() > 0) {
+        auto input = network->getInput(0);
+        if (input->getDimensions().nbDims == 4) {
+            // Check if any dimension is dynamic (-1)
+            bool isDynamic = false;
+            for(int i=0; i<4; i++) {
+                if(input->getDimensions().d[i] == -1) isDynamic = true;
+            }
+
+            if (isDynamic) {
+                std::cout << "Dynamic input detected: " << input->getName() << ". Creating optimization profile." << std::endl;
+                // Min, Opt, Max dimensions
+                // Forcing 640x640 for consistency and speed
+                profile->setDimensions(input->getName(), nvinfer1::OptProfileSelector::kMIN, nvinfer1::Dims4{1, 3, 640, 640});
+                profile->setDimensions(input->getName(), nvinfer1::OptProfileSelector::kOPT, nvinfer1::Dims4{1, 3, 640, 640});
+                profile->setDimensions(input->getName(), nvinfer1::OptProfileSelector::kMAX, nvinfer1::Dims4{1, 3, 640, 640});
+                config->addOptimizationProfile(profile);
+            }
+        }
+    }
+
     std::unique_ptr<nvinfer1::IHostMemory, InferDeleter> plan{
         builder->buildSerializedNetwork(*network, *config)
     };

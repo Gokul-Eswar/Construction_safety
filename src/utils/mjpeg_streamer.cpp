@@ -72,7 +72,11 @@ void MJPEGStreamer::publish(const cv::Mat& frame) {
 void MJPEGStreamer::listenThread() {
     while (running_) {
         sockaddr_in client_addr;
+#ifdef _WIN32
         int client_len = sizeof(client_addr);
+#else
+        socklen_t client_len = sizeof(client_addr);
+#endif
         SOCKET client_socket = accept(server_socket_, (struct sockaddr*)&client_addr, &client_len);
         
         if (client_socket != INVALID_SOCKET) {

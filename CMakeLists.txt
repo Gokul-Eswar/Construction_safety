@@ -120,8 +120,8 @@ set(PahoMqttC_FOUND TRUE CACHE BOOL "" FORCE)
 if(WIN32)
     set(PAHO_MQTT_C_LIBRARIES ${pahomqttc_BINARY_DIR}/src/libpaho-mqtt3a.dll.a CACHE STRING "" FORCE)
 else()
-    # Use target name for Linux to ensure correct dependency tracking
-    set(PAHO_MQTT_C_LIBRARIES paho-mqtt3a-static CACHE STRING "" FORCE)
+    # Link against the file path to avoid "No rule to make target" errors for the target name
+    set(PAHO_MQTT_C_LIBRARIES ${pahomqttc_BINARY_DIR}/src/libpaho-mqtt3a.a CACHE STRING "" FORCE)
 endif()
 set(PAHO_MQTT_C_INCLUDE_DIRS ${pahomqttc_SOURCE_DIR}/src CACHE STRING "" FORCE)
 
@@ -136,6 +136,11 @@ set(PAHO_BUILD_SHARED OFF CACHE BOOL "" FORCE)
 set(PAHO_BUILD_DOCUMENTATION OFF CACHE BOOL "" FORCE)
 set(PAHO_BUILD_SAMPLES OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(PahoMqttCpp)
+
+# Crucial Fix: Ensure C++ lib waits for C lib to build
+if(TARGET paho-mqttpp3-static AND TARGET paho-mqtt3a-static)
+    add_dependencies(paho-mqttpp3-static paho-mqtt3a-static)
+endif()
 
 if(WIN32)
     target_link_libraries(paho-mqttpp3 PRIVATE ws2_32 rpcrt4 crypt32)
@@ -170,14 +175,16 @@ target_include_directories(main_app PRIVATE
 if(CMAKE_CUDA_COMPILER)
     target_include_directories(main_app PRIVATE ${CUDA_INCLUDE_DIRS})
 endif()
+
 target_link_libraries(main_app PRIVATE 
     ${GST_LIBRARIES} 
     ${OpenCV_LIBS}
     nlohmann_json::nlohmann_json
     spdlog::spdlog
-    paho-mqttpp3
+    paho-mqttpp3-static
     SQLite::SQLite3
     ${TENSORRT_LIBS}
+    ${CUDA_CUDART_LIBRARY} # Required for cudaMalloc, cudaStreamCreate, etc.
 )
 if(WIN32)
     target_link_libraries(main_app PRIVATE ws2_32)
@@ -209,15 +216,17 @@ target_include_directories(unit_tests PRIVATE
 if(CMAKE_CUDA_COMPILER)
     target_include_directories(unit_tests PRIVATE ${CUDA_INCLUDE_DIRS})
 endif()
+
 target_link_libraries(unit_tests PRIVATE 
     GTest::gtest_main 
     ${GST_LIBRARIES} 
     ${OpenCV_LIBS}
     nlohmann_json::nlohmann_json
     spdlog::spdlog
-    paho-mqttpp3
+    paho-mqttpp3-static
     SQLite::SQLite3
     ${TENSORRT_LIBS}
+    ${CUDA_CUDART_LIBRARY} # Required for cudaMalloc, cudaStreamCreate, etc.
 )
 if(WIN32)
     target_link_libraries(unit_tests PRIVATE ws2_32)
