@@ -2,6 +2,7 @@
 #include <csignal>
 #include <atomic>
 #include "pipeline/pipeline_manager.hpp"
+#include "inference/model_loader.hpp"
 #include "utils/config_loader.hpp"
 #include "utils/logger.hpp"
 
@@ -20,8 +21,15 @@ int main(int argc, char* argv[]) {
     std::signal(SIGTERM, signalHandler);
 
     std::string config_path = "config.json";
-    if (argc > 1) {
-        config_path = argv[1];
+    bool build_engine_only = false;
+
+    for (int i = 1; i < argc; ++i) {
+        std::string arg = argv[i];
+        if (arg == "--build-engine-only") {
+            build_engine_only = true;
+        } else {
+            config_path = arg;
+        }
     }
     
     spdlog::info("Starting Construction Safety Inference System...");
@@ -29,6 +37,23 @@ int main(int argc, char* argv[]) {
 
     AppConfig config = ConfigLoader::load(config_path);
     
+    // Mode: Build Engine Only
+    if (build_engine_only) {
+        spdlog::info("Running in ENGINE BUILD MODE only.");
+        if (config.model_path.empty()) config.model_path = "yolo11n.onnx";
+        
+        spdlog::info("Target Model: {}", config.model_path);
+        
+        ModelLoader loader(config.model_path);
+        if (loader.load()) {
+            spdlog::info("Engine build/verification complete. Exiting.");
+            return 0;
+        } else {
+            spdlog::error("Failed to build or load the engine.");
+            return 1;
+        }
+    }
+
     if (config.streams.empty()) {
         spdlog::warn("No streams configured in {}", config_path);
     }

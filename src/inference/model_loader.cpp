@@ -27,6 +27,20 @@ bool ModelLoader::load() {
 
     // Check extension
     if (model_path_.find(".onnx") != std::string::npos) {
+        // Optimization: Check if a serialized .engine file already exists
+        std::string engine_path = model_path_.substr(0, model_path_.find_last_of('.')) + ".engine";
+        std::ifstream engine_file(engine_path);
+        
+        if (engine_file.good()) {
+            std::cout << "Found existing TensorRT engine: " << engine_path << ". Loading directly..." << std::endl;
+            // Temporarily switch path to load the engine
+            std::string original_path = model_path_;
+            model_path_ = engine_path;
+            bool success = deserializeEngine();
+            model_path_ = original_path; // Restore original path
+            return success;
+        }
+
         std::cout << "Detected ONNX model. Starting conversion to TensorRT..." << std::endl;
         return buildFromOnnx();
     } else if (model_path_.find(".engine") != std::string::npos) {
