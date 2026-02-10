@@ -50,6 +50,7 @@ The dashboard is accessible at `http://localhost:3001` and is divided into four 
 ### 4.1 Home / Live Feed
 *   **Tiled View:** Displays up to 4 active camera feeds simultaneously.
 *   **System Health:** Real-time status indicators (Online/Offline) for the core AI engine.
+*   **Cloud Sync Status:** Indicates if local violation records are successfully synchronizing with the cloud backend.
 *   **Violation Counter:** Displays the total number of safety breaches detected in the last 24 hours.
 
 ### 4.2 Camera Management
@@ -66,7 +67,7 @@ The dashboard is accessible at `http://localhost:3001` and is divided into four 
 
 ### 4.4 Violation Logs
 *   View a searchable table of all recent safety incidents.
-*   Each log entry includes the **Timestamp**, **Camera ID**, **Zone Name**, and **Detection Confidence**.
+*   Each log entry includes the **Timestamp**, **Camera ID**, **Zone Name**, **Detection Confidence**, and **Cloud Sync Status**.
 
 ---
 

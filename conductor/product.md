@@ -33,8 +33,12 @@ A robust, real-time safety monitoring system for industrial construction sites t
 -   [x] **One-Click Start:** simple `.bat` and `.sh` launcher scripts.
 -   [x] **Edge Ready:** Compatible with NVIDIA Jetson (ARM64) and x86 GPUs.
 
-## 3. Future Roadmap (Post-v1.0)
--   [ ] **Cloud Sync:** Sync violation logs to a central cloud dashboard.
--   [ ] **Auth:** Add login/password protection to the Web UI.
+## 3. Features 2.0 (New!)
+-   [x] **Cloud Sync:** Automatic background synchronization of violation logs to MQTT (`safety/cloud_sync`).
+-   [x] **Auth:** Basic Authentication for the Web Dashboard (configured via `config.json`).
+-   [x] **Auto-Healing:** Automatic service restart on failure.
+-   [x] **Robust RTSP:** Exponential backoff for camera reconnection.
+
+## 4. Future Roadmap (Post-v1.0)
 -   [ ] **Analytics:** Heatmaps of worker movement and violation hotspots.
 -   [ ] **Email/SMS:** Direct integration (currently handled via MQTT downstream).

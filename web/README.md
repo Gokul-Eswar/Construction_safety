@@ -15,14 +15,16 @@ A web-based dashboard for monitoring safety violations in real-time.
 
 ## Getting Started
 
-### Quick Start (Windows)
-Simply run the batch script in the project root:
-```cmd
-start_dashboard.bat
-```
-This will install dependencies (if needed) and launch both the backend (Port 3001) and frontend (Port 3000).
+### Quick Start (Recommended)
+The web dashboard is automatically started as part of the main system.
+- **Windows:** Run `start_system.bat` in the project root.
+- **Linux:** Run `./start_system.sh` in the project root.
 
-### Manual Start
+The dashboard will be available at `http://localhost:3001`.
+
+### Manual Development Start
+
+If you are developing the web interface specifically and want to run it outside of Docker:
 
 #### 1. Start the Backend
 ```bash

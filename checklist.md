@@ -62,6 +62,6 @@
 
 ### 🚀 Optimization
 - [x] **System Optimization:** Profiling GStreamer pipeline and reducing end-to-end latency.
-- [ ] **Cloud Sync:** Sync violation logs to a central cloud dashboard.
-- [ ] **Auth:** Add login/password protection to the Web UI.
+- [x] **Cloud Sync:** Sync violation logs to a central cloud dashboard.
+- [x] **Auth:** Add login/password protection to the Web UI.
 
