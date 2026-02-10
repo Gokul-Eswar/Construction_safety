@@ -20,6 +20,7 @@ export default function Dashboard() {
   const [recentAlert, setRecentAlert] = useState<string | null>(null);
   const [systemOnline, setSystemOnline] = useState(false); // Default false until heartbeat
   const [telemetry, setTelemetry] = useState<any>(null);
+  const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
   const lastHeartbeat = useRef<number>(0);
 
   useEffect(() => {
@@ -66,6 +67,10 @@ export default function Dashboard() {
         setTelemetry(data);
     });
 
+    socket.on('cloud_sync_event', () => {
+        setLastSyncTime(new Date());
+    });
+
     return () => {
         clearInterval(interval);
         clearInterval(watchdog);
@@ -73,6 +78,7 @@ export default function Dashboard() {
         socket.off('violation_alert');
         socket.off('system_heartbeat');
         socket.off('system_telemetry');
+        socket.off('cloud_sync_event');
     };
   }, []);
 
@@ -102,10 +108,13 @@ export default function Dashboard() {
         <Card sx={{ height: '100%', bgcolor: 'background.paper' }}>
           <CardContent>
             <Typography color="text.secondary" gutterBottom>System Health</Typography>
-            <Box display="flex" alignItems="center" gap={1}>
+            <Box display="flex" alignItems="center" gap={1} mb={1}>
               <CheckCircleIcon color="success" fontSize="large" />
               <Typography variant="h4">{stats?.system_status || 'Unknown'}</Typography>
             </Box>
+            {lastSyncTime && (
+                 <Chip label={`Cloud Synced: ${lastSyncTime.toLocaleTimeString()}`} size="small" variant="outlined" color="info" />
+            )}
           </CardContent>
         </Card>
       </Grid>

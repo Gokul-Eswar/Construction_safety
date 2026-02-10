@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard';
 import StreamManager from './pages/StreamManager';
 import Settings from './pages/Settings';
 import ZoneEditorPage from './pages/ZoneEditorPage';
+import Logs from './pages/Logs';
 import { Typography, Box } from '@mui/material';
 
 // Placeholder pages
@@ -24,7 +25,7 @@ function App() {
       case 'dashboard': return <Dashboard />;
       case 'zones': return <ZoneEditorPage />;
       case 'streams': return <StreamManager />;
-      case 'logs': return <PlaceholderPage title="Violation Logs" />;
+      case 'logs': return <Logs />;
       case 'settings': return <Settings />;
       default: return <Dashboard />;
     }

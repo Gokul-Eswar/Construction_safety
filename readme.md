@@ -33,6 +33,14 @@ Sentinel detects personnel in hazardous areas using advanced computer vision and
 -   **📊 Modern Dashboard:** Dark-themed UI with real-time health metrics, violation logs, and camera management.
 -   **🐳 Dockerized Deployment:** "Write once, run anywhere" architecture for easy deployment on Edge devices (Jetson/x86).
 
+## ✨ Features 2.0 (New!)
+
+-   **☁️ Cloud Sync:** Automatic background synchronization of violation records to the cloud (via MQTT `safety/cloud_sync`).
+-   **🔄 Auto-Healing:** The system detects engine crashes or freezes and automatically restarts within seconds, ensuring 24/7 reliability.
+-   **📜 Historical Logs:** A dedicated "Violation Logs" page to browse, filter, and audit past safety incidents.
+-   **📡 Robust RTSP:** Exponential backoff reconnection strategy to handle unstable camera feeds gracefully.
+-   **🚀 Optimized Web:** Gzip compression and improved UI feedback for a snappier dashboard experience.
+
 ---
 
 ## 🖥️ Web Interface Guide
@@ -40,8 +48,13 @@ Sentinel detects personnel in hazardous areas using advanced computer vision and
 ### 1. Dashboard
 -   View the live **Tiled Feed** of all active cameras.
 -   Monitor system health (Online/Offline status) and today's violation statistics.
+-   **New:** View Cloud Sync status and real-time latency metrics.
 
-### 2. Cameras (Stream Manager)
+### 2. Violation Logs
+-   Browse a paginated history of all detected safety violations.
+-   View the synchronization status of each record (Uploaded/Pending).
+
+### 3. Cameras (Stream Manager)
 -   **Add Camera:** Click "Add Camera" and enter the RTSP URI (e.g., `rtsp://user:pass@ip:554/feed`).
 -   **Edit/Delete:** Manage your existing camera inventory.
 

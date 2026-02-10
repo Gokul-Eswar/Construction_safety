@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const compression = require('compression');
 const path = require('path');
 const http = require('http');
 const { Server } = require('socket.io');
@@ -11,6 +12,7 @@ const apiRoutes = require('./src/routes');
 const app = express();
 const PORT = 3001;
 
+app.use(compression());
 app.use(cors());
 app.use(express.json());
 

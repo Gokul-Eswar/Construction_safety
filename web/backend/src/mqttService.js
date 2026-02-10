@@ -38,6 +38,11 @@ const connect = () => {
         mqttClient.subscribe('safety/telemetry', (err) => {
             if (!err) console.log(`[MQTT] Subscribed to safety/telemetry`);
         });
+
+        // Subscribe to Cloud Sync
+        mqttClient.subscribe('safety/cloud_sync', (err) => {
+            if (!err) console.log(`[MQTT] Subscribed to safety/cloud_sync`);
+        });
     });
 
     mqttClient.on('message', (topic, message) => {
@@ -50,6 +55,8 @@ const connect = () => {
                 ioInstance.emit('system_heartbeat', payload);
             } else if (topic === 'safety/telemetry') {
                 ioInstance.emit('system_telemetry', payload);
+            } else if (topic === 'safety/cloud_sync') {
+                ioInstance.emit('cloud_sync_event', payload);
             } else {
                 // Default: Violation Alert
                 ioInstance.emit('violation_alert', payload);
