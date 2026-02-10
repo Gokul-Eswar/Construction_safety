@@ -308,6 +308,37 @@ void PipelineManager::updateTiledView() {
             last_telemetry = now_beat;
         }
 
+        // --- CLOUD SYNC (Every 10s) ---
+        static auto last_sync = std::chrono::steady_clock::now();
+        if (std::chrono::duration_cast<std::chrono::seconds>(now_beat - last_sync).count() >= 10) {
+            if (violation_logger_ && mqtt_client_ && mqtt_client_->isConnected()) {
+                auto pending = violation_logger_->get_pending_uploads(5);
+                if (!pending.empty()) {
+                    std::vector<int> uploaded_ids;
+                    json sync_payload;
+                    sync_payload["type"] = "cloud_sync";
+                    sync_payload["records"] = json::array();
+                    
+                    for (const auto& rec : pending) {
+                         sync_payload["records"].push_back({
+                             {"id", rec.id},
+                             {"timestamp", rec.timestamp},
+                             {"zone_id", rec.zone_id},
+                             {"confidence", rec.confidence},
+                             {"object_id", rec.object_id}
+                         });
+                         uploaded_ids.push_back(rec.id);
+                    }
+                    
+                    if (mqtt_client_->publish("safety/cloud_sync", sync_payload.dump())) {
+                        violation_logger_->mark_uploaded(uploaded_ids);
+                        std::cout << "Synced " << uploaded_ids.size() << " records to cloud." << std::endl;
+                    }
+                }
+            }
+            last_sync = now_beat;
+        }
+
         // Reduced sleep for higher visual FPS (10ms ~= 100 FPS target)
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }

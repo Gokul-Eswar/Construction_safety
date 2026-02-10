@@ -5,7 +5,17 @@
 #include <memory>
 #include <sqlite3.h>
 
+#include <vector>
+
 namespace safety {
+
+struct ViolationRecord {
+    int id;
+    std::string timestamp;
+    int zone_id;
+    float confidence;
+    int object_id;
+};
 
 class ViolationLogger {
 public:
@@ -37,6 +47,9 @@ public:
      * @param days Number of days to keep.
      */
     void cleanup_old_logs(int days = 30);
+    
+    std::vector<ViolationRecord> get_pending_uploads(int limit = 10);
+    void mark_uploaded(const std::vector<int>& ids);
 
 private:
     sqlite3* db_ = nullptr;

@@ -54,7 +54,17 @@ if not exist "%EXE_PATH%" set EXE_PATH=build\main_app.exe
 if exist "%EXE_PATH%" (
     echo [4/5] Starting Inference Engine...
     echo     Found at: %EXE_PATH%
-    start "Sentinel Engine" cmd /k "%EXE_PATH% config.json"
+    
+    :: Create a loop script for auto-restart
+    echo @echo off > run_engine_loop.bat
+    echo :loop >> run_engine_loop.bat
+    echo echo Starting Sentinel Engine... >> run_engine_loop.bat
+    echo "%EXE_PATH%" config.json >> run_engine_loop.bat
+    echo echo Engine exited. Restarting in 3s... >> run_engine_loop.bat
+    echo timeout /t 3 >> run_engine_loop.bat
+    echo goto loop >> run_engine_loop.bat
+
+    start "Sentinel Engine" cmd /k "run_engine_loop.bat"
 ) else (
     echo [WARNING] Engine executable not found!
     echo Running in Web-Only mode. Run build_engine.bat to build the C++ engine.

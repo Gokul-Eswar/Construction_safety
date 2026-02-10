@@ -156,6 +156,7 @@ GstFlowReturn RTSPSource::on_new_sample(GstElement* sink, gpointer user_data) {
         
         // Success means we are definitely connected
         self->should_reconnect_ = false;
+        self->reconnect_attempt_ = 0;
 
         LatencyLogger::getInstance().startTimer(self->id_ + "_e2e", self->frame_count_);
 
@@ -202,8 +203,14 @@ void RTSPSource::handleMessage(GstMessage* msg) {
 void RTSPSource::reconnectionLoop() {
     while (is_running_) {
         if (should_reconnect_) {
-            std::cout << "[" << id_ << "] Connection lost. Attempting to reconnect in 5s..." << std::endl;
-            std::this_thread::sleep_for(std::chrono::seconds(5));
+            // Exponential Backoff: 5s, 10s, 20s, 30s (max)
+            int delay_sec = 5 * (1 << reconnect_attempt_);
+            if (delay_sec > 30) delay_sec = 30;
+
+            std::cout << "[" << id_ << "] Connection lost (Attempt " << (reconnect_attempt_ + 1) 
+                      << "). Reconnecting in " << delay_sec << "s..." << std::endl;
+            std::this_thread::sleep_for(std::chrono::seconds(delay_sec));
+            reconnect_attempt_++;
             
             if (!is_running_) break; // Check if stopped during sleep
 

@@ -56,4 +56,6 @@ private:
     std::atomic<bool> should_reconnect_;
     std::thread reconnection_thread_;
     std::mutex pipeline_mutex_;
+    
+    int reconnect_attempt_ = 0;
 };
