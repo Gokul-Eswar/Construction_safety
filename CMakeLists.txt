@@ -148,14 +148,14 @@ endif()
 
 # Source Files
 set(COMMON_SOURCES
-    src/pipeline/rtsp_source.cpp
-    src/pipeline/pipeline_manager.cpp
-    src/inference/model_loader.cpp
-    src/inference/inference_engine.cpp
-    src/inference/trt_utils.cpp
-    src/spatial/spatial_mapper.cpp
-    src/tracking/kalman_box_tracker.cpp
-    src/tracking/sort_tracker.cpp
+    src/core/rtsp_source.cpp
+    src/core/pipeline_manager.cpp
+    src/core/model_loader.cpp
+    src/core/inference_engine.cpp
+    src/core/trt_utils.cpp
+    src/core/spatial_mapper.cpp
+    src/core/kalman_box_tracker.cpp
+    src/core/sort_tracker.cpp
     src/utils/visualizer.cpp
     src/utils/mqtt_client.cpp
     src/utils/config_loader.cpp
@@ -169,6 +169,7 @@ set(COMMON_SOURCES
 add_executable(main_app src/main.cpp ${COMMON_SOURCES})
 target_include_directories(main_app PRIVATE 
     src 
+    src/core
     ${pahomqttcpp_SOURCE_DIR}/src
     ${pahomqttc_SOURCE_DIR}/src
 )

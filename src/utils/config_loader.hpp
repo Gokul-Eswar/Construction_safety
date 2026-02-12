@@ -16,11 +16,17 @@ struct ZoneConfig {
     std::vector<cv::Point> points;
 };
 
+struct CalibrationPoint {
+    cv::Point2f image;
+    cv::Point2f world;
+};
+
 struct StreamConfig {
     std::string id;
     std::string name;
     std::string rtsp_uri;
     std::vector<ZoneConfig> zones;
+    std::vector<CalibrationPoint> calibration;
 };
 
 struct AppConfig {

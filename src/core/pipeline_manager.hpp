@@ -1,13 +1,13 @@
 #pragma once
 #include "rtsp_source.hpp"
-#include "inference/inference_engine.hpp"
-#include "spatial/spatial_mapper.hpp"
+#include "inference_engine.hpp"
+#include "spatial_mapper.hpp"
 #include "utils/visualizer.hpp"
 #include "utils/mqtt_client.hpp"
 #include "utils/config_loader.hpp"
 #include "utils/violation_logger.hpp"
 #include "utils/alert_throttler.hpp"
-#include "tracking/sort_tracker.hpp"
+#include "sort_tracker.hpp"
 #include "utils/mjpeg_streamer.hpp"
 #include <memory>
 #include <mutex>
@@ -21,6 +21,7 @@ struct StreamContext {
     std::string name;
     std::unique_ptr<RTSPSource> source;
     std::unique_ptr<SortTracker> tracker;
+    std::unique_ptr<SpatialMapper> spatial_mapper;
     std::vector<ZoneConfig> zones;
     cv::Mat last_processed_frame;
     std::mutex frame_mutex;
