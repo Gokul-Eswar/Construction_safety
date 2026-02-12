@@ -88,4 +88,4 @@ This document outlines specific scenarios where the system may encounter degrade
 | **Frame Lag** | LatencyLogger | Leaky Queue / Frame Drop | Implemented |
 | **ID Swap** | SORT IOU Analysis | Hungarian Assignment | Implemented |
 | **Camera Shake** | Visual Inspection | Digital Stabilization | Future |
-| **Database Lock** | SQLite Error Codes | WAL Journaling Mode | Planned |
+| **Database Lock** | SQLite Error Codes | WAL Journaling Mode | Implemented |

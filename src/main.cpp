@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <csignal>
 #include <atomic>
 #include "pipeline/pipeline_manager.hpp"
@@ -72,7 +73,21 @@ int main(int argc, char* argv[]) {
 
     spdlog::info("System is running. Press Ctrl+C to stop.");
 
+    auto last_heartbeat = std::chrono::steady_clock::now();
+
     while (keep_running) {
+        auto now = std::chrono::steady_clock::now();
+        if (std::chrono::duration_cast<std::chrono::seconds>(now - last_heartbeat).count() >= 5) {
+            std::ofstream heartbeat_file("heartbeat.json");
+            if (heartbeat_file.is_open()) {
+                auto sys_now = std::chrono::system_clock::now();
+                auto sys_time = std::chrono::system_clock::to_time_t(sys_now);
+                heartbeat_file << "{\"timestamp\": " << sys_time << ", \"status\": \"running\"}";
+                heartbeat_file.close();
+            }
+            last_heartbeat = now;
+        }
+
         g_usleep(100000); // 100ms
     }
 

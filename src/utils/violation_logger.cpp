@@ -25,11 +25,19 @@ bool ViolationLogger::init(const std::string& db_path) {
         return false;
     }
 
+    // Enable WAL mode
+    char* zErrMsg = 0;
+    sqlite3_exec(db_, "PRAGMA journal_mode=WAL;", 0, 0, &zErrMsg);
+    if (zErrMsg) {
+        std::cerr << "Failed to set WAL mode: " << zErrMsg << std::endl;
+        sqlite3_free(zErrMsg);
+        zErrMsg = 0; // Reset for next use
+    }
+
     if (!create_tables_if_not_exist()) return false;
     
     // Migration: Attempt to add uploaded column if it doesn't exist
     const char* alter_sql = "ALTER TABLE violations ADD COLUMN uploaded INTEGER DEFAULT 0;";
-    char* zErrMsg = 0;
     sqlite3_exec(db_, alter_sql, 0, 0, &zErrMsg);
     if (zErrMsg) sqlite3_free(zErrMsg); // Ignore error if column exists
 
