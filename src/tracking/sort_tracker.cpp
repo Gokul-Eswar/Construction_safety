@@ -2,8 +2,8 @@
 #include <algorithm>
 #include <set>
 
-SortTracker::SortTracker(int max_age, int min_hits, float iou_threshold)
-    : max_age_(max_age), min_hits_(min_hits), iou_threshold_(iou_threshold), next_id_(1) {
+SortTracker::SortTracker(int maxAge, int minHits, float iouThreshold)
+    : max_age_(maxAge), min_hits_(minHits), iou_threshold_(iouThreshold), next_id_(1) {
 }
 
 std::vector<Detection> SortTracker::update(const std::vector<Detection>& detections) {
@@ -23,7 +23,7 @@ std::vector<Detection> SortTracker::update(const std::vector<Detection>& detecti
 
     for (size_t i = 0; i < detections.size(); ++i) {
         for (size_t j = 0; j < trackers_.size(); ++j) {
-            float iou = calculate_iou(detections[i].box, predicted_boxes[j]);
+            float iou = calculateIou(detections[i].box, predicted_boxes[j]);
             if (iou >= iou_threshold_) {
                 matches.push_back({(int)i, (int)j, iou});
             }
@@ -54,19 +54,11 @@ std::vector<Detection> SortTracker::update(const std::vector<Detection>& detecti
     }
 
     // 4. Output results and remove dead trackers
-    std::vector<Detection> results;
     auto it = trackers_.begin();
     while (it != trackers_.end()) {
-        if ((*it)->get_time_since_update() < 1 && ((*it)->get_hit_streak() >= min_hits_ || next_id_ <= min_hits_ + 1)) {
-            // Find the detection that matched this tracker
-            // Since we updated them in step 2, we can just get current state
-            // But we need to return the class_id and confidence from the original detection
-            // For now, let's assume we want to return tracked boxes
-            
-            // To be accurate, we should find the original detection that matched.
-            // Simplified: we return detections with assigned IDs.
+        if ((*it)->getTimeSinceUpdate() < 1 && ((*it)->getHitStreak() >= min_hits_ || next_id_ <= min_hits_ + 1)) {
             it++;
-        } else if ((*it)->get_time_since_update() > max_age_) {
+        } else if ((*it)->getTimeSinceUpdate() > max_age_) {
             it = trackers_.erase(it);
         } else {
             it++;
@@ -78,19 +70,14 @@ std::vector<Detection> SortTracker::update(const std::vector<Detection>& detecti
     // Reset IDs
     for(auto& d : tracked_detections) d.track_id = -1;
 
-    // Use the used_det/used_trk sets to assign IDs back to detections
-    // We need to re-run the matching logic or store the result.
-    // Let's re-store the result in step 2.
-    
-    // (Refactored step 2 above would be better, but let's just do a final match check)
     for (size_t i = 0; i < tracked_detections.size(); ++i) {
         float max_iou = -1.0f;
         int best_id = -1;
         for (const auto& trk : trackers_) {
-            float iou = calculate_iou(tracked_detections[i].box, trk->get_state());
+            float iou = calculateIou(tracked_detections[i].box, trk->getState());
             if (iou > iou_threshold_ && iou > max_iou) {
                 max_iou = iou;
-                best_id = trk->get_id();
+                best_id = trk->getId();
             }
         }
         tracked_detections[i].track_id = best_id;
@@ -99,9 +86,9 @@ std::vector<Detection> SortTracker::update(const std::vector<Detection>& detecti
     return tracked_detections;
 }
 
-float SortTracker::calculate_iou(cv::Rect2f bb_test, cv::Rect2f bb_gt) {
-    float in = (bb_test & bb_gt).area();
-    float un = bb_test.area() + bb_gt.area() - in;
+float SortTracker::calculateIou(cv::Rect2f bbTest, cv::Rect2f bbGt) const {
+    float in = (bbTest & bbGt).area();
+    float un = bbTest.area() + bbGt.area() - in;
     if (un <= 0) return 0;
     return in / un;
 }

@@ -11,3 +11,12 @@ __pycache__/
 .idea/
 
 *.db
+
+yolo11n.onnx
+clang_tidy_report.txt
+
+node_modules/
+dist/
+
+tools/build_temp/
+tools/dist/

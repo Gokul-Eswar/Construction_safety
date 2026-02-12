@@ -10,15 +10,15 @@ public:
     ModelLoader(const std::string& model_path);
     ~ModelLoader();
 
-    bool load();
-    bool saveEngine(const std::string& engine_path);
-    bool isLoaded() const;
+    [[nodiscard]] bool load();
+    [[nodiscard]] bool saveEngine(const std::string& engine_path);
+    [[nodiscard]] bool isLoaded() const;
 
     // Get the OpenCV DNN Net object (for fallback/CPU)
-    cv::dnn::Net& getNet() { return net_; }
+    [[nodiscard]] cv::dnn::Net& getNet() { return net_; }
 
 #ifdef ENABLE_TENSORRT
-    nvinfer1::ICudaEngine* getEngine() { return engine_.get(); }
+    [[nodiscard]] nvinfer1::ICudaEngine* getEngine() { return engine_.get(); }
 #endif
 
 private:

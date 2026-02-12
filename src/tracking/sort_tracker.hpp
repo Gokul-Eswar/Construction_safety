@@ -6,7 +6,7 @@
 
 class SortTracker {
 public:
-    SortTracker(int max_age = 15, int min_hits = 3, float iou_threshold = 0.3f);
+    SortTracker(int maxAge = 15, int minHits = 3, float iouThreshold = 0.3f);
     ~SortTracker() = default;
 
     /**
@@ -24,5 +24,5 @@ private:
 
     std::vector<std::unique_ptr<KalmanBoxTracker>> trackers_;
 
-    float calculate_iou(cv::Rect2f bb_test, cv::Rect2f bb_gt);
+    [[nodiscard]] float calculateIou(cv::Rect2f bbTest, cv::Rect2f bbGt) const;
 };

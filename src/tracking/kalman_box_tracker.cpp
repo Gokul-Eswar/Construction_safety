@@ -1,6 +1,6 @@
 #include "kalman_box_tracker.hpp"
 
-KalmanBoxTracker::KalmanBoxTracker(cv::Rect2f initial_rect, int id) 
+KalmanBoxTracker::KalmanBoxTracker(cv::Rect2f initialRect, int id) 
     : id_(id), time_since_update_(0), hit_streak_(0), age_(0) {
     
     // State: [x, y, s, r, dx, dy, ds]
@@ -34,7 +34,7 @@ KalmanBoxTracker::KalmanBoxTracker(cv::Rect2f initial_rect, int id)
     setIdentity(kf_.errorCovPost, cv::Scalar::all(1));
 
     // Initialize state
-    cv::Mat state = rect_to_state(initial_rect);
+    cv::Mat state = rectToState(initialRect);
     kf_.statePost.at<float>(0) = state.at<float>(0);
     kf_.statePost.at<float>(1) = state.at<float>(1);
     kf_.statePost.at<float>(2) = state.at<float>(2);
@@ -46,21 +46,21 @@ cv::Rect2f KalmanBoxTracker::predict() {
     age_++;
     if (time_since_update_ > 0) hit_streak_ = 0;
     time_since_update_++;
-    return state_to_rect(p);
+    return stateToRect(p);
 }
 
 void KalmanBoxTracker::update(cv::Rect2f rect) {
     time_since_update_ = 0;
     hit_streak_++;
-    cv::Mat measurement = rect_to_state(rect);
+    cv::Mat measurement = rectToState(rect);
     kf_.correct(measurement);
 }
 
-cv::Rect2f KalmanBoxTracker::get_state() const {
-    return state_to_rect(kf_.statePost);
+cv::Rect2f KalmanBoxTracker::getState() const {
+    return stateToRect(kf_.statePost);
 }
 
-cv::Mat KalmanBoxTracker::rect_to_state(cv::Rect2f rect) {
+cv::Mat KalmanBoxTracker::rectToState(cv::Rect2f rect) {
     float w = rect.width;
     float h = rect.height;
     float x = rect.x + w / 2.0f;
@@ -70,7 +70,7 @@ cv::Mat KalmanBoxTracker::rect_to_state(cv::Rect2f rect) {
     return (cv::Mat_<float>(4, 1) << x, y, s, r);
 }
 
-cv::Rect2f KalmanBoxTracker::state_to_rect(cv::Mat state) const {
+cv::Rect2f KalmanBoxTracker::stateToRect(cv::Mat state) const {
     float x = state.at<float>(0);
     float y = state.at<float>(1);
     float s = state.at<float>(2);

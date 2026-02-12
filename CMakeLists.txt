@@ -143,7 +143,7 @@ if(TARGET paho-mqttpp3-static AND TARGET paho-mqtt3a-static)
 endif()
 
 if(WIN32)
-    target_link_libraries(paho-mqttpp3 PRIVATE ws2_32 rpcrt4 crypt32)
+    target_link_libraries(paho-mqttpp3-static PRIVATE ws2_32 rpcrt4 crypt32)
 endif()
 
 # Source Files

@@ -1,5 +1,5 @@
 ---
-Checks: '-*,bugprone-*,modernize-*,performance-*,readability-redundant-*,readability-identifier-naming,-modernize-use-scoped-lock,-clang-diagnostic-*'
+Checks: '-*,bugprone-*,modernize-*,-modernize-use-trailing-return-type,performance-*,readability-redundant-*,readability-identifier-naming,-modernize-use-scoped-lock,-clang-diagnostic-*'
 CheckOptions:
   - key:             readability-identifier-naming.VariableCase
     value:           lower_case
