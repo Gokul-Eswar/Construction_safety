@@ -80,8 +80,11 @@ If you wish to develop or modify the source code without Docker:
 -   OpenCV 4.x
 -   CUDA Toolkit & TensorRT (Optional, for GPU acceleration)
 -   Node.js 18+ (For Web UI)
+-   **Windows Only:** Visual Studio Build Tools (C++ Desktop Development workload) - Required for `cl.exe`.
 
 ### Building the Engine (C++)
+> **Note:** On Windows, ensure you run these commands from the "x64 Native Tools Command Prompt for VS 20xx" or ensure `cl.exe` is in your system PATH.
+
 ```bash
 mkdir build && cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release

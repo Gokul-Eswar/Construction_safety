@@ -79,7 +79,18 @@ This document outlines specific scenarios where the system may encounter degrade
 
 ---
 
-## 5. Summary Table for Journal Reference
+## 6. Build & Deployment Edge Cases
+
+### 6.1 Native Build Failure (Windows)
+- **Scenario:** Running `build_engine.bat` fails with "cl is not recognized as an internal or external command".
+- **Impact:** Developer cannot compile the C++ engine from source without Docker.
+- **Mitigation:**
+    - **Documentation:** Explicitly require Visual Studio C++ Build Tools in `readme.md`.
+    - **Scripting:** The Docker build (`start_system.bat`) isolates the build environment, bypassing the need for local toolchains.
+
+---
+
+## 7. Summary Table for Journal Reference
 
 | Edge Case | Detection Method | Mitigation Logic | Status |
 | :--- | :--- | :--- | :--- |

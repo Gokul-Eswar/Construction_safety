@@ -85,6 +85,10 @@ Sentinel can send alerts to external systems (e.g., sirens, mobile apps) via MQT
 *   **Topic:** `safety/alerts`
 *   **Payload Format:** JSON (includes camera ID, zone name, and timestamp).
 
+### 5.3 System Resilience
+*   **Auto-Healing:** The system continuously monitors the AI engine. If a crash or freeze occurs (e.g., due to a GPU driver timeout), the watchdog service will automatically restart the engine within seconds to ensure continuous surveillance.
+*   **Robust RTSP:** If a camera feed disconnects, the system employs an exponential backoff strategy to reconnect, preventing network floods while ensuring the feed is restored as soon as possible.
+
 ---
 
 ## 6. Troubleshooting

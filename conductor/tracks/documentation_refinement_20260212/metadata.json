@@ -1,0 +1,9 @@
+{
+  "id": "documentation_refinement_20260212",
+  "name": "Documentation Refinement",
+  "description": "Refine documentation to include Features 2.0 details and native build warnings.",
+  "status": "completed",
+  "owner": "Gemini",
+  "created_at": "2026-02-12",
+  "milestone": "Production Readiness"
+}
