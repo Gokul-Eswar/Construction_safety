@@ -210,8 +210,18 @@ add_executable(unit_tests
     tests/unit/utils/test_violation_logger.cpp
     tests/unit/utils/test_alert_throttler.cpp
     tests/unit/tracking/test_sort_tracker.cpp
+    tests/unit/tracking/test_kalman.cpp
+    tests/unit/pipeline/test_pipeline_integration.cpp
     ${COMMON_SOURCES}
 )
+
+# Rigorous Testing Flags
+if(MSVC)
+    target_compile_options(unit_tests PRIVATE /W4 /WX)
+else()
+    target_compile_options(unit_tests PRIVATE -Wall -Wextra -Werror)
+endif()
+
 target_include_directories(unit_tests PRIVATE 
     src 
     ${pahomqttcpp_SOURCE_DIR}/src
