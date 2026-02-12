@@ -1,8 +1,8 @@
 #include <iostream>
 #include <csignal>
 #include <atomic>
-#include "core/pipeline_manager.hpp"
-#include "core/model_loader.hpp"
+#include "pipeline/pipeline_manager.hpp"
+#include "inference/model_loader.hpp"
 #include "utils/config_loader.hpp"
 #include "utils/logger.hpp"
 
