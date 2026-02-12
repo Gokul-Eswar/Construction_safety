@@ -7,15 +7,6 @@ import StreamManager from './pages/StreamManager';
 import Settings from './pages/Settings';
 import ZoneEditorPage from './pages/ZoneEditorPage';
 import Logs from './pages/Logs';
-import { Typography, Box } from '@mui/material';
-
-// Placeholder pages
-const PlaceholderPage = ({ title }: { title: string }) => (
-  <Box p={3} textAlign="center">
-    <Typography variant="h4" color="text.secondary">{title}</Typography>
-    <Typography>This feature is under development.</Typography>
-  </Box>
-);
 
 function App() {
   const [currentTab, setCurrentTab] = useState('dashboard');

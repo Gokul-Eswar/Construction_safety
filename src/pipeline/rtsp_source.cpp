@@ -171,6 +171,7 @@ GstFlowReturn RTSPSource::on_new_sample(GstElement* sink, gpointer user_data) {
 }
 
 gboolean RTSPSource::on_bus_message(GstBus* bus, GstMessage* msg, gpointer data) {
+    (void)bus;
     RTSPSource* self = static_cast<RTSPSource*>(data);
     self->handleMessage(msg);
     return TRUE; // Keep watching

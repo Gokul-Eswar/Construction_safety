@@ -244,6 +244,7 @@ bool ModelLoader::saveEngine(const std::string& engine_path) {
     return true;
 #else
     // If TRT is not enabled, we can't save a TRT engine.
+    (void)engine_path;
     std::cerr << "Cannot save TensorRT engine: TRT disabled." << std::endl;
     return false;
 #endif

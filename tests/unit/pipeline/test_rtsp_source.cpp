@@ -45,6 +45,7 @@ TEST(RTSPSourceTest, FrameCallback) {
     int frame_count = 0;
     
     source.setFrameCallback([&frame_count](GstSample* sample) {
+        (void)sample;
         frame_count++;
     });
     

@@ -44,6 +44,7 @@ bool PipelineManager::init() {
         if (mqtt_client_->connect(config_.mqtt.host, config_.mqtt.port)) {
             // Subscribe to control topic
             mqtt_client_->subscribe("safety/control", [this](const std::string& topic, const std::string& payload) {
+                 (void)topic;
                  if (payload.find("restart") != std::string::npos) {
                      std::cout << "Received restart command via MQTT. Initiating shutdown..." << std::endl;
                      std::raise(SIGTERM);

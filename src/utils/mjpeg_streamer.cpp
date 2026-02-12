@@ -2,7 +2,9 @@
 #include <iostream>
 
 #ifdef _WIN32
+#ifdef _MSC_VER
 #pragma comment(lib, "ws2_32.lib")
+#endif
 #endif
 
 MJPEGStreamer::MJPEGStreamer() : port_(0), running_(false), server_socket_(INVALID_SOCKET), frame_sequence_(0) {

@@ -2,6 +2,12 @@ cmake_minimum_required(VERSION 3.18)
 set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
 project(ConstructionSafetyInference LANGUAGES CXX)
 
+if(WIN32)
+    # Aggressively force system libraries to the end of the link command for MinGW/GCC
+    set(CMAKE_CXX_LINK_EXECUTABLE "<CMAKE_CXX_COMPILER> <FLAGS> <CMAKE_CXX_LINK_FLAGS> <LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES> -lws2_32 -lrpcrt4 -lcrypt32")
+    link_libraries(ws2_32 rpcrt4 crypt32)
+endif()
+
 # Industry Standard Static Analysis Setup
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_VERBOSE_MAKEFILE ON)
@@ -117,11 +123,10 @@ set(PAHO_ENABLE_TESTING OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(PahoMqttC)
 
 set(PahoMqttC_FOUND TRUE CACHE BOOL "" FORCE)
-if(WIN32)
-    set(PAHO_MQTT_C_LIBRARIES ${pahomqttc_BINARY_DIR}/src/libpaho-mqtt3a.dll.a CACHE STRING "" FORCE)
+if(MSVC)
+    set(PAHO_MQTT_C_LIBRARIES ${pahomqttc_BINARY_DIR}/src/paho-mqtt3a-static.lib CACHE STRING "" FORCE)
 else()
-    # Link against the file path to avoid "No rule to make target" errors for the target name
-    set(PAHO_MQTT_C_LIBRARIES ${pahomqttc_BINARY_DIR}/src/libpaho-mqtt3a.a CACHE STRING "" FORCE)
+    set(PAHO_MQTT_C_LIBRARIES ${pahomqttc_BINARY_DIR}/src/libpaho-mqtt3a-static.a CACHE STRING "" FORCE)
 endif()
 set(PAHO_MQTT_C_INCLUDE_DIRS ${pahomqttc_SOURCE_DIR}/src CACHE STRING "" FORCE)
 
@@ -140,10 +145,6 @@ FetchContent_MakeAvailable(PahoMqttCpp)
 # Crucial Fix: Ensure C++ lib waits for C lib to build
 if(TARGET paho-mqttpp3-static AND TARGET paho-mqtt3a-static)
     add_dependencies(paho-mqttpp3-static paho-mqtt3a-static)
-endif()
-
-if(WIN32)
-    target_link_libraries(paho-mqttpp3-static PRIVATE ws2_32 rpcrt4 crypt32)
 endif()
 
 # Source Files
@@ -188,11 +189,8 @@ target_link_libraries(main_app PRIVATE
     paho-mqttpp3-static
     SQLite::SQLite3
     ${TENSORRT_LIBS}
-    ${CUDA_CUDART_LIBRARY} # Required for cudaMalloc, cudaStreamCreate, etc.
+    ${CUDA_CUDART_LIBRARY}
 )
-if(WIN32)
-    target_link_libraries(main_app PRIVATE ws2_32)
-endif()
 if(GST_FOUND OR GSTREAMER_FOUND)
      target_include_directories(main_app PRIVATE ${GST_INCLUDE_DIRS})
 endif()
@@ -219,11 +217,15 @@ add_executable(unit_tests
 if(MSVC)
     target_compile_options(unit_tests PRIVATE /W4 /WX)
 else()
-    target_compile_options(unit_tests PRIVATE -Wall -Wextra -Werror)
+    target_compile_options(unit_tests PRIVATE -Wall -Wextra -Werror -Wno-error=unused-parameter -Wno-error=unknown-pragmas)
 endif()
 
 target_include_directories(unit_tests PRIVATE 
     src 
+    src/inference
+    src/pipeline
+    src/spatial
+    src/tracking
     ${pahomqttcpp_SOURCE_DIR}/src
     ${pahomqttc_SOURCE_DIR}/src
 )
@@ -240,11 +242,8 @@ target_link_libraries(unit_tests PRIVATE
     paho-mqttpp3-static
     SQLite::SQLite3
     ${TENSORRT_LIBS}
-    ${CUDA_CUDART_LIBRARY} # Required for cudaMalloc, cudaStreamCreate, etc.
+    ${CUDA_CUDART_LIBRARY}
 )
-if(WIN32)
-    target_link_libraries(unit_tests PRIVATE ws2_32)
-endif()
 if(GST_FOUND OR GSTREAMER_FOUND)
      target_include_directories(unit_tests PRIVATE ${GST_INCLUDE_DIRS})
 endif()
