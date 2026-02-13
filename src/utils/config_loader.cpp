@@ -62,6 +62,18 @@ AppConfig ConfigLoader::load(const std::string& path) {
                         stream.zones.push_back(zone);
                     }
                 }
+
+                if (s.contains("calibration")) {
+                    for (const auto& c : s["calibration"]) {
+                        if (c.contains("image") && c.contains("world")) {
+                            CalibrationPoint cp;
+                            cp.image = cv::Point2f(c["image"][0], c["image"][1]);
+                            cp.world = cv::Point2f(c["world"][0], c["world"][1]);
+                            stream.calibration.push_back(cp);
+                        }
+                    }
+                }
+
                 config.streams.push_back(stream);
             }
         }
@@ -102,6 +114,15 @@ bool ConfigLoader::save(const std::string& path, const AppConfig& config) {
             }
             stream_json["zones"].push_back(zone_json);
         }
+
+        stream_json["calibration"] = json::array();
+        for (const auto& c : s.calibration) {
+            json cal_json;
+            cal_json["image"] = {c.image.x, c.image.y};
+            cal_json["world"] = {c.world.x, c.world.y};
+            stream_json["calibration"].push_back(cal_json);
+        }
+
         j["streams"].push_back(stream_json);
     }
 

@@ -11,6 +11,7 @@ import EditLocationIcon from '@mui/icons-material/EditLocation';
 import SettingsIcon from '@mui/icons-material/Settings';
 import HistoryIcon from '@mui/icons-material/History';
 import WarningIcon from '@mui/icons-material/Warning';
+import StraightenIcon from '@mui/icons-material/Straighten';
 
 const drawerWidth = 240;
 
@@ -31,6 +32,7 @@ export default function Layout({ children, currentTab, onTabChange }: LayoutProp
     { id: 'dashboard', text: 'Dashboard', icon: <DashboardIcon /> },
     { id: 'streams', text: 'Cameras', icon: <VideocamIcon /> },
     { id: 'zones', text: 'Safety Zones', icon: <EditLocationIcon /> },
+    { id: 'calibration', text: 'Calibration', icon: <StraightenIcon /> },
     { id: 'logs', text: 'Violation Logs', icon: <HistoryIcon /> },
     { id: 'settings', text: 'System Settings', icon: <SettingsIcon /> },
   ];

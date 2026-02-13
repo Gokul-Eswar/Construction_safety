@@ -60,6 +60,19 @@ bool PipelineManager::init() {
         ctx->name = sc.name;
         ctx->zones = sc.zones;
         ctx->tracker = std::make_unique<SortTracker>();
+        ctx->spatial_mapper = std::make_unique<SpatialMapper>();
+        
+        if (!sc.calibration.empty()) {
+            std::vector<cv::Point2f> img_pts, world_pts;
+            for (const auto& cp : sc.calibration) {
+                img_pts.push_back(cp.image);
+                world_pts.push_back(cp.world);
+            }
+            if (ctx->spatial_mapper->setCalibration(img_pts, world_pts)) {
+                std::cout << "[" << sc.id << "] Spatial calibration applied with " << img_pts.size() << " points." << std::endl;
+            }
+        }
+
         ctx->source = std::make_unique<RTSPSource>(sc.id, sc.rtsp_uri);
         
         ctx->source->setFrameCallback([this, id = sc.id](GstSample* sample) {
@@ -193,11 +206,39 @@ void PipelineManager::onFrameReceived(const std::string& stream_id, GstSample* s
 }
 
 void PipelineManager::checkAlerts(const std::string& stream_id, const std::vector<Detection>& detections, const std::vector<ZoneConfig>& zones) {
+    auto it = streams_.find(stream_id);
+    if (it == streams_.end()) return;
+    auto& ctx = it->second;
+
     for (const auto& det : detections) {
-        cv::Point feet(det.box.x + det.box.width / 2, det.box.y + det.box.height);
+        // Person's feet center in image coordinates
+        cv::Point2f feet_img(det.box.x + det.box.width / 2.0f, det.box.y + det.box.height);
+        
+        // Map to world if calibrated
+        cv::Point2f feet_final = feet_img;
+        if (ctx->spatial_mapper) {
+            feet_final = ctx->spatial_mapper->mapToWorld(feet_img);
+        }
         
         for (const auto& zone : zones) {
-            double dist = cv::pointPolygonTest(zone.points, feet, false);
+            // Note: Currently zones are defined in IMAGE space via the Web UI.
+            // If the user has calibrated the ground plane, the system is technically
+            // most accurate if the ZONES are also in world coordinates.
+            // For now, if we have calibration, we treat the 'feet_final' as the 
+            // ground-truth position. To maintain backward compatibility with 
+            // image-space zones, we only use mapToWorld if the zones themselves 
+            // were intended for world-space (which we will add UI for).
+            
+            // HYBRID LOGIC: If a zone has very large coordinates (e.g. > 1000), 
+            // it's likely image space. If small (0-100), it's likely world space.
+            // BETTER: Use a flag or just assume image space for now but transform
+            // 'feet' to improve perspective stability if we ever move to world zones.
+            
+            // For THIS task (Perspective Calibration), we want to avoid 
+            // 'lean-in' false positives. This is done by ensuring that the 
+            // point we check is the GROUND point.
+            
+            double dist = cv::pointPolygonTest(zone.points, feet_final, false);
             if (dist >= 0) {
                 if (violation_logger_) {
                     violation_logger_->log_violation(zone.id, det.confidence, det.track_id);

@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard';
 import StreamManager from './pages/StreamManager';
 import Settings from './pages/Settings';
 import ZoneEditorPage from './pages/ZoneEditorPage';
+import CalibrationPage from './pages/CalibrationPage';
 import Logs from './pages/Logs';
 
 function App() {
@@ -15,6 +16,7 @@ function App() {
     switch (currentTab) {
       case 'dashboard': return <Dashboard />;
       case 'zones': return <ZoneEditorPage />;
+      case 'calibration': return <CalibrationPage />;
       case 'streams': return <StreamManager />;
       case 'logs': return <Logs />;
       case 'settings': return <Settings />;
