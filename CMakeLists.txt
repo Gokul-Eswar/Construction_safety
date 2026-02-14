@@ -210,6 +210,7 @@ add_executable(unit_tests
     tests/unit/tracking/test_sort_tracker.cpp
     tests/unit/tracking/test_kalman.cpp
     tests/unit/pipeline/test_pipeline_integration.cpp
+    tests/unit/utils/test_resilience.cpp
     ${COMMON_SOURCES}
 )
 

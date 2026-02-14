@@ -118,7 +118,41 @@ node server.js
 
 
 
+## 🧪 Rigorous Testing
+
+
+
+Sentinel includes a comprehensive suite of rigorous tests designed for industrial stability:
+
+
+
+- **STRESS TEST:** Verifies multi-stream stability by running 4+ simultaneous feeds to monitor GPU memory drift and thread contention.
+
+- **RESILIENCE TEST:** Simulates network failures (RTSP drops) and verifies the exponential backoff reconnection strategy.
+
+- **GEOMETRIC ACCURACY:** Validates the "Bottom-Center Point" logic to ensure alerts are triggered only by feet-on-ground contact, preventing false positives from leaning personnel.
+
+- **CI INTEGRATION:** All core components are verified via **Googletest** (C++) and **Pytest** (System E2E).
+
+
+
+To run tests:
+
+```bash
+
+./run_tests.bat
+
+```
+
+
+
+---
+
+
+
 ## 📚 References
+
+
 
 
 
