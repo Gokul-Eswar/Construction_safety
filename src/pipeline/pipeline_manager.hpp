@@ -3,7 +3,7 @@
 #include "inference_engine.hpp"
 #include "spatial_mapper.hpp"
 #include "utils/visualizer.hpp"
-#include "utils/mqtt_client.hpp"
+// #include "utils/mqtt_client.hpp"  // Temporarily disabled
 #include "utils/config_loader.hpp"
 #include "utils/violation_logger.hpp"
 #include "utils/alert_throttler.hpp"
@@ -37,9 +37,11 @@ public:
     void start();
     void stop();
 
+protected:
+    void checkAlerts(const std::string& stream_id, const std::vector<Detection>& detections, const std::vector<ZoneConfig>& zones);
+
 private:
     void onFrameReceived(const std::string& stream_id, GstSample* sample);
-    void checkAlerts(const std::string& stream_id, const std::vector<Detection>& detections, const std::vector<ZoneConfig>& zones);
     void updateTiledView();
 
     AppConfig config_;
@@ -48,7 +50,7 @@ private:
     
     std::unique_ptr<InferenceEngine> engine_;
     std::unique_ptr<Visualizer> visualizer_;
-    std::unique_ptr<MQTTClient> mqtt_client_;
+    // std::unique_ptr<MQTTClient> mqtt_client_;  // Temporarily disabled
     std::unique_ptr<safety::ViolationLogger> violation_logger_;
     std::unique_ptr<safety::AlertThrottler> alert_throttler_;
     std::unique_ptr<MJPEGStreamer> streamer_;

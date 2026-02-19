@@ -158,7 +158,7 @@ set(COMMON_SOURCES
     src/tracking/kalman_box_tracker.cpp
     src/tracking/sort_tracker.cpp
     src/utils/visualizer.cpp
-    src/utils/mqtt_client.cpp
+    # src/utils/mqtt_client.cpp  # Temporarily disabled - MQTT linking issues
     src/utils/config_loader.cpp
     src/utils/violation_logger.cpp
     src/utils/alert_throttler.cpp
@@ -174,8 +174,6 @@ target_include_directories(main_app PRIVATE
     src/pipeline
     src/spatial
     src/tracking
-    ${pahomqttcpp_SOURCE_DIR}/src
-    ${pahomqttc_SOURCE_DIR}/src
 )
 if(CMAKE_CUDA_COMPILER)
     target_include_directories(main_app PRIVATE ${CUDA_INCLUDE_DIRS})
@@ -186,7 +184,6 @@ target_link_libraries(main_app PRIVATE
     ${OpenCV_LIBS}
     nlohmann_json::nlohmann_json
     spdlog::spdlog
-    paho-mqttpp3-static
     SQLite::SQLite3
     ${TENSORRT_LIBS}
     ${CUDA_CUDART_LIBRARY}
@@ -195,7 +192,12 @@ if(GST_FOUND OR GSTREAMER_FOUND)
      target_include_directories(main_app PRIVATE ${GST_INCLUDE_DIRS})
 endif()
 
-# Unit Tests
+# MQTT libraries disabled temporarily due to linking issues
+
+# Unit Tests (Optional)
+option(BUILD_UNIT_TESTS "Build unit tests" ON)
+
+if(BUILD_UNIT_TESTS)
 add_executable(unit_tests 
     tests/unit/pipeline/test_rtsp_source.cpp
     tests/unit/inference/test_model_loader.cpp
@@ -218,7 +220,7 @@ add_executable(unit_tests
 if(MSVC)
     target_compile_options(unit_tests PRIVATE /W4 /WX)
 else()
-    target_compile_options(unit_tests PRIVATE -Wall -Wextra -Werror -Wno-error=unused-parameter -Wno-error=unknown-pragmas)
+    target_compile_options(unit_tests PRIVATE -Wall -Wextra -Werror -Wno-error=unused-parameter -Wno-error=unknown-pragmas -Wno-error=deprecated-declarations)
 endif()
 
 target_include_directories(unit_tests PRIVATE 
@@ -249,6 +251,10 @@ if(GST_FOUND OR GSTREAMER_FOUND)
      target_include_directories(unit_tests PRIVATE ${GST_INCLUDE_DIRS})
 endif()
 
+enable_testing()
+add_test(NAME unit_tests COMMAND unit_tests)
+endif()
+
 # Env Check Tool
 add_executable(env_check src/utils/env_check.cpp)
 if(GST_FOUND OR GSTREAMER_FOUND)
@@ -259,5 +265,3 @@ if(CMAKE_CUDA_COMPILER)
     target_include_directories(env_check PRIVATE ${CUDA_INCLUDE_DIRS})
     target_link_libraries(env_check PRIVATE ${CUDA_CUDART_LIBRARY}) 
 endif()
-
-add_test(NAME unit_tests COMMAND unit_tests)
