@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { 
     Box, Typography, Button, Table, TableBody, TableCell, 
     TableContainer, TableHead, TableRow, Paper, IconButton, 
-    Dialog, DialogTitle, DialogContent, DialogActions, TextField, Chip 
+    Dialog, DialogTitle, DialogContent, DialogActions, TextField, Chip,
+    Select, MenuItem, FormControl, InputLabel
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
@@ -12,7 +13,8 @@ import axios from 'axios';
 interface Stream {
     id: string;
     name: string;
-    rtsp_uri: string;
+    type: string;
+    uri: string;
     zones?: any[];
 }
 
@@ -24,6 +26,7 @@ export default function StreamManager() {
     // Form State
     const [formId, setFormId] = useState('');
     const [formName, setFormName] = useState('');
+    const [formType, setFormType] = useState('rtsp');
     const [formUri, setFormUri] = useState('');
 
     useEffect(() => {
@@ -34,7 +37,15 @@ export default function StreamManager() {
         try {
             const res = await axios.get('/api/config');
             if (res.data.streams) {
-                setStreams(res.data.streams);
+                // Ensure backward compatibility when fetching
+                const normalizedStreams = res.data.streams.map((s: any) => ({
+                    id: s.id || '',
+                    name: s.name || '',
+                    type: s.type || (s.rtsp_uri === 'test' ? 'test' : 'rtsp'),
+                    uri: s.uri || s.rtsp_uri || '',
+                    zones: s.zones || []
+                }));
+                setStreams(normalizedStreams);
             }
         } catch (err) {
             console.error(err);
@@ -45,11 +56,12 @@ export default function StreamManager() {
         const newStream: Stream = {
             id: formId,
             name: formName,
-            rtsp_uri: formUri,
+            type: formType,
+            uri: formUri,
             zones: [] // Default empty zones for new stream
         };
 
-        let updatedStreams;
+        let updatedStreams: Stream[];
         if (editingId) {
             // Update existing
             updatedStreams = streams.map(s => {
@@ -93,7 +105,8 @@ export default function StreamManager() {
     const handleEdit = (stream: Stream) => {
         setFormId(stream.id);
         setFormName(stream.name);
-        setFormUri(stream.rtsp_uri);
+        setFormType(stream.type);
+        setFormUri(stream.uri);
         setEditingId(stream.id);
         setOpen(true);
     };
@@ -106,6 +119,7 @@ export default function StreamManager() {
     const resetForm = () => {
         setFormId('');
         setFormName('');
+        setFormType('rtsp');
         setFormUri('');
         setEditingId(null);
     };
@@ -125,7 +139,8 @@ export default function StreamManager() {
                         <TableRow>
                             <TableCell>ID</TableCell>
                             <TableCell>Name</TableCell>
-                            <TableCell>RTSP URI</TableCell>
+                            <TableCell>Type</TableCell>
+                            <TableCell>URI / Device</TableCell>
                             <TableCell>Zones</TableCell>
                             <TableCell align="right">Actions</TableCell>
                         </TableRow>
@@ -135,7 +150,14 @@ export default function StreamManager() {
                             <TableRow key={stream.id}>
                                 <TableCell>{stream.id}</TableCell>
                                 <TableCell>{stream.name}</TableCell>
-                                <TableCell sx={{ fontFamily: 'monospace' }}>{stream.rtsp_uri}</TableCell>
+                                <TableCell>
+                                    <Chip 
+                                        label={stream.type.toUpperCase()} 
+                                        size="small" 
+                                        color={stream.type === 'usb' ? 'primary' : (stream.type === 'test' ? 'secondary' : 'default')}
+                                    />
+                                </TableCell>
+                                <TableCell sx={{ fontFamily: 'monospace' }}>{stream.uri}</TableCell>
                                 <TableCell>
                                     <Chip label={stream.zones?.length || 0} size="small" />
                                 </TableCell>
@@ -151,7 +173,7 @@ export default function StreamManager() {
                         ))}
                         {streams.length === 0 && (
                             <TableRow>
-                                <TableCell colSpan={5} align="center">
+                                <TableCell colSpan={6} align="center">
                                     No cameras configured. Add one to get started.
                                 </TableCell>
                             </TableRow>
@@ -160,33 +182,50 @@ export default function StreamManager() {
                 </Table>
             </TableContainer>
 
-            <Dialog open={open} onClose={() => setOpen(false)}>
+            <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
                 <DialogTitle>{editingId ? 'Edit Camera' : 'Add New Camera'}</DialogTitle>
                 <DialogContent>
-                    <TextField
-                        autoFocus
-                        margin="dense"
-                        label="Stream ID (Unique)"
-                        fullWidth
-                        value={formId}
-                        onChange={(e) => setFormId(e.target.value)}
-                        disabled={!!editingId} // Cannot change ID once created
-                    />
-                    <TextField
-                        margin="dense"
-                        label="Friendly Name"
-                        fullWidth
-                        value={formName}
-                        onChange={(e) => setFormName(e.target.value)}
-                    />
-                    <TextField
-                        margin="dense"
-                        label="RTSP URI"
-                        fullWidth
-                        value={formUri}
-                        onChange={(e) => setFormUri(e.target.value)}
-                        helperText="e.g. rtsp://192.168.1.100:554/live"
-                    />
+                    <Box mt={1}>
+                        <TextField
+                            margin="dense"
+                            label="Stream ID (Unique)"
+                            fullWidth
+                            value={formId}
+                            onChange={(e) => setFormId(e.target.value)}
+                            disabled={!!editingId}
+                        />
+                        <TextField
+                            margin="dense"
+                            label="Friendly Name"
+                            fullWidth
+                            value={formName}
+                            onChange={(e) => setFormName(e.target.value)}
+                        />
+                        
+                        <FormControl fullWidth margin="dense">
+                            <InputLabel id="type-label">Camera Type</InputLabel>
+                            <Select
+                                labelId="type-label"
+                                value={formType}
+                                label="Camera Type"
+                                onChange={(e) => setFormType(e.target.value)}
+                            >
+                                <MenuItem value="rtsp">RTSP (Network IP Camera)</MenuItem>
+                                <MenuItem value="usb">Wired / USB Camera</MenuItem>
+                                <MenuItem value="test">Test Source (Simulation)</MenuItem>
+                            </Select>
+                        </FormControl>
+
+                        <TextField
+                            margin="dense"
+                            label={formType === 'usb' ? "Device Index or Path" : (formType === 'test' ? "Source Mode" : "RTSP URI")}
+                            fullWidth
+                            value={formUri}
+                            onChange={(e) => setFormUri(e.target.value)}
+                            placeholder={formType === 'usb' ? "e.g. 0 or /dev/video0" : (formType === 'test' ? "test" : "rtsp://...")}
+                            helperText={formType === 'usb' ? "Wired cameras usually start from index 0" : ""}
+                        />
+                    </Box>
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setOpen(false)}>Cancel</Button>

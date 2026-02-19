@@ -15,7 +15,8 @@ TEST(PipelineManagerTest, InitializationFailsWithInvalidModel) {
     AppConfig config;
     StreamConfig sc;
     sc.id = "cam1";
-    sc.rtsp_uri = "test";
+    sc.uri = "test";
+    sc.type = "test";
     config.streams.push_back(sc);
     
     config.model_path = dummy_model;

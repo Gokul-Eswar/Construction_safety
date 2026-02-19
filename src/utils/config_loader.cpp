@@ -45,7 +45,22 @@ AppConfig ConfigLoader::load(const std::string& path) {
                 StreamConfig stream;
                 if (s.contains("id")) stream.id = s["id"];
                 if (s.contains("name")) stream.name = s["name"];
-                if (s.contains("rtsp_uri")) stream.rtsp_uri = s["rtsp_uri"];
+                
+                // Unified URI handling
+                if (s.contains("uri")) {
+                    stream.uri = s["uri"];
+                } else if (s.contains("rtsp_uri")) {
+                    stream.uri = s["rtsp_uri"];
+                }
+
+                if (s.contains("type")) {
+                    stream.type = s["type"];
+                } else {
+                    // Inference type from uri
+                    if (stream.uri == "test") stream.type = "test";
+                    else if (stream.uri.find("rtsp://") == 0) stream.type = "rtsp";
+                    else if (stream.uri.find("/dev/video") == 0 || (stream.uri.length() > 0 && std::isdigit(stream.uri[0]))) stream.type = "usb";
+                }
                 
                 if (s.contains("zones")) {
                     for (const auto& z : s["zones"]) {
@@ -102,7 +117,8 @@ bool ConfigLoader::save(const std::string& path, const AppConfig& config) {
         json stream_json;
         stream_json["id"] = s.id;
         stream_json["name"] = s.name;
-        stream_json["rtsp_uri"] = s.rtsp_uri;
+        stream_json["type"] = s.type;
+        stream_json["uri"] = s.uri;
         stream_json["zones"] = json::array();
         for (const auto& z : s.zones) {
             json zone_json;

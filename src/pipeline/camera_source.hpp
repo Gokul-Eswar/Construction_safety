@@ -15,12 +15,12 @@ struct SourceStats {
     bool is_running;
 };
 
-class RTSPSource {
+class CameraSource {
 public:
     using FrameCallback = std::function<void(GstSample*)>;
 
-    RTSPSource(const std::string& id, const std::string& uri);
-    ~RTSPSource();
+    CameraSource(const std::string& id, const std::string& type, const std::string& uri);
+    ~CameraSource();
 
     bool start();
     void stop();
@@ -37,6 +37,7 @@ private:
     void reconnectionLoop();
 
     std::string id_;
+    std::string type_;
     std::string uri_;
     GstElement* pipeline_;
     GstBus* bus_;

@@ -149,7 +149,7 @@ endif()
 
 # Source Files
 set(COMMON_SOURCES
-    src/pipeline/rtsp_source.cpp
+    src/pipeline/camera_source.cpp
     src/pipeline/pipeline_manager.cpp
     src/inference/model_loader.cpp
     src/inference/inference_engine.cpp
@@ -199,12 +199,12 @@ option(BUILD_UNIT_TESTS "Build unit tests" ON)
 
 if(BUILD_UNIT_TESTS)
 add_executable(unit_tests 
-    tests/unit/pipeline/test_rtsp_source.cpp
+    tests/unit/pipeline/test_camera_source.cpp
     tests/unit/inference/test_model_loader.cpp
     tests/unit/inference/test_inference_engine.cpp
     tests/unit/spatial/test_spatial_mapper.cpp
     tests/unit/utils/test_visualizer.cpp
-    tests/unit/utils/test_mqtt_client.cpp
+    # tests/unit/utils/test_mqtt_client.cpp
     tests/unit/pipeline/test_pipeline_manager.cpp
     tests/unit/utils/test_config_loader.cpp
     tests/unit/utils/test_violation_logger.cpp

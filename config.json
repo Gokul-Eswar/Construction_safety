@@ -3,7 +3,8 @@
         {
             "id": "cam_01",
             "name": "Simulation Feed",
-            "rtsp_uri": "test",
+            "type": "test",
+            "uri": "test",
             "zones": [
                 {
                     "id": 1,
@@ -30,9 +31,10 @@
             ]
         },
         {
-            "id": "",
-            "name": "",
-            "rtsp_uri": "",
+            "id": "cam_usb",
+            "name": "Wired Camera",
+            "type": "usb",
+            "uri": "0",
             "zones": []
         }
     ],

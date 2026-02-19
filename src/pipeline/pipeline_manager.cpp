@@ -74,7 +74,7 @@ bool PipelineManager::init() {
             }
         }
 
-        ctx->source = std::make_unique<RTSPSource>(sc.id, sc.rtsp_uri);
+        ctx->source = std::make_unique<CameraSource>(sc.id, sc.type, sc.uri);
         
         ctx->source->setFrameCallback([this, id = sc.id](GstSample* sample) {
             this->onFrameReceived(id, sample);

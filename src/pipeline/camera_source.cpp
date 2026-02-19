@@ -1,31 +1,51 @@
-#include "rtsp_source.hpp"
+#include "camera_source.hpp"
 #include <iostream>
 #include <gst/app/gstappsink.h>
 #include "../utils/latency_logger.hpp"
 
-RTSPSource::RTSPSource(const std::string& id, const std::string& uri) 
-    : id_(id), uri_(uri), pipeline_(nullptr), bus_(nullptr), bus_watch_id_(0),
+CameraSource::CameraSource(const std::string& id, const std::string& type, const std::string& uri) 
+    : id_(id), type_(type), uri_(uri), pipeline_(nullptr), bus_(nullptr), bus_watch_id_(0),
       frame_callback_(nullptr), frame_count_(0), current_fps_(0.0),
       is_running_(false), should_reconnect_(false) {
 }
 
-RTSPSource::~RTSPSource() {
+CameraSource::~CameraSource() {
     stop();
 }
 
-std::string RTSPSource::getPipelineString() const {
-    if (uri_ == "test") {
+std::string CameraSource::getPipelineString() const {
+    if (type_ == "test") {
         return "videotestsrc ! video/x-raw,format=I420,width=1280,height=720,framerate=30/1 ! appsink name=mysink emit-signals=true max-buffers=1 drop=true";
     }
 
-    // High-performance industrial pipeline
-    // We use a flexible string that can be tuned for NVIDIA hardware
-    std::string pipeline;
-    
-    // Check if we are in a Docker environment with NVIDIA support (common for this project)
     const char* use_nv = std::getenv("USE_NVIDIA_HW");
     bool nvidia_hw = (use_nv && std::string(use_nv) == "1");
 
+    if (type_ == "usb") {
+        // Wired Camera (USB)
+        std::string src_element;
+#ifdef _WIN32
+        src_element = "ksvideosrc";
+#else
+        src_element = "v4l2src";
+#endif
+        std::string device_prop = (uri_.length() > 0 && std::isdigit(uri_[0])) ? "device-index=" : "device=";
+        
+        if (nvidia_hw) {
+            return src_element + " " + device_prop + uri_ + " ! "
+                   "videoconvert ! video/x-raw,format=BGR ! "
+                   "queue max-size-buffers=1 leaky=2 ! "
+                   "appsink name=mysink emit-signals=true max-buffers=1 drop=true";
+        } else {
+             return src_element + " " + device_prop + uri_ + " ! "
+                   "videoconvert ! video/x-raw,format=BGR ! "
+                   "queue max-size-buffers=1 leaky=2 ! "
+                   "appsink name=mysink emit-signals=true max-buffers=1 drop=true";
+        }
+    }
+
+    // Default: RTSP High-performance industrial pipeline
+    std::string pipeline;
     if (nvidia_hw) {
         // Ultra-Low Latency Settings (latency=0)
         pipeline = "rtspsrc location=" + uri_ + " latency=0 drop-on-latency=true ! "
@@ -44,11 +64,11 @@ std::string RTSPSource::getPipelineString() const {
     return pipeline;
 }
 
-void RTSPSource::setFrameCallback(FrameCallback callback) {
+void CameraSource::setFrameCallback(FrameCallback callback) {
     frame_callback_ = callback;
 }
 
-bool RTSPSource::start() {
+bool CameraSource::start() {
     if (is_running_) return true;
 
     // First attempt to start pipeline
@@ -93,12 +113,12 @@ bool RTSPSource::start() {
     should_reconnect_ = false;
 
     // Start background monitor thread
-    reconnection_thread_ = std::thread(&RTSPSource::reconnectionLoop, this);
+    reconnection_thread_ = std::thread(&CameraSource::reconnectionLoop, this);
     
     return true;
 }
 
-void RTSPSource::stop() {
+void CameraSource::stop() {
     is_running_ = false;
     
     if (reconnection_thread_.joinable()) {
@@ -124,14 +144,14 @@ void RTSPSource::stop() {
     }
 }
 
-SourceStats RTSPSource::getStats() const {
-    const_cast<RTSPSource*>(this)->updateStats();
+SourceStats CameraSource::getStats() const {
+    const_cast<CameraSource*>(this)->updateStats();
     // Active if running AND not currently waiting to reconnect
     bool is_active = is_running_ && !should_reconnect_;
     return {frame_count_.load(), current_fps_, is_active, is_running_};
 }
 
-void RTSPSource::updateStats() {
+void CameraSource::updateStats() {
     auto now = std::chrono::steady_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - last_fps_check_time_).count();
     
@@ -145,8 +165,8 @@ void RTSPSource::updateStats() {
     }
 }
 
-GstFlowReturn RTSPSource::on_new_sample(GstElement* sink, gpointer user_data) {
-    RTSPSource* self = static_cast<RTSPSource*>(user_data);
+GstFlowReturn CameraSource::on_new_sample(GstElement* sink, gpointer user_data) {
+    CameraSource* self = static_cast<CameraSource*>(user_data);
     
     GstSample* sample = nullptr;
     g_signal_emit_by_name(sink, "pull-sample", &sample);
@@ -170,14 +190,14 @@ GstFlowReturn RTSPSource::on_new_sample(GstElement* sink, gpointer user_data) {
     return GST_FLOW_ERROR;
 }
 
-gboolean RTSPSource::on_bus_message(GstBus* bus, GstMessage* msg, gpointer data) {
+gboolean CameraSource::on_bus_message(GstBus* bus, GstMessage* msg, gpointer data) {
     (void)bus;
-    RTSPSource* self = static_cast<RTSPSource*>(data);
+    CameraSource* self = static_cast<CameraSource*>(data);
     self->handleMessage(msg);
     return TRUE; // Keep watching
 }
 
-void RTSPSource::handleMessage(GstMessage* msg) {
+void CameraSource::handleMessage(GstMessage* msg) {
     switch (GST_MESSAGE_TYPE(msg)) {
         case GST_MESSAGE_ERROR: {
             GError *err;
@@ -201,7 +221,7 @@ void RTSPSource::handleMessage(GstMessage* msg) {
     }
 }
 
-void RTSPSource::reconnectionLoop() {
+void CameraSource::reconnectionLoop() {
     while (is_running_) {
         if (should_reconnect_) {
             // Exponential Backoff: 5s, 10s, 20s, 30s (max)

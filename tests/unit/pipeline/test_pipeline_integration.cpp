@@ -13,7 +13,7 @@ TEST(PipelineIntegrationTest, EndToEndFlow) {
     // 1. Setup Config
     AppConfig config;
     config.streams.push_back({
-        "test_cam_1", "Test Camera", "test", // "test" triggers videotestsrc
+        "test_cam_1", "Test Camera", "test", "test", // "test" triggers videotestsrc
         {{1, "Danger Zone", {{0,0}, {100,0}, {100,100}, {0,100}}}},
         {}
     });
@@ -31,7 +31,7 @@ TEST(PipelineIntegrationTest, EndToEndFlow) {
 TEST(PipelineIntegrationTest, ManagerLifecycle) {
     AppConfig config;
     config.streams.push_back({
-        "test_cam_lifecycle", "Lifecycle Cam", "test", {}, {}
+        "test_cam_lifecycle", "Lifecycle Cam", "test", "test", {}, {}
     });
     
     PipelineManager manager(config);
@@ -40,8 +40,8 @@ TEST(PipelineIntegrationTest, ManagerLifecycle) {
 TEST(PipelineIntegrationTest, ConfigValidation) {
     AppConfig config;
     // Add a duplicate stream ID to see if it handles it rigorousy
-    config.streams.push_back({"cam1", "Cam 1", "test", {}, {}});
-    config.streams.push_back({"cam1", "Cam 1 (Dup)", "test", {}, {}}); // Duplicate ID
+    config.streams.push_back({"cam1", "Cam 1", "test", "test", {}, {}});
+    config.streams.push_back({"cam1", "Cam 1 (Dup)", "test", "test", {}, {}}); // Duplicate ID
 
     PipelineManager manager(config);
     

@@ -1,5 +1,5 @@
 #pragma once
-#include "rtsp_source.hpp"
+#include "camera_source.hpp"
 #include "inference_engine.hpp"
 #include "spatial_mapper.hpp"
 #include "utils/visualizer.hpp"
@@ -19,7 +19,7 @@
 struct StreamContext {
     std::string id;
     std::string name;
-    std::unique_ptr<RTSPSource> source;
+    std::unique_ptr<CameraSource> source;
     std::unique_ptr<SortTracker> tracker;
     std::unique_ptr<SpatialMapper> spatial_mapper;
     std::vector<ZoneConfig> zones;

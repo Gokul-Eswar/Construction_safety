@@ -24,7 +24,8 @@ struct CalibrationPoint {
 struct StreamConfig {
     std::string id;
     std::string name;
-    std::string rtsp_uri;
+    std::string type = "rtsp"; // Default to rtsp
+    std::string uri; // Renamed from rtsp_uri for generality
     std::vector<ZoneConfig> zones;
     std::vector<CalibrationPoint> calibration;
 };
