@@ -1,106 +1,95 @@
-# Sentinel Safety System: User Manual
+# 🏗️ Construction Safety System: User Manual
+**Version 2.1 (2026 Update)**
 
-**Version:** 1.0.0  
-**Last Updated:** February 3, 2026
-
----
-
-## 1. Introduction
-The **Sentinel Safety System** is an AI-powered surveillance platform designed to monitor industrial and construction sites. It uses high-performance computer vision (TensorRT) to detect personnel entering restricted "Danger Zones" and provides real-time alerts to supervisors.
+Welcome to the Construction Safety System. This manual will guide you through setting up and operating the AI-powered safety monitoring system. No technical background is required.
 
 ---
 
-## 2. System Prerequisites
-To run the system with full performance, ensure your environment meets the following requirements:
-*   **Operating System:** Windows 10/11 or Ubuntu 20.04/22.04.
-*   **Hardware:** NVIDIA GPU (GTX 10-series or newer) with at least 4GB VRAM.
-*   **Software:**
-    *   [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Required for primary deployment).
-    *   NVIDIA Container Toolkit (Installed automatically with Docker Desktop on Windows).
-    *   NVIDIA Drivers (Version 525+ recommended).
+## 1. System Overview
+This system uses Artificial Intelligence (AI) to monitor construction sites in real-time. It detects workers and sends alerts if they enter restricted "Danger Zones."
+
+**Key Features:**
+*   **Wired & Wireless Support:** Works with standard USB cameras and professional Network (RTSP) cameras.
+*   **Smart Detection:** Only tracks people. Birds, vehicles, and moving machinery are automatically ignored.
+*   **Danger Zones:** Customizable areas that trigger alerts when stepped into.
+*   **Automatic Recording:** Logs every safety violation with a timestamp for later review.
 
 ---
 
-## 3. Getting Started
+## 2. Quick Start Guide (The "One-Click" Start)
 
-### 3.1 Installation
-1.  Download or clone the project repository to your local machine.
-2.  Ensure Docker Desktop is running.
+To start the system, follow these three steps:
 
-### 3.2 Launching the System
-*   **Windows:** Double-click `start_system.bat`.
-*   **Linux/macOS:** Run `bash start_system.sh` in the terminal.
-
-The system will automatically:
-1.  Start an MQTT broker for internal communication.
-2.  Build and launch the AI Inference Engine.
-3.  Start the Web Dashboard.
-4.  Open your default browser to `http://localhost:3001`.
-
-### 3.3 Stopping the System
-*   **Windows:** Double-click `stop_system.bat`.
-*   **Linux/macOS:** Run `bash stop_system.sh`.
+1.  **Plug in your cameras:** Ensure your USB cameras or network cameras are connected.
+2.  **Run the System:** Double-click the file named `start_system.bat` in the main folder.
+3.  **Open the Dashboard:** Open your web browser (Chrome or Edge) and type:
+    `http://localhost:3000`
 
 ---
 
-## 4. Web Dashboard Navigation
+## 3. Managing Your Cameras
 
-The dashboard is accessible at `http://localhost:3001` and is divided into four main sections:
+You can now add both professional network cameras and simple wired USB cameras.
 
-### 4.1 Home / Live Feed
-*   **Tiled View:** Displays up to 4 active camera feeds simultaneously.
-*   **System Health:** Real-time status indicators (Online/Offline) for the core AI engine.
-*   **Cloud Sync Status:** Indicates if local violation records are successfully synchronizing with the cloud backend.
-*   **Violation Counter:** Displays the total number of safety breaches detected in the last 24 hours.
-
-### 4.2 Camera Management
-1.  Navigate to the **Cameras** tab.
-2.  **Add Camera:** Click the "+" button, enter a friendly name (e.g., "Crane Area") and the RTSP URI of your camera.
-3.  **Authentication:** If your camera requires a login, use the format: `rtsp://username:password@ip_address:554/path`.
-
-### 4.3 Safety Zone Editor
-1.  Navigate to the **Zones** tab.
-2.  Select a camera feed from the dropdown menu.
-3.  **Drawing:** Click on the video frame to place points. Connecting 3 or more points creates a polygonal "Danger Zone."
-4.  **Editing:** Drag existing points to adjust the zone boundaries.
-5.  **Save:** Click **"Save Changes"** to push the configuration to the AI engine instantly.
-
-### 4.4 Violation Logs
-*   View a searchable table of all recent safety incidents.
-*   Each log entry includes the **Timestamp**, **Camera ID**, **Zone Name**, **Detection Confidence**, and **Cloud Sync Status**.
+### How to add a camera:
+1.  On the Dashboard, click on **"Camera Management"** in the sidebar.
+2.  Click the **"Add Camera"** button.
+3.  **Fill in the details:**
+    *   **Friendly Name:** Give it a name (e.g., "Main Entrance" or "Crane Area").
+    *   **Camera Type:** 
+        *   Choose **RTSP** for professional network cameras.
+        *   Choose **USB/Wired** for cameras plugged directly into the computer.
+    *   **URI / Device:**
+        *   For **RTSP**, enter the address (e.g., `rtsp://admin:password@192.168.1.50`).
+        *   For **USB**, simply enter `0` for the first camera, `1` for the second, etc.
+4.  Click **Save**. The system will automatically start the new feed.
 
 ---
 
-## 5. Advanced Settings
+## 4. Setting Up Danger Zones
 
-### 5.1 Configuration File (`config.json`)
-The system's core parameters are stored in the root `config.json`. Key settings include:
-*   `alert_cooldown`: The time (in milliseconds) to wait before sending a repeat alert for the same person (default: 5000ms).
-*   `inference_interval`: Number of frames to skip between AI passes (lower is more accurate but heavier on the GPU).
-*   `stream_port`: The network port used for the MJPEG video stream (default: 8081).
+A "Danger Zone" is a virtual fence. If a worker's feet cross this line, the system sounds an alarm.
 
-### 5.2 MQTT Integration
-Sentinel can send alerts to external systems (e.g., sirens, mobile apps) via MQTT.
-*   **Default Broker:** `localhost:1883`
-*   **Topic:** `safety/alerts`
-*   **Payload Format:** JSON (includes camera ID, zone name, and timestamp).
-
-### 5.3 System Resilience
-*   **Auto-Healing:** The system continuously monitors the AI engine. If a crash or freeze occurs (e.g., due to a GPU driver timeout), the watchdog service will automatically restart the engine within seconds to ensure continuous surveillance.
-*   **Robust RTSP:** If a camera feed disconnects, the system employs an exponential backoff strategy to reconnect, preventing network floods while ensuring the feed is restored as soon as possible.
+1.  Go to the **"Zone Editor"** page.
+2.  Select the camera feed you want to draw on.
+3.  Click on the video image to place "dots." Connect the dots to create a shape around the restricted area.
+4.  Give the zone a name (e.g., "Deep Pit Area").
+5.  Click **"Save Zone."**
 
 ---
 
-## 6. Troubleshooting
+## 5. Understanding the AI (Edge Case Handling)
 
-| Issue | Potential Cause | Solution |
-| :--- | :--- | :--- |
-| Dashboard shows "Offline" | Engine container failed to start | Check Docker logs using `docker logs safety-engine`. |
-| No Video Feed | Incorrect RTSP URI | Verify the camera URI in a media player like VLC. |
-| Slow Detection | Low GPU Resources | Ensure `NVIDIA` is selected as the Docker runtime in settings. |
-| Logs are empty | Database Permission | Ensure `safety_violations.db` is writable by the Docker container. |
+The system is designed to be highly "smart" to avoid annoying false alarms:
+
+*   **The "Bird" Problem:** If a bird flies across the camera, the AI identifies it as a bird and **does not** trigger an alert. It only looks for the "Person" shape.
+*   **The "Leaning" Problem:** If a worker stands *outside* a zone but leans their head *into* it, the system **will not** alert. It only checks the "Footprint"—where the person is actually standing on the ground.
+*   **Night Mode:** The system works in low light, but for best results, ensure your cameras have "Infrared (IR) Night Vision" enabled.
 
 ---
 
-## 7. Support
-For technical issues or feature requests, please contact the site administrator or refer to the [Development Journal](journal.md).
+## 6. Reviewing Safety Logs
+
+To see past violations:
+1.  Click on **"Safety Logs"** in the Dashboard.
+2.  You will see a list of every time someone entered a danger zone.
+3.  Each entry shows:
+    *   Which camera caught it.
+    *   Which zone was violated.
+    *   The exact time and date.
+
+---
+
+## 7. Troubleshooting
+
+| Issue | Solution |
+| :--- | :--- |
+| **Black Screen** | Ensure the camera is plugged in. For USB cameras, try changing the "Device Index" from `0` to `1`. |
+| **Too many alerts** | Increase the "Alert Cooldown" in the **Settings** page so the system doesn't beep every second for the same person. |
+| **System is slow** | Close other heavy programs on the computer. The AI requires significant "brainpower" (CPU/GPU) to run. |
+| **Can't open Dashboard** | Ensure you ran `start_system.bat` first and that it didn't show any red error messages. |
+
+---
+
+## 8. Safety Disclaimer
+*This system is a safety **assistant** and should not be the only method of ensuring worker safety. Always follow standard site safety protocols and use human spotters where necessary.*
