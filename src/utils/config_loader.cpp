@@ -22,6 +22,7 @@ AppConfig ConfigLoader::load(const std::string& path) {
         if (j.contains("model_path")) config.model_path = j["model_path"];
         if (j.contains("database_path")) config.database_path = j["database_path"];
         if (j.contains("alert_cooldown")) config.alert_cooldown = j["alert_cooldown"];
+        if (j.contains("log_retention_days")) config.log_retention_days = j["log_retention_days"];
         if (j.contains("inference_interval")) config.inference_interval = j["inference_interval"];
         if (j.contains("stream_port")) config.stream_port = j["stream_port"];
         
@@ -104,6 +105,7 @@ bool ConfigLoader::save(const std::string& path, const AppConfig& config) {
     j["model_path"] = config.model_path;
     j["database_path"] = config.database_path;
     j["alert_cooldown"] = config.alert_cooldown;
+    j["log_retention_days"] = config.log_retention_days;
     j["inference_interval"] = config.inference_interval;
     j["stream_port"] = config.stream_port;
     

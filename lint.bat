@@ -1,7 +1,17 @@
 @echo off
 setlocal enabledelayedexpansion
 
-echo Generating compilation database...
+echo ==========================================
+echo   SENTINEL SAFETY - STATIC ANALYSIS
+echo ==========================================
+echo.
+
+if not exist build (
+    echo [1/2] Creating build directory...
+    mkdir build
+)
+
+echo [1/2] Generating compilation database...
 cmake -B build -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON . > NUL 2>&1
 
 if not exist build\compile_commands.json (
@@ -9,7 +19,7 @@ if not exist build\compile_commands.json (
     exit /b 1
 )
 
-echo Running Static Analysis (Clang-Tidy)...
+echo [2/2] Running Static Analysis (Clang-Tidy)...
 
 :: Define MSYS2 System Include Paths (Hardcoded for stability)
 set "INCLUDES="
@@ -27,14 +37,24 @@ set "INCLUDES=!INCLUDES! --extra-arg=-D__GNUC__=15 --extra-arg=-D__GNUC_MINOR__=
 :: Suppress MSYS2/GCC specific header errors
 set "INCLUDES=!INCLUDES! --extra-arg=-Wno-unknown-pragmas --extra-arg=-Wno-unused-command-line-argument"
 
-:: Analyze only project source files
+:: Analyze only project source files from the src directory
 set "SOURCE_FILES="
-for /r src %%f in (*.cpp) do (
+for /f "delims=" %%f in ('dir /s /b src\*.cpp') do (
     set "SOURCE_FILES=!SOURCE_FILES! "%%f""
+)
+
+if "!SOURCE_FILES!"=="" (
+    echo No source files found to analyze.
+    exit /b 0
 )
 
 :: Run clang-tidy
 :: --header-filter: Only analyze files in the src directory to avoid noise from dependencies in build/_deps
 clang-tidy -p build !SOURCE_FILES! --extra-arg=--driver-mode=g++ !INCLUDES! --header-filter="^.*/src/.*$" > clang_tidy_report.txt 2>&1
 
-echo Analysis Complete. Results saved to clang_tidy_report.txt.
+echo.
+echo ==========================================
+echo   Analysis Complete. 
+echo   Results saved to: clang_tidy_report.txt
+echo ==========================================
+echo.

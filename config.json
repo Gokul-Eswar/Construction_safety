@@ -41,6 +41,7 @@
     "model_path": "yolo11n.onnx",
     "database_path": "safety_violations.db",
     "alert_cooldown": 3000,
+    "log_retention_days": 30,
     "inference_interval": 1,
     "stream_port": 8081,
     "auth": {

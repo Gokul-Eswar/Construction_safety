@@ -26,7 +26,7 @@ bool PipelineManager::init() {
 
     // 2. Init Shared Utilities
     violation_logger_ = std::make_unique<safety::ViolationLogger>();
-    if (!violation_logger_->init(config_.database_path)) {
+    if (!violation_logger_->init(config_.database_path, config_.log_retention_days)) {
         std::cerr << "Failed to initialize violation logger." << std::endl;
         return false;
     }

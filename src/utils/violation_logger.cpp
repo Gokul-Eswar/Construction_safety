@@ -15,7 +15,7 @@ ViolationLogger::~ViolationLogger() {
     }
 }
 
-bool ViolationLogger::init(const std::string& db_path) {
+bool ViolationLogger::init(const std::string& db_path, int retention_days) {
     std::lock_guard<std::mutex> lock(db_mutex_);
     db_path_ = db_path;
 
@@ -42,7 +42,7 @@ bool ViolationLogger::init(const std::string& db_path) {
     if (zErrMsg) sqlite3_free(zErrMsg); // Ignore error if column exists
 
     // Cleanup old logs
-    cleanup_old_logs(30);
+    cleanup_old_logs(retention_days);
     return true;
 }
 

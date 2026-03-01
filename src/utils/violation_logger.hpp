@@ -29,9 +29,10 @@ public:
     /**
      * @brief Initialize the logger with the database path.
      * @param db_path Path to the SQLite database file.
+     * @param retention_days Number of days to keep logs.
      * @return true if successful, false otherwise.
      */
-    bool init(const std::string& db_path);
+    bool init(const std::string& db_path, int retention_days = 30);
 
     /**
      * @brief Log a violation event to the database.
