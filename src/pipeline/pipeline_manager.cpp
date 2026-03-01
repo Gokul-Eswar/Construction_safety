@@ -39,20 +39,20 @@ bool PipelineManager::init() {
     streamer_ = std::make_unique<MJPEGStreamer>();
     streamer_->start(config_.stream_port);
 
-    // MQTT connectivity temporarily disabled
-    // if (!config_.mqtt.host.empty()) {
-    //     mqtt_client_ = std::make_unique<MQTTClient>(config_.mqtt.client_id);
-    //     if (mqtt_client_->connect(config_.mqtt.host, config_.mqtt.port)) {
-    //         // Subscribe to control topic
-    //         mqtt_client_->subscribe("safety/control", [this](const std::string& topic, const std::string& payload) {
-    //              (void)topic;
-    //              if (payload.find("restart") != std::string::npos) {
-    //                  std::cout << "Received restart command via MQTT. Initiating shutdown..." << std::endl;
-    //                  std::raise(SIGTERM);
-    //              }
-    //         });
-    //     }
-    // }
+    // MQTT Connectivity
+    if (!config_.mqtt.host.empty()) {
+        mqtt_client_ = std::make_unique<MQTTClient>(config_.mqtt.client_id);
+        if (mqtt_client_->connect(config_.mqtt.host, config_.mqtt.port)) {
+            // Subscribe to control topic
+            mqtt_client_->subscribe("safety/control", [this](const std::string& topic, const std::string& payload) {
+                 (void)topic;
+                 if (payload.find("restart") != std::string::npos) {
+                     std::cout << "Received restart command via MQTT. Initiating shutdown..." << std::endl;
+                     std::raise(SIGTERM);
+                 }
+            });
+        }
+    }
 
     // 3. Init Streams
     for (const auto& sc : config_.streams) {
@@ -105,10 +105,10 @@ void PipelineManager::stop() {
     for (auto& pair : streams_) {
         pair.second->source->stop();
     }
-    // MQTT disconnect temporarily disabled
-    // if (mqtt_client_) {
-    //     mqtt_client_->disconnect();
-    // }
+
+    if (mqtt_client_) {
+        mqtt_client_->disconnect();
+    }
     std::cout << "All pipelines stopped." << std::endl;
 }
 
@@ -223,23 +223,6 @@ void PipelineManager::checkAlerts(const std::string& stream_id, const std::vecto
         }
         
         for (const auto& zone : zones) {
-            // Note: Currently zones are defined in IMAGE space via the Web UI.
-            // If the user has calibrated the ground plane, the system is technically
-            // most accurate if the ZONES are also in world coordinates.
-            // For now, if we have calibration, we treat the 'feet_final' as the 
-            // ground-truth position. To maintain backward compatibility with 
-            // image-space zones, we only use mapToWorld if the zones themselves 
-            // were intended for world-space (which we will add UI for).
-            
-            // HYBRID LOGIC: If a zone has very large coordinates (e.g. > 1000), 
-            // it's likely image space. If small (0-100), it's likely world space.
-            // BETTER: Use a flag or just assume image space for now but transform
-            // 'feet' to improve perspective stability if we ever move to world zones.
-            
-            // For THIS task (Perspective Calibration), we want to avoid 
-            // 'lean-in' false positives. This is done by ensuring that the 
-            // point we check is the GROUND point.
-            
             double dist = cv::pointPolygonTest(zone.points, feet_final, false);
             if (dist >= 0) {
                 if (violation_logger_) {
@@ -247,13 +230,12 @@ void PipelineManager::checkAlerts(const std::string& stream_id, const std::vecto
                 }
 
                 if (alert_throttler_ && alert_throttler_->should_alert(zone.id, det.track_id)) {
-                    // MQTT publish temporarily disabled
-                    // if (mqtt_client_ && mqtt_client_->isConnected()) {
-                    //     std::string alert = "{\"alert\": \"zone_violation\", \"stream_id\": \"" + stream_id + 
-                    //                     "\", \"zone_name\": \"" + zone.name + 
-                    //                     "\", \"track_id\": " + std::to_string(det.track_id) + "}";
-                    //     mqtt_client_->publish(config_.mqtt.topic, alert);
-                    // }
+                    if (mqtt_client_ && mqtt_client_->isConnected()) {
+                        std::string alert = "{\"alert\": \"zone_violation\", \"stream_id\": \"" + stream_id + 
+                                        "\", \"zone_name\": \"" + zone.name + 
+                                        "\", \"track_id\": " + std::to_string(det.track_id) + "}";
+                        mqtt_client_->publish(config_.mqtt.topic, alert);
+                    }
                 }
             }
         }
@@ -309,83 +291,80 @@ void PipelineManager::updateTiledView() {
         }
 
         // --- HEARTBEAT ---
-        // MQTT heartbeat temporarily disabled
-        // static auto last_beat_time = std::chrono::steady_clock::now();
-        // auto now_beat_time = std::chrono::steady_clock::now();
-        // if (std::chrono::duration_cast<std::chrono::seconds>(now_beat_time - last_beat_time).count() >= 2) {
-        //     if (mqtt_client_ && mqtt_client_->isConnected()) {
-        //         std::string beat = "{\"status\":\"online\", "
-        //                            "\"timestamp\":" + std::to_string(std::time(nullptr)) + "}";
-        //         mqtt_client_->publish("safety/heartbeat", beat);
-        //     }
-        //     last_beat_time = now_beat_time;
-        // }
+        static auto last_beat_time = std::chrono::steady_clock::now();
+        auto now_beat_time = std::chrono::steady_clock::now();
+        if (std::chrono::duration_cast<std::chrono::seconds>(now_beat_time - last_beat_time).count() >= 2) {
+            if (mqtt_client_ && mqtt_client_->isConnected()) {
+                std::string beat = "{\"status\":\"online\", "
+                                   "\"timestamp\":" + std::to_string(std::time(nullptr)) + "}";
+                mqtt_client_->publish("safety/heartbeat", beat);
+            }
+            last_beat_time = now_beat_time;
+        }
 
         // --- TELEMETRY (1Hz) ---
-        // MQTT telemetry temporarily disabled
-        // static auto last_telemetry = std::chrono::steady_clock::now();
-        // if (std::chrono::duration_cast<std::chrono::seconds>(now_beat - last_telemetry).count() >= 1) {
-        //     if (mqtt_client_ && mqtt_client_->isConnected()) {
-        //         json j;
-        //         j["timestamp"] = std::time(nullptr);
-        //         
-        //         // Stream Stats
-        //         for (auto& pair : streams_) {
-        //             auto stats = pair.second->source->getStats();
-        //             j["streams"][pair.first] = {
-        //                 {"fps", stats.fps},
-        //                 {"active", stats.active},
-        //                 {"frame_count", stats.frame_count}
-        //             };
-        //         }
+        static auto last_telemetry = std::chrono::steady_clock::now();
+        if (std::chrono::duration_cast<std::chrono::seconds>(now_beat_time - last_telemetry).count() >= 1) {
+            if (mqtt_client_ && mqtt_client_->isConnected()) {
+                json j;
+                j["timestamp"] = std::time(nullptr);
+                
+                // Stream Stats
+                for (auto& pair : streams_) {
+                    auto stats = pair.second->source->getStats();
+                    j["streams"][pair.first] = {
+                        {"fps", stats.fps},
+                        {"active", stats.active},
+                        {"frame_count", stats.frame_count}
+                    };
+                }
 
-        //         // Latency Stats
-        //         auto latencies = LatencyLogger::getInstance().getAndClearStats();
-        //         for (const auto& [key, val] : latencies) {
-        //             j["latency"][key] = {
-        //                 {"avg", val.avg},
-        //                 {"min", val.min},
-        //                 {"max", val.max},
-        //                 {"p99", val.p99}
-        //             };
-        //         }
+                // Latency Stats
+                auto latencies = LatencyLogger::getInstance().getAndClearStats();
+                for (const auto& [key, val] : latencies) {
+                    j["latency"][key] = {
+                        {"avg", val.avg},
+                        {"min", val.min},
+                        {"max", val.max},
+                        {"p99", val.p99}
+                    };
+                }
 
-        //         mqtt_client_->publish("safety/telemetry", j.dump());
-        //     }
-        //     last_telemetry = now_beat;
-        // }
+                mqtt_client_->publish("safety/telemetry", j.dump());
+            }
+            last_telemetry = now_beat_time;
+        }
 
         // --- CLOUD SYNC (Every 10s) ---
-        // MQTT cloud sync temporarily disabled
-        // static auto last_sync = std::chrono::steady_clock::now();
-        // if (std::chrono::duration_cast<std::chrono::seconds>(now_beat - last_sync).count() >= 10) {
-        //     if (violation_logger_ && mqtt_client_ && mqtt_client_->isConnected()) {
-        //         auto pending = violation_logger_->get_pending_uploads(5);
-        //         if (!pending.empty()) {
-        //             std::vector<int> uploaded_ids;
-        //             json sync_payload;
-        //             sync_payload["type"] = "cloud_sync";
-        //             sync_payload["records"] = json::array();
-        //             
-        //             for (const auto& rec : pending) {
-        //                  sync_payload["records"].push_back({
-        //                      {"id", rec.id},
-        //                      {"timestamp", rec.timestamp},
-        //                      {"zone_id", rec.zone_id},
-        //                      {"confidence", rec.confidence},
-        //                      {"object_id", rec.object_id}
-        //                  });
-        //                  uploaded_ids.push_back(rec.id);
-        //             }
-        //             
-        //             if (mqtt_client_->publish("safety/cloud_sync", sync_payload.dump())) {
-        //                 violation_logger_->mark_uploaded(uploaded_ids);
-        //                 std::cout << "Synced " << uploaded_ids.size() << " records to cloud." << std::endl;
-        //             }
-        //         }
-        //     }
-        //     last_sync = now_beat;
-        // }
+        static auto last_sync = std::chrono::steady_clock::now();
+        if (std::chrono::duration_cast<std::chrono::seconds>(now_beat_time - last_sync).count() >= 10) {
+            if (violation_logger_ && mqtt_client_ && mqtt_client_->isConnected()) {
+                auto pending = violation_logger_->get_pending_uploads(5);
+                if (!pending.empty()) {
+                    std::vector<int> uploaded_ids;
+                    json sync_payload;
+                    sync_payload["type"] = "cloud_sync";
+                    sync_payload["records"] = json::array();
+                    
+                    for (const auto& rec : pending) {
+                         sync_payload["records"].push_back({
+                             {"id", rec.id},
+                             {"timestamp", rec.timestamp},
+                             {"zone_id", rec.zone_id},
+                             {"confidence", rec.confidence},
+                             {"object_id", rec.object_id}
+                         });
+                         uploaded_ids.push_back(rec.id);
+                    }
+                    
+                    if (mqtt_client_->publish("safety/cloud_sync", sync_payload.dump())) {
+                        violation_logger_->mark_uploaded(uploaded_ids);
+                        std::cout << "Synced " << uploaded_ids.size() << " records to cloud." << std::endl;
+                    }
+                }
+            }
+            last_sync = now_beat_time;
+        }
 
         // Reduced sleep for higher visual FPS (10ms ~= 100 FPS target)
         std::this_thread::sleep_for(std::chrono::milliseconds(10));

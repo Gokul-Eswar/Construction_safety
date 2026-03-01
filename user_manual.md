@@ -1,5 +1,5 @@
 # 🏗️ Construction Safety System: User Manual
-**Version 2.1 (2026 Update)**
+**Version 2.2 (2026 Production Update)**
 
 Welcome to the Construction Safety System. This manual will guide you through setting up and operating the AI-powered safety monitoring system. No technical background is required.
 
@@ -10,6 +10,7 @@ This system uses Artificial Intelligence (AI) to monitor construction sites in r
 
 **Key Features:**
 *   **Wired & Wireless Support:** Works with standard USB cameras and professional Network (RTSP) cameras.
+*   **Native TensorRT Acceleration:** Powered by NVIDIA GPUs for ultra-fast, real-time person detection.
 *   **Smart Detection:** Only tracks people. Birds, vehicles, and moving machinery are automatically ignored.
 *   **Danger Zones:** Customizable areas that trigger alerts when stepped into.
 *   **Automatic Recording:** Logs every safety violation with a timestamp for later review.
@@ -27,7 +28,18 @@ To start the system, follow these three steps:
 
 ---
 
-## 3. Managing Your Cameras
+## 3. Advanced AI Optimization (TensorRT)
+
+The system now includes **Native TensorRT** optimization. This allows the AI to run significantly faster on NVIDIA hardware.
+
+*   **First Run:** The very first time you start the system with a new AI model, it may take 2-5 minutes to "optimize" the model for your specific computer. You will see a message saying "Building TensorRT engine."
+*   **Subsequent Runs:** After the first run, the system will start almost instantly by loading the pre-optimized "Engine" file.
+*   **Manual Optimization:** If you want to optimize a new model without starting the full camera system, you can run:
+    `SentinelEngine.exe --build-engine-only`
+
+---
+
+## 4. Managing Your Cameras
 
 You can now add both professional network cameras and simple wired USB cameras.
 
@@ -46,7 +58,7 @@ You can now add both professional network cameras and simple wired USB cameras.
 
 ---
 
-## 4. Setting Up Danger Zones
+## 5. Setting Up Danger Zones
 
 A "Danger Zone" is a virtual fence. If a worker's feet cross this line, the system sounds an alarm.
 
@@ -58,7 +70,17 @@ A "Danger Zone" is a virtual fence. If a worker's feet cross this line, the syst
 
 ---
 
-## 5. Understanding the AI (Edge Case Handling)
+## 6. System Control & Remote Restart
+
+If you change major settings or if a camera becomes unresponsive, you can restart the AI engine remotely:
+
+1.  Go to the **"Settings"** page on the Dashboard.
+2.  Click the **"Restart Inference Engine"** button.
+3.  The system will send a secure signal to the AI engine to reboot. This takes about 5-10 seconds.
+
+---
+
+## 7. Understanding the AI (Edge Case Handling)
 
 The system is designed to be highly "smart" to avoid annoying false alarms:
 
@@ -68,28 +90,17 @@ The system is designed to be highly "smart" to avoid annoying false alarms:
 
 ---
 
-## 6. Reviewing Safety Logs
-
-To see past violations:
-1.  Click on **"Safety Logs"** in the Dashboard.
-2.  You will see a list of every time someone entered a danger zone.
-3.  Each entry shows:
-    *   Which camera caught it.
-    *   Which zone was violated.
-    *   The exact time and date.
-
----
-
-## 7. Troubleshooting
+## 8. Troubleshooting
 
 | Issue | Solution |
 | :--- | :--- |
 | **Black Screen** | Ensure the camera is plugged in. For USB cameras, try changing the "Device Index" from `0` to `1`. |
 | **Too many alerts** | Increase the "Alert Cooldown" in the **Settings** page so the system doesn't beep every second for the same person. |
-| **System is slow** | Close other heavy programs on the computer. The AI requires significant "brainpower" (CPU/GPU) to run. |
+| **System is slow** | Ensure you have an NVIDIA GPU with the latest drivers. The system relies on "TensorRT" for speed. |
 | **Can't open Dashboard** | Ensure you ran `start_system.bat` first and that it didn't show any red error messages. |
+| **"System Offline" Alert** | The AI engine may be starting up or optimizing. Wait 1-2 minutes. If it persists, check your MQTT broker connection. |
 
 ---
 
-## 8. Safety Disclaimer
+## 9. Safety Disclaimer
 *This system is a safety **assistant** and should not be the only method of ensuring worker safety. Always follow standard site safety protocols and use human spotters where necessary.*

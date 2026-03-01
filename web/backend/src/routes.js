@@ -4,7 +4,30 @@ const db = require('../db');
 const configManager = require('./configManager');
 const mqttService = require('./mqttService');
 
-// Middleware to inject dependencies if needed, or just import them directly.
+/**
+ * Filter sensitive information from config before sending to frontend.
+ */
+const filterConfig = (config) => {
+    if (!config) return {};
+    const filtered = JSON.parse(JSON.stringify(config));
+    
+    if (filtered.streams) {
+        filtered.streams = filtered.streams.map(stream => {
+            if (stream.uri) {
+                // Strip credentials from RTSP/HTTP URIs
+                // Format: rtsp://user:pass@host:port/path -> rtsp://***:***@host:port/path
+                stream.uri = stream.uri.replace(/(rtsp:\/\/|http:\/\/)([^:]+):([^@]+)@/, '$1***:***@');
+            }
+            return stream;
+        });
+    }
+
+    if (filtered.mqtt && filtered.mqtt.password) {
+        filtered.mqtt.password = '***';
+    }
+
+    return filtered;
+};
 
 // Helper to get zone name
 const getZoneName = (id) => {
@@ -80,7 +103,8 @@ router.get('/stats', (req, res) => {
 
 // GET /api/config
 router.get('/config', (req, res) => {
-    res.json(configManager.getConfig());
+    const config = configManager.getConfig();
+    res.json(filterConfig(config));
 });
 
 // POST /api/config (Legacy/Full)
@@ -100,7 +124,7 @@ router.post('/config', (req, res) => {
 // POST /api/config/global
 router.post('/config/global', (req, res) => {
     if (configManager.updateGlobalSettings(req.body)) {
-        res.json({ success: true, config: configManager.getConfig() });
+        res.json({ success: true, config: filterConfig(configManager.getConfig()) });
     } else {
         res.status(500).json({ error: "Failed to update global settings" });
     }
@@ -109,7 +133,7 @@ router.post('/config/global', (req, res) => {
 // POST /api/config/streams
 router.post('/config/streams', (req, res) => {
     if (configManager.updateStreams(req.body)) {
-        res.json({ success: true, config: configManager.getConfig() });
+        res.json({ success: true, config: filterConfig(configManager.getConfig()) });
     } else {
         res.status(500).json({ error: "Failed to update streams" });
     }
@@ -126,3 +150,4 @@ router.post('/system/restart', async (req, res) => {
 });
 
 module.exports = router;
+
