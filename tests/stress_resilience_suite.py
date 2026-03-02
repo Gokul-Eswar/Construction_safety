@@ -10,7 +10,7 @@ from threading import Event
 # --- Configuration for Rigorous Testing ---
 TEST_CONFIG_PATH = "stress_test_config.json"
 TEST_DB_PATH = "stress_test_violations.db"
-ENGINE_BIN = "./build/bin/main_app" if os.name != 'nt' else "build\\bin\\Release\\main_app.exe"
+ENGINE_BIN = "./build/main_app" if os.name != 'nt' else "build\\main_app.exe"
 
 @pytest.fixture
 def mock_config():
