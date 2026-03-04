@@ -180,10 +180,32 @@ std::vector<Detection> InferenceEngine::parseDetections(const cv::Mat& output_t,
 
 void InferenceEngine::preprocess(const cv::Mat& input, cv::Mat& output) {
     if (input.empty()) return;
+
+    // --- CORNER CASE: Lighting Normalization (CLAHE) ---
+    cv::Mat lab_image;
+    cv::cvtColor(input, lab_image, cv::COLOR_BGR2Lab);
+
+    // Extract the L channel
+    std::vector<cv::Mat> lab_planes(3);
+    cv::split(lab_image, lab_planes);
+
+    // Apply CLAHE to the L channel
+    cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE();
+    clahe->setClipLimit(2.0); // Standard clip limit
+    cv::Mat dst;
+    clahe->apply(lab_planes[0], dst);
+
+    // Merge the channels back
+    dst.copyTo(lab_planes[0]);
+    cv::merge(lab_planes, lab_image);
+
+    // Convert back to BGR
+    cv::Mat normalized_input;
+    cv::cvtColor(lab_image, normalized_input, cv::COLOR_Lab2BGR);
     
     // Letterbox Resize
-    int iw = input.cols;
-    int ih = input.rows;
+    int iw = normalized_input.cols;
+    int ih = normalized_input.rows;
     int w = config_.input_width;
     int h = config_.input_height;
     
@@ -192,7 +214,7 @@ void InferenceEngine::preprocess(const cv::Mat& input, cv::Mat& output) {
     int nh = int(ih * scale);
     
     cv::Mat resized;
-    cv::resize(input, resized, cv::Size(nw, nh));
+    cv::resize(normalized_input, resized, cv::Size(nw, nh));
     
     // Create canvas with padding (114 is YOLO grey)
     cv::Mat canvas(h, w, CV_8UC3, cv::Scalar(114, 114, 114));
