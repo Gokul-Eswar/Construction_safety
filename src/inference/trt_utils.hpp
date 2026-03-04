@@ -13,6 +13,10 @@
 
 #define checkCudaErrors(val) check((val), #val, __FILE__, __LINE__)
 void check(cudaError_t result, char const* const func, const char* const file, int const line);
+
+namespace trt {
+    size_t getAvailableVRAM();
+}
 #endif
 
 namespace trt {

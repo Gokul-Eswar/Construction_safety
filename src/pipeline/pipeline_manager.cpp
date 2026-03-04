@@ -88,14 +88,29 @@ bool PipelineManager::init() {
 
 void PipelineManager::start() {
     running_ = true;
+    
+    // --- CORNER CASE: VRAM Governor ---
+    const size_t MIN_VRAM_PER_STREAM = 500 * 1024 * 1024; // 500MB safety margin
+
     for (auto& pair : streams_) {
+#ifdef ENABLE_CUDA
+        size_t free_vram = trt::getAvailableVRAM();
+        if (free_vram < MIN_VRAM_PER_STREAM) {
+            std::cerr << "CRITICAL: Insufficient VRAM to start stream '" << pair.first 
+                      << "'. Required: ~500MB, Available: " << (free_vram / 1024 / 1024) << "MB. Skipping." << std::endl;
+            continue;
+        }
+        std::cout << "[VRAM Governor] Starting stream '" << pair.first << "' (Free VRAM: " 
+                  << (free_vram / 1024 / 1024) << "MB)" << std::endl;
+#endif
+
         if (!pair.second->source->start()) {
             std::cerr << "Failed to start stream: " << pair.first << std::endl;
         }
     }
     
     tiling_thread_ = std::thread(&PipelineManager::updateTiledView, this);
-    std::cout << "All pipelines started." << std::endl;
+    std::cout << "Pipelines started (governor-controlled)." << std::endl;
 }
 
 void PipelineManager::stop() {
