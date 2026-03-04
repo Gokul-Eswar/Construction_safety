@@ -59,4 +59,5 @@ private:
     std::mutex pipeline_mutex_;
     
     int reconnect_attempt_ = 0;
+    std::chrono::steady_clock::time_point last_frame_received_time_;
 };

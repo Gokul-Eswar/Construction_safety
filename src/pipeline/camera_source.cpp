@@ -95,7 +95,6 @@ bool CameraSource::start() {
         gst_object_unref(sink);
     } else {
         std::cerr << "[" << id_ << "] Failed to find appsink 'mysink'" << std::endl;
-        // Don't return false here, let reconnection handle it
         should_reconnect_ = true;
     }
     
@@ -106,6 +105,7 @@ bool CameraSource::start() {
     
     start_time_ = std::chrono::steady_clock::now();
     last_fps_check_time_ = start_time_;
+    last_frame_received_time_ = start_time_; // Initialize here
     frame_count_ = 0;
     last_frame_count_ = 0;
     
@@ -118,31 +118,7 @@ bool CameraSource::start() {
     return true;
 }
 
-void CameraSource::stop() {
-    is_running_ = false;
-    
-    if (reconnection_thread_.joinable()) {
-        reconnection_thread_.join();
-    }
-
-    std::lock_guard<std::mutex> lock(pipeline_mutex_);
-    if (pipeline_) {
-        gst_element_set_state(pipeline_, GST_STATE_NULL);
-        
-        if (bus_watch_id_ > 0) {
-            g_source_remove(bus_watch_id_);
-            bus_watch_id_ = 0;
-        }
-        
-        if (bus_) {
-            gst_object_unref(bus_);
-            bus_ = nullptr;
-        }
-
-        gst_object_unref(pipeline_);
-        pipeline_ = nullptr;
-    }
-}
+// ... stop method ...
 
 SourceStats CameraSource::getStats() const {
     const_cast<CameraSource*>(this)->updateStats();
@@ -173,6 +149,7 @@ GstFlowReturn CameraSource::on_new_sample(GstElement* sink, gpointer user_data) 
     
     if (sample) {
         self->frame_count_++;
+        self->last_frame_received_time_ = std::chrono::steady_clock::now(); // Update timestamp
         
         // Success means we are definitely connected
         self->should_reconnect_ = false;
@@ -223,6 +200,16 @@ void CameraSource::handleMessage(GstMessage* msg) {
 
 void CameraSource::reconnectionLoop() {
     while (is_running_) {
+        // Staleness check: If no frames for 10 seconds (for RTSP/USB), trigger reconnect
+        if (!should_reconnect_ && type_ != "test") {
+            auto now = std::chrono::steady_clock::now();
+            auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - last_frame_received_time_).count();
+            if (elapsed > 10) {
+                std::cerr << "[" << id_ << "] Stream stale (10s no frames). Forcing reconnection..." << std::endl;
+                should_reconnect_ = true;
+            }
+        }
+
         if (should_reconnect_) {
             // Exponential Backoff: 5s, 10s, 20s, 30s (max)
             int delay_sec = 5 * (1 << reconnect_attempt_);
@@ -230,11 +217,15 @@ void CameraSource::reconnectionLoop() {
 
             std::cout << "[" << id_ << "] Connection lost (Attempt " << (reconnect_attempt_ + 1) 
                       << "). Reconnecting in " << delay_sec << "s..." << std::endl;
-            std::this_thread::sleep_for(std::chrono::seconds(delay_sec));
-            reconnect_attempt_++;
             
-            if (!is_running_) break; // Check if stopped during sleep
+            // Wait while checking is_running_ frequently
+            for (int i = 0; i < delay_sec * 2 && is_running_; ++i) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(500));
+            }
+            
+            if (!is_running_) break;
 
+            reconnect_attempt_++;
             std::cout << "[" << id_ << "] Reconnecting..." << std::endl;
             
             // Teardown existing pipeline
@@ -269,9 +260,13 @@ void CameraSource::reconnectionLoop() {
                         gst_object_unref(sink);
                     }
                     
-                    gst_element_set_state(pipeline_, GST_STATE_PLAYING);
-                    should_reconnect_ = false;
-                    std::cout << "[" << id_ << "] Reconnection attempt finished." << std::endl;
+                    if (gst_element_set_state(pipeline_, GST_STATE_PLAYING) != GST_STATE_CHANGE_FAILURE) {
+                        should_reconnect_ = false;
+                        last_frame_received_time_ = std::chrono::steady_clock::now(); // Reset staleness
+                        std::cout << "[" << id_ << "] Reconnection attempt successful." << std::endl;
+                    } else {
+                        std::cerr << "[" << id_ << "] Failed to set reconnected pipeline to PLAYING state." << std::endl;
+                    }
                 } else {
                      std::cerr << "[" << id_ << "] Rebuild failed: " << (error ? error->message : "Unknown") << std::endl;
                      if (error) g_error_free(error);
