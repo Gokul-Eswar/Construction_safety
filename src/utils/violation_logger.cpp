@@ -25,13 +25,21 @@ bool ViolationLogger::init(const std::string& db_path, int retention_days) {
         return false;
     }
 
-    // Enable WAL mode
+    // Enable WAL mode for concurrent write reliability
     char* zErrMsg = 0;
     sqlite3_exec(db_, "PRAGMA journal_mode=WAL;", 0, 0, &zErrMsg);
     if (zErrMsg) {
         std::cerr << "Failed to set WAL mode: " << zErrMsg << std::endl;
         sqlite3_free(zErrMsg);
-        zErrMsg = 0; // Reset for next use
+        zErrMsg = 0; 
+    }
+
+    // Recommended for WAL: synchronous=NORMAL (good balance of safety vs speed)
+    sqlite3_exec(db_, "PRAGMA synchronous=NORMAL;", 0, 0, &zErrMsg);
+    if (zErrMsg) {
+        std::cerr << "Failed to set synchronous mode: " << zErrMsg << std::endl;
+        sqlite3_free(zErrMsg);
+        zErrMsg = 0;
     }
 
     if (!create_tables_if_not_exist()) return false;
@@ -78,20 +86,26 @@ bool ViolationLogger::log_violation(int zone_id, float confidence, int object_id
     ss << std::put_time(std::localtime(&in_time_t), "%Y-%m-%d %H:%M:%S");
     std::string timestamp = ss.str();
 
-    std::stringstream sql;
-    sql << "INSERT INTO violations (timestamp, zone_id, confidence, object_id, uploaded) VALUES ('"
-        << timestamp << "', "
-        << zone_id << ", "
-        << confidence << ", "
-        << object_id << ", 0);";
-
-    std::string query = sql.str();
-    char* zErrMsg = 0;
-    int rc = sqlite3_exec(db_, query.c_str(), 0, 0, &zErrMsg);
+    // --- CORNER CASE: Database Reliability (Prepared Statements) ---
+    const char* sql = "INSERT INTO violations (timestamp, zone_id, confidence, object_id, uploaded) VALUES (?, ?, ?, ?, 0);";
+    sqlite3_stmt* stmt;
     
+    int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, 0);
     if (rc != SQLITE_OK) {
-        std::cerr << "SQL error: " << zErrMsg << std::endl;
-        sqlite3_free(zErrMsg);
+        std::cerr << "Failed to prepare violation insert: " << sqlite3_errmsg(db_) << std::endl;
+        return false;
+    }
+
+    sqlite3_bind_text(stmt, 1, timestamp.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_int(stmt, 2, zone_id);
+    sqlite3_bind_double(stmt, 3, static_cast<double>(confidence));
+    sqlite3_bind_int(stmt, 4, object_id);
+
+    rc = sqlite3_step(stmt);
+    sqlite3_finalize(stmt);
+
+    if (rc != SQLITE_DONE) {
+        std::cerr << "Failed to log violation record: " << sqlite3_errmsg(db_) << std::endl;
         return false;
     }
 
