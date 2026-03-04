@@ -1,9 +1,0 @@
-{
-  "id": "system_optimization_20260201",
-  "name": "System Optimization & Real-Time UX",
-  "description": "Improve system performance via inference throttling and enhance UX with real-time WebSocket updates.",
-  "status": "completed",
-  "owner": "Gemini",
-  "created_at": "2026-02-01",
-  "milestone": "Production Polish"
-}

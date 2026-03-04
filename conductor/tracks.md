@@ -1,53 +1,27 @@
-# Project Tracks
+# Project Milestones
 
-This file tracks all major tracks for the project. Each track has its own detailed plan in its respective folder.
+This file summarizes the completed major phases of the project. All core features are now integrated and maintained in the `src/` directory.
 
 ---
 
-- [x] **Track: Core Inference Pipeline & GStreamer Integration**
-  *Link: [./tracks/core_inference_20260127/](./tracks/core_inference_20260127/)*
+### ✅ Phase 1: Foundation & Core Vision
+- **Core Inference Pipeline**: GStreamer integration and hardware-accelerated RTSP ingestion.
+- **System Integration**: Unified alerting system and Paho MQTT client.
+- **Native TensorRT Execution**: Transitioned from prototypes to production GPU-accelerated inference.
 
-- [x] **Track: System Integration & Alerting**
-  *Link: [./tracks/system_integration_20260128/](./tracks/system_integration_20260128/)*
+### ✅ Phase 2: Intelligence & Persistence
+- **Advanced Tracking**: SORT-based object tracking for persistent identity across frames.
+- **Data & Alerting**: Intelligent throttling and SQLite violation logging.
+- **Spatial Mapping**: Homography-based "Image-to-World" coordinate transformation.
 
-- [x] **Track: Configuration & Deployment Readiness**
-  *Link: [./tracks/config_deployment_20260128/](./tracks/config_deployment_20260128/)*
+### ✅ Phase 3: UX & Deployment
+- **Web Dashboard**: React-based monitoring UI with real-time video streaming.
+- **Multi-Stream Support**: Simultaneous orchestration of multiple RTSP feeds.
+- **Dockerization**: Complete containerization for edge deployment on NVIDIA Jetson/Desktop.
 
-- [x] **Track: Paho MQTT Integration**
-  *Link: [./tracks/mqtt_integration_20260129/](./tracks/mqtt_integration_20260129/)*
+### ✅ Phase 4: Refinement
+- **System Optimization**: Latency reduction and end-to-end performance tuning.
+- **Documentation Refinement**: Consolidation of technical specifications into `conductor/spec.md`.
 
-- [x] **Track: Data Persistence & Intelligent Alerting**
-  *Link: [./tracks/persistence_alerting_20260129/](./tracks/persistence_alerting_20260129/)*
-
-- [x] **Track: Web Dashboard & Visualization**
-  *Link: [./tracks/web_dashboard_20260129/](./tracks/web_dashboard_20260129/)*
-
-- [x] **Track: Advanced Object Tracking & ID Persistence**
-  *Link: [./tracks/tracking_id_20260130/](./tracks/tracking_id_20260130/)*
-
-- [x] **Track: Live Web Video Streaming**
-  *Link: [./tracks/live_streaming_20260130/](./tracks/live_streaming_20260130/)*
-
-- [x] **Track: Native TensorRT Execution**
-  *Link: [./tracks/native_tensorrt_20260201/](./tracks/native_tensorrt_20260201/)*
-
-- [x] **Track: Multi-Stream Support**
-  *Link: [./tracks/multi_stream_support_20260201/](./tracks/multi_stream_support_20260201/)*
-
-- [x] **Track: Modern Web UI & System Control**
-  *Link: [./tracks/modern_ui_control_20260201/](./tracks/modern_ui_control_20260201/)*
-
-- [x] **Track: Dockerization & Deployment**
-  *Link: [./tracks/dockerization_20260201/](./tracks/dockerization_20260201/)*
-
-- [x] **Track: System Launcher Scripts**
-  *Link: [./tracks/launcher_scripts_20260201/](./tracks/launcher_scripts_20260201/)*
-
-- [x] **Track: Documentation Update**
-  *Link: [./tracks/documentation_update_20260201/](./tracks/documentation_update_20260201/)*
-
-- [x] **Track: System Optimization & Real-Time UX**
-  *Link: [./tracks/system_optimization_20260201/](./tracks/system_optimization_20260201/)*
-
-- [x] **Track: Documentation Refinement**
-  *Link: [./tracks/documentation_refinement_20260212/](./tracks/documentation_refinement_20260212/)*
+---
+*Last Updated: March 4, 2026*
