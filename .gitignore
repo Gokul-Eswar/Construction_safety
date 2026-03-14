@@ -83,5 +83,8 @@ desktop.ini
 *.swo
 
 # Project Specific
+config.json
+config.json.bak
 yolo11n.onnx
+yolo11n.engine
 .gemini-clipboard/

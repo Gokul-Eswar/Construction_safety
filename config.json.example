@@ -1,0 +1,45 @@
+{
+  "inference": {
+    "model_path": "yolo11n.onnx",
+    "engine_path": "yolo11n.engine",
+    "conf_threshold": 0.45,
+    "iou_threshold": 0.45,
+    "input_width": 640,
+    "input_height": 640,
+    "use_vram_governor": true,
+    "min_vram_mb": 500
+  },
+  "mqtt": {
+    "host": "localhost",
+    "port": 1883,
+    "topic_prefix": "safety/sentinel",
+    "client_id": "sentinel_engine_01"
+  },
+  "pipeline": {
+    "cameras": [
+      {
+        "id": "cam_01",
+        "name": "Front Gate",
+        "url": "rtsp://user:pass@192.168.1.100:554/stream1",
+        "zones": [
+          {
+            "id": "zone_A",
+            "name": "Main Entrance",
+            "polygon": [[100, 100], [200, 100], [200, 200], [100, 200]],
+            "type": "RESTRICTED"
+          }
+        ]
+      }
+    ],
+    "mjpeg_stream": {
+      "port": 8081,
+      "quality": 70,
+      "fps": 15
+    }
+  },
+  "alerting": {
+    "cooldown_ms": 5000,
+    "min_violation_duration_ms": 1500,
+    "log_violations": true
+  }
+}
