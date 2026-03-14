@@ -6,6 +6,43 @@ Sentinel detects personnel in hazardous areas using advanced computer vision and
 
 ---
 
+## 🛠️ Prerequisites & GPU Setup
+
+Sentinel requires an NVIDIA GPU for real-time inference. Follow these steps to prepare your environment:
+
+### 1. Install NVIDIA Drivers
+Ensure you have the latest drivers for your GPU installed on your host machine. Run `nvidia-smi` in your terminal to verify.
+
+### 2. Install NVIDIA Container Toolkit (Crucial for Docker)
+The toolkit allows Docker to access your GPU hardware.
+
+**Windows (WSL2 + Docker Desktop):**
+1. Ensure "Use the WSL 2 based engine" is enabled in Docker Desktop settings.
+2. In your WSL2 terminal (e.g., Ubuntu), run:
+   ```bash
+   curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
+   curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
+   sudo apt-get update && sudo apt-get install -y nvidia-container-toolkit
+   sudo nvidia-ctk runtime configure --runtime=docker
+   ```
+3. Restart Docker Desktop.
+
+**Linux (Native):**
+Follow the same steps as above, then restart the Docker daemon: `sudo systemctl restart docker`.
+
+---
+
+## 🔧 Troubleshooting
+
+| Issue | Solution |
+| :--- | :--- |
+| **"Unknown runtime: nvidia"** | The NVIDIA Container Toolkit is not configured. Re-run `nvidia-ctk runtime configure` and restart Docker. |
+| **Port 1883/3001/8081 busy** | Another application is using these ports. Stop the conflicting service (e.g., a local Mosquitto broker or Node.js app). |
+| **"Model file not found"** | Ensure `yolo11n.onnx` is placed in the project root directory before running `docker compose`. |
+| **GStreamer Plugin Errors** | If running natively on Windows, install the [GStreamer MSVC binaries](https://gstreamer.freedesktop.org/download/) and add them to your System PATH. |
+
+---
+
 ## 🚀 Quick Start (One-Click)
 
 **Prerequisites:**

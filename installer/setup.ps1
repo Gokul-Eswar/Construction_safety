@@ -286,7 +286,36 @@ $DoInstall = {
 
         # --- Phase 3: System Configuration (90-95%) ---
         $ProgressBar.Value = 90
-        $LblStatus.Text = "Configuring system shortcuts..."
+        $LblStatus.Text = "Configuring system files..."
+        
+        # 1. Initialize SQLite Database (Ensure it's a file, not a directory)
+        $DbPath = Join-Path $Dest "safety_violations.db"
+        if (-not (Test-Path $DbPath)) {
+            &$Log "Initializing safety_violations.db..."
+            New-Item -ItemType File -Path $DbPath -Force | Out-Null
+        }
+
+        # 2. Check for AI Model
+        $ModelPath = Join-Path $Dest "yolo11n.onnx"
+        if (-not (Test-Path $ModelPath)) {
+            &$Log "WARNING: yolo11n.onnx not found in root. System will not run without a model."
+            [System.Windows.Forms.MessageBox]::Show("AI Model (yolo11n.onnx) is missing from the project root. Please place it there before starting the system.", "Model Missing", "OK", "Warning")
+        }
+
+        # 3. Port Availability Check
+        $Ports = @(1883, 3001, 8081)
+        foreach ($Port in $Ports) {
+            $Socket = New-Object Net.Sockets.TcpClient
+            try {
+                $Socket.Connect("127.0.0.1", $Port)
+                &$Log "WARNING: Port $Port is already in use by another application."
+                [System.Windows.Forms.MessageBox]::Show("Port $Port is already in use. This may cause the system to fail during startup.", "Port Conflict", "OK", "Warning")
+                $Socket.Close()
+            } catch {
+                # Port is free, this is good.
+            }
+        }
+
         &$Log "Creating Desktop Shortcut..."
         $WshShell = New-Object -ComObject WScript.Shell
         $ShortcutPath = "$Home\Desktop\Sentinel Safety.lnk"
