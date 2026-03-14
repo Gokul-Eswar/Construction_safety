@@ -298,8 +298,17 @@ $DoInstall = {
         # 2. Check for AI Model
         $ModelPath = Join-Path $Dest "yolo11n.onnx"
         if (-not (Test-Path $ModelPath)) {
-            &$Log "WARNING: yolo11n.onnx not found in root. System will not run without a model."
-            [System.Windows.Forms.MessageBox]::Show("AI Model (yolo11n.onnx) is missing from the project root. Please place it there before starting the system.", "Model Missing", "OK", "Warning")
+            &$Log "yolo11n.onnx not found. Attempting to download..."
+            $ModelUrl = "https://github.com/ultralytics/assets/releases/download/v8.3.0/yolo11n.onnx"
+            try {
+                Invoke-WebRequest -Uri $ModelUrl -OutFile $ModelPath -ErrorAction Stop
+                &$Log "Successfully downloaded yolo11n.onnx."
+            } catch {
+                &$Log "ERROR: Failed to download model automatically. Please place it manually in the root."
+                [System.Windows.Forms.MessageBox]::Show("AI Model download failed. Please manually place yolo11n.onnx in the installation folder.", "Download Error", "OK", "Error")
+            }
+        } else {
+            &$Log "AI Model found: yolo11n.onnx"
         }
 
         # 3. Port Availability Check
