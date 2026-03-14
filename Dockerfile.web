@@ -1,35 +1,38 @@
 # Stage 1: Build Frontend
-FROM node:18-alpine as build-stage
+FROM node:18-alpine AS frontend-builder
 WORKDIR /app/frontend
 COPY web/frontend/package*.json ./
-RUN npm install
+# Using 'npm ci' for faster, immutable installs
+RUN npm ci
 COPY web/frontend/ ./
 RUN npm run build
 
-# Stage 2: Setup Backend & Serve
-FROM node:18-alpine as production-stage
+# Stage 2: Prepare Backend (Native module compilation)
+FROM node:18-alpine AS backend-builder
 WORKDIR /app/backend
-
-# Install build dependencies for native modules (like sqlite3)
+# Install native build tools (needed for sqlite3 and other native deps)
 RUN apk add --no-cache python3 make g++
-
-# Install Backend Deps
 COPY web/backend/package*.json ./
-RUN npm install --only=production
+# Only install production dependencies
+RUN npm ci --only=production
 
-# Copy Backend Code
-COPY web/backend/ ./
-
-# Copy Built Frontend from Stage 1
-COPY --from=build-stage /app/frontend/dist ../frontend/dist
-
-# Expose API Port
-EXPOSE 3001
-
-# Set Environment
+# Stage 3: Final Production Image
+FROM node:18-alpine AS runner
+WORKDIR /app
 ENV NODE_ENV=production
 ENV CONFIG_PATH=/app/config.json
 ENV DB_PATH=/app/safety_violations.db
 
-# Mount Config via Volume (mapped in docker-compose)
+# Copy production backend dependencies
+COPY --from=backend-builder /app/backend/node_modules ./web/backend/node_modules
+# Copy backend source code
+COPY web/backend/ ./web/backend/
+# Copy static frontend assets from stage 1
+COPY --from=frontend-builder /app/frontend/dist ./web/frontend/dist
+
+# Expose API Port
+EXPOSE 3001
+
+# Run the backend from the backend directory
+WORKDIR /app/web/backend
 CMD ["node", "server.js"]
