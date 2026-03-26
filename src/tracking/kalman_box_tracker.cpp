@@ -49,11 +49,23 @@ cv::Rect2f KalmanBoxTracker::predict() {
     return stateToRect(p);
 }
 
-void KalmanBoxTracker::update(cv::Rect2f rect) {
+void KalmanBoxTracker::update(cv::Rect2f rect, const cv::Mat& feature) {
     time_since_update_ = 0;
     hit_streak_++;
     cv::Mat measurement = rectToState(rect);
     kf_.correct(measurement);
+
+    // Update Visual Feature (EMA)
+    if (!feature.empty()) {
+        if (feature_.empty()) {
+            feature_ = feature.clone();
+        } else {
+            // Smoothly update the feature vector (90% history, 10% new)
+            const float alpha = 0.1f;
+            cv::addWeighted(feature_, 1.0f - alpha, feature, alpha, 0, feature_);
+            cv::normalize(feature_, feature_);
+        }
+    }
 }
 
 cv::Rect2f KalmanBoxTracker::getState() const {

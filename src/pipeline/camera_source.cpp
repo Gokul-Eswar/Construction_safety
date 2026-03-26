@@ -33,12 +33,12 @@ std::string CameraSource::getPipelineString() const {
         
         if (nvidia_hw) {
             return src_element + " " + device_prop + uri_ + " ! "
-                   "videoconvert ! video/x-raw,format=BGR ! "
+                   "videoconvert ! videostab ! video/x-raw,format=BGR ! "
                    "queue max-size-buffers=1 leaky=2 ! "
                    "appsink name=mysink emit-signals=true max-buffers=1 drop=true";
         } else {
              return src_element + " " + device_prop + uri_ + " ! "
-                   "videoconvert ! video/x-raw,format=BGR ! "
+                   "videoconvert ! videostab ! video/x-raw,format=BGR ! "
                    "queue max-size-buffers=1 leaky=2 ! "
                    "appsink name=mysink emit-signals=true max-buffers=1 drop=true";
         }
@@ -50,13 +50,13 @@ std::string CameraSource::getPipelineString() const {
         // Ultra-Low Latency Settings (latency=0)
         pipeline = "rtspsrc location=" + uri_ + " latency=0 drop-on-latency=true ! "
                    "rtph264depay ! h264parse ! nvv4l2decoder ! "
-                   "nvvideoconvert ! video/x-raw,format=BGR ! "
+                   "nvvideoconvert ! videostab ! video/x-raw,format=BGR ! "
                    "queue max-size-buffers=1 leaky=2 ! "
                    "appsink name=mysink emit-signals=true max-buffers=1 drop=true";
     } else {
         pipeline = "rtspsrc location=" + uri_ + " latency=0 drop-on-latency=true ! "
                    "rtph264depay ! h264parse ! decodebin ! "
-                   "videoconvert ! video/x-raw,format=BGR ! "
+                   "videoconvert ! videostab ! video/x-raw,format=BGR ! "
                    "queue max-size-buffers=1 leaky=2 ! "
                    "appsink name=mysink emit-signals=true max-buffers=1 drop=true";
     }

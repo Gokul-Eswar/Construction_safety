@@ -19,6 +19,7 @@ struct Detection {
     float confidence;
     cv::Rect box;
     int track_id = -1; // -1 indicates untracked
+    cv::Mat feature;   // Visual feature embedding (Re-ID)
 };
 
 class InferenceEngine {

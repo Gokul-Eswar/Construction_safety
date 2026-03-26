@@ -183,6 +183,29 @@ void PipelineManager::onFrameReceived(const std::string& stream_id, GstSample* s
                     }
                     LatencyLogger::getInstance().stopTimer(key_inf, ctx->frame_count);
                     
+                    // --- RE-ID: Feature Extraction (Color Histogram) ---
+                    for (auto& det : raw_detections) {
+                        // Ensure box is within frame boundaries
+                        cv::Rect safe_box = det.box & cv::Rect(0, 0, frame.cols, frame.rows);
+                        if (safe_box.width > 0 && safe_box.height > 0) {
+                            cv::Mat crop = frame(safe_box);
+                            
+                            // Simple but effective color histogram for Re-ID
+                            cv::Mat hsv;
+                            cv::cvtColor(crop, hsv, cv::COLOR_BGR2HSV);
+                            
+                            int h_bins = 16, s_bins = 8;
+                            int histSize[] = { h_bins, s_bins };
+                            float h_ranges[] = { 0, 180 };
+                            float s_ranges[] = { 0, 256 };
+                            const float* ranges[] = { h_ranges, s_ranges };
+                            int channels[] = { 0, 1 };
+
+                            cv::calcHist(&hsv, 1, channels, cv::Mat(), det.feature, 2, histSize, ranges, true, false);
+                            cv::normalize(det.feature, det.feature, 1.0, 0, cv::NORM_L2);
+                        }
+                    }
+
                     // 2. Tracking (Per stream)
                     LatencyLogger::getInstance().startTimer(key_track, ctx->frame_count);
                     detections = ctx->tracker->update(raw_detections);

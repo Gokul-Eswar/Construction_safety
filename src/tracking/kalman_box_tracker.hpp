@@ -18,15 +18,17 @@ public:
     [[nodiscard]] cv::Rect2f predict();
 
     /**
-     * @brief Update the state with observed bounding box.
+     * @brief Update the state with observed bounding box and visual feature.
      * @param rect Observed bounding box.
+     * @param feature Visual feature embedding.
      */
-    void update(cv::Rect2f rect);
+    void update(cv::Rect2f rect, const cv::Mat& feature = cv::Mat());
 
     /**
      * @brief Get the current bounding box estimate.
      */
     [[nodiscard]] cv::Rect2f getState() const;
+    [[nodiscard]] cv::Mat getFeature() const { return feature_; }
 
     [[nodiscard]] int getId() const { return id_; }
     [[nodiscard]] int getTimeSinceUpdate() const { return time_since_update_; }
@@ -38,6 +40,7 @@ private:
     int time_since_update_;
     int hit_streak_;
     int age_;
+    cv::Mat feature_; // EMA of visual features
 
     // Utility to convert Rect to state vector [x, y, s, r]
     // x,y: center coords, s: area, r: aspect ratio
