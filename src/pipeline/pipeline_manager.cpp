@@ -368,6 +368,15 @@ void PipelineManager::updateTiledView() {
                     };
                 }
 
+                // GPU Stats
+                auto gpu = LatencyLogger::getInstance().getGPUStats();
+                j["gpu"] = {
+                    {"utilization", gpu.utilization},
+                    {"temperature", gpu.temperature},
+                    {"memory_used_mb", gpu.memory_used / (1024 * 1024)},
+                    {"memory_total_mb", gpu.memory_total / (1024 * 1024)}
+                };
+
                 mqtt_client_->publish("safety/telemetry", j.dump());
             }
             last_telemetry = now_beat_time;

@@ -186,16 +186,15 @@ export default function Dashboard() {
              
              <Grid container spacing={3}>
                 {/* Operation Stats */}
-                <Grid item xs={12} md={6}>
+                <Grid item xs={12} md={4}>
                     <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>Operation Statistics</Typography>
                     <TableContainer component={Paper} variant="outlined">
                         <Table size="small">
                             <TableHead>
                                 <TableRow>
                                     <TableCell>Stream ID</TableCell>
-                                    <TableCell align="right">Status</TableCell>
                                     <TableCell align="right">FPS</TableCell>
-                                    <TableCell align="right">Frames Processed</TableCell>
+                                    <TableCell align="right">Frames</TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
@@ -203,21 +202,13 @@ export default function Dashboard() {
                                     Object.entries(telemetry.streams).map(([key, val]: any) => (
                                         <TableRow key={key}>
                                             <TableCell component="th" scope="row">{key}</TableCell>
-                                            <TableCell align="right">
-                                                <Chip 
-                                                    label={val.active ? "Active" : "Inactive"} 
-                                                    color={val.active ? "success" : "error"} 
-                                                    size="small" 
-                                                    sx={{ height: 20, fontSize: '0.7rem' }}
-                                                />
-                                            </TableCell>
                                             <TableCell align="right">{val.fps.toFixed(1)}</TableCell>
                                             <TableCell align="right">{val.frame_count.toLocaleString()}</TableCell>
                                         </TableRow>
                                     ))
                                 ) : (
                                     <TableRow>
-                                        <TableCell colSpan={4} align="center">No telemetry data</TableCell>
+                                        <TableCell colSpan={3} align="center">No telemetry data</TableCell>
                                     </TableRow>
                                 )}
                             </TableBody>
@@ -226,7 +217,7 @@ export default function Dashboard() {
                 </Grid>
 
                 {/* Model Stats */}
-                <Grid item xs={12} md={6}>
+                <Grid item xs={12} md={4}>
                     <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>Model Latency (ms)</Typography>
                     <TableContainer component={Paper} variant="outlined">
                         <Table size="small">
@@ -234,15 +225,12 @@ export default function Dashboard() {
                                 <TableRow>
                                     <TableCell>Component</TableCell>
                                     <TableCell align="right">Avg</TableCell>
-                                    <TableCell align="right">Min</TableCell>
-                                    <TableCell align="right">Max</TableCell>
                                     <TableCell align="right">P99</TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
                                 {telemetry && telemetry.latency ? (
                                     Object.entries(telemetry.latency).map(([key, val]: any) => {
-                                        // Clean up key name for display (e.g. "cam_01_inference" -> "Inference")
                                         const parts = key.split('_');
                                         const label = parts[parts.length - 1].charAt(0).toUpperCase() + parts[parts.length - 1].slice(1);
                                         const stream = parts.slice(0, -1).join('_');
@@ -252,16 +240,64 @@ export default function Dashboard() {
                                                 <TableCell component="th" scope="row">
                                                     {label} <Typography variant="caption" color="text.secondary">({stream})</Typography>
                                                 </TableCell>
-                                                <TableCell align="right">{val.avg.toFixed(2)}</TableCell>
-                                                <TableCell align="right">{val.min.toFixed(2)}</TableCell>
-                                                <TableCell align="right">{val.max.toFixed(2)}</TableCell>
-                                                <TableCell align="right" sx={{ fontWeight: 'bold' }}>{val.p99.toFixed(2)}</TableCell>
+                                                <TableCell align="right">{val.avg.toFixed(1)}</TableCell>
+                                                <TableCell align="right" sx={{ fontWeight: 'bold' }}>{val.p99.toFixed(1)}</TableCell>
                                             </TableRow>
                                         );
                                     })
                                 ) : (
                                     <TableRow>
-                                        <TableCell colSpan={5} align="center">No latency data</TableCell>
+                                        <TableCell colSpan={3} align="center">No latency data</TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
+                </Grid>
+
+                {/* GPU Infrastructure */}
+                <Grid item xs={12} md={4}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>GPU Infrastructure</Typography>
+                    <TableContainer component={Paper} variant="outlined">
+                        <Table size="small">
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell>Metric</TableCell>
+                                    <TableCell align="right">Value</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {telemetry && telemetry.gpu ? (
+                                    <>
+                                        <TableRow>
+                                            <TableCell component="th" scope="row">Utilization</TableCell>
+                                            <TableCell align="right">
+                                                <Chip 
+                                                    label={`${telemetry.gpu.utilization}%`} 
+                                                    color={telemetry.gpu.utilization > 80 ? "error" : "primary"} 
+                                                    size="small" 
+                                                    sx={{ height: 20, fontSize: '0.75rem' }}
+                                                />
+                                            </TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell component="th" scope="row">Temperature</TableCell>
+                                            <TableCell align="right">
+                                                <Typography variant="body2" color={telemetry.gpu.temperature > 75 ? "error" : "text.primary"}>
+                                                    {telemetry.gpu.temperature}°C
+                                                </Typography>
+                                            </TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell component="th" scope="row">Memory</TableCell>
+                                            <TableCell align="right">
+                                                {telemetry.gpu.memory_used_mb} / {telemetry.gpu.memory_total_mb} MB
+                                            </TableCell>
+                                        </TableRow>
+                                    </>
+                                ) : (
+                                    <TableRow>
+                                        <TableCell colSpan={2} align="center">No GPU data</TableCell>
                                     </TableRow>
                                 )}
                             </TableBody>

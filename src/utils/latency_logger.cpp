@@ -2,6 +2,76 @@
 #include <numeric>
 #include <iomanip>
 
+#ifdef ENABLE_NVML
+#include <nvml.h>
+#endif
+
+LatencyLogger::LatencyLogger() {
+    initNVML();
+}
+
+LatencyLogger::~LatencyLogger() {
+#ifdef ENABLE_NVML
+    if (nvml_initialized_) {
+        nvmlShutdown();
+    }
+#endif
+}
+
+void LatencyLogger::initNVML() {
+#ifdef ENABLE_NVML
+    nvmlReturn_t result = nvmlInit();
+    if (NVML_SUCCESS != result) {
+        std::cerr << "Failed to initialize NVML: " << nvmlErrorString(result) << std::endl;
+        nvml_initialized_ = false;
+        return;
+    }
+
+    nvmlDevice_t device;
+    result = nvmlDeviceGetHandleByIndex(0, &device);
+    if (NVML_SUCCESS != result) {
+        std::cerr << "Failed to get handle for GPU 0: " << nvmlErrorString(result) << std::endl;
+        nvmlShutdown();
+        nvml_initialized_ = false;
+        return;
+    }
+
+    nvml_device_ = static_cast<void*>(device);
+    nvml_initialized_ = true;
+#else
+    nvml_initialized_ = false;
+#endif
+}
+
+GPUStats LatencyLogger::getGPUStats() {
+    GPUStats stats = {0, 0, 0, 0};
+#ifdef ENABLE_NVML
+    if (!nvml_initialized_) return stats;
+
+    nvmlDevice_t device = static_cast<nvmlDevice_t>(nvml_device_);
+    
+    // Utilization
+    nvmlUtilization_t utilization;
+    if (nvmlDeviceGetUtilizationRates(device, &utilization) == NVML_SUCCESS) {
+        stats.utilization = utilization.gpu;
+    }
+
+    // Temperature
+    uint32_t temp;
+    if (nvmlDeviceGetTemperature(device, NVML_TEMPERATURE_GPU, &temp) == NVML_SUCCESS) {
+        stats.temperature = temp;
+    }
+
+    // Memory
+    nvmlMemory_t memory;
+    if (nvmlDeviceGetMemoryInfo(device, &memory) == NVML_SUCCESS) {
+        stats.memory_used = memory.used;
+        stats.memory_total = memory.total;
+    }
+#endif
+    return stats;
+}
+
 void LatencyLogger::startTimer(const std::string& key, uint64_t frame_id) {
     std::lock_guard<std::mutex> lock(mutex_);
     cleanupOldTimers(key, frame_id);

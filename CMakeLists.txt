@@ -30,12 +30,26 @@ if(CMAKE_CUDA_COMPILER)
     find_library(TENSORRT_LIBRARY nvinfer)
     find_library(TENSORRT_PARSER_LIBRARY nvonnxparser)
     
+    # NVML (NVIDIA Management Library)
+    find_library(NVML_LIBRARY nvidia-ml)
+    if(NOT NVML_LIBRARY AND WIN32)
+        # On Windows, nvml.lib is usually in the CUDA lib path
+        find_library(NVML_LIBRARY nvml PATHS "${CUDA_TOOLKIT_ROOT_DIR}/lib/x64")
+    endif()
+
     if(TENSORRT_LIBRARY AND TENSORRT_PARSER_LIBRARY)
         message(STATUS "TensorRT Found: ${TENSORRT_LIBRARY}")
         add_compile_definitions(ENABLE_TENSORRT)
         set(TENSORRT_LIBS ${TENSORRT_LIBRARY} ${TENSORRT_PARSER_LIBRARY})
     else()
         message(STATUS "TensorRT Not Found. Native TRT execution will be disabled.")
+    endif()
+
+    if(NVML_LIBRARY)
+        message(STATUS "NVML Found: ${NVML_LIBRARY}")
+        add_compile_definitions(ENABLE_NVML)
+    else()
+        message(STATUS "NVML Not Found. GPU monitoring will be disabled.")
     endif()
 else()
     message(STATUS "CUDA Not Found. Disabling CUDA support.")
@@ -189,6 +203,7 @@ target_link_libraries(main_app PRIVATE
     SQLite::SQLite3
     ${TENSORRT_LIBS}
     ${CUDA_CUDART_LIBRARY}
+    ${NVML_LIBRARY}
     paho-mqttpp3-static
 )
 if(GST_FOUND OR GSTREAMER_FOUND)
@@ -247,6 +262,7 @@ target_link_libraries(unit_tests PRIVATE
     SQLite::SQLite3
     ${TENSORRT_LIBS}
     ${CUDA_CUDART_LIBRARY}
+    ${NVML_LIBRARY}
 )
 if(GST_FOUND OR GSTREAMER_FOUND)
      target_include_directories(unit_tests PRIVATE ${GST_INCLUDE_DIRS})
