@@ -21,33 +21,71 @@ int main(int argc, char* argv[]) {
     std::signal(SIGINT, signalHandler);
     std::signal(SIGTERM, signalHandler);
 
-    std::string config_path = "config.json";
-    bool build_engine_only = false;
+    try {
+        std::string config_path = "config.json";
+        bool build_engine_only = false;
 
-    for (int i = 1; i < argc; ++i) {
-        std::string arg = argv[i];
-        if (arg == "--build-engine-only") {
-            build_engine_only = true;
-        } else {
-            config_path = arg;
+        for (int i = 1; i < argc; ++i) {
+            std::string arg = argv[i];
+            if (arg == "--build-engine-only") {
+                build_engine_only = true;
+            } else {
+                config_path = arg;
+            }
         }
-    }
-    
-    spdlog::info("Starting Construction Safety Inference System...");
-    spdlog::info("Loading configuration from: {}", config_path);
+        
+        spdlog::info("Starting Construction Safety Inference System...");
+        spdlog::info("Loading configuration from: {}", config_path);
 
-    AppConfig config = ConfigLoader::load(config_path);
-    
-    // Mode: Build Engine Only
-    if (build_engine_only) {
-        spdlog::info("Running in ENGINE BUILD MODE only.");
-        if (config.model_path.empty()) config.model_path = "yolo11n.onnx";
+        AppConfig config = ConfigLoader::load(config_path);
         
-        spdlog::info("Target Model: {}", config.model_path);
+        // Mode: Build Engine Only
+        if (build_engine_only) {
+            spdlog::info("Running in ENGINE BUILD MODE only.");
+            if (config.model_path.empty()) config.model_path = "yolo11n.onnx";
+            
+            spdlog::info("Target Model: {}", config.model_path);
+            
+            ModelLoader loader(config.model_path);
+            if (loader.load()) {
+                spdlog::info("Engine build/verification complete. Exiting.");
+                return EXIT_SUCCESS;
+            } else {
+                spdlog::error("Engine build/verification failed.");
+                return EXIT_FAILURE;
+            }
+        }
+
+        // Full system mode
+        spdlog::info("Initializing full safety monitoring system...");
         
-        ModelLoader loader(config.model_path);
-        if (loader.load()) {
-            spdlog::info("Engine build/verification complete. Exiting.");
+        PipelineManager pipeline(config);
+        if (!pipeline.init()) {
+            spdlog::error("Failed to initialize pipeline manager");
+            return EXIT_FAILURE;
+        }
+
+        spdlog::info("System initialized successfully. Starting monitoring...");
+
+        // Main processing loop
+        while (keep_running.load()) {
+            if (!pipeline.processFrame()) {
+                spdlog::warn("Frame processing failed, continuing...");
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            }
+        }
+
+        spdlog::info("Shutdown signal received. Cleaning up...");
+        return EXIT_SUCCESS;
+        
+    } catch (const std::exception& e) {
+        spdlog::error("Fatal error: {}", e.what());
+        return EXIT_FAILURE;
+    } catch (...) {
+        spdlog::error("Unknown fatal error occurred");
+        return EXIT_FAILURE;
+    }
+}
             return 0;
         } else {
             spdlog::error("Failed to build or load the engine.");

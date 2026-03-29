@@ -17,6 +17,19 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
+# MSVC-specific fixes for GCC intrinsic compatibility
+if(MSVC)
+    # Disable warnings about deprecated functions
+    add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
+    # Ensure proper exception handling
+    add_compile_options(/EHsc)
+    # Optimize for speed
+    add_compile_options(/O2)
+else()
+    # GCC/Clang optimizations
+    add_compile_options(-O3 -march=native)
+endif()
+
 include(CheckLanguage)
 check_language(CUDA)
 

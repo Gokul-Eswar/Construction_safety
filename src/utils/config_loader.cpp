@@ -11,13 +11,17 @@ AppConfig ConfigLoader::load(const std::string& path) {
     AppConfig config;
     std::ifstream f(path);
     if (!f.good()) {
-        std::cerr << "Config file not found: " << path << ". Using defaults." << std::endl;
-        return config;
+        throw std::runtime_error("Config file not found: " + path);
     }
 
     try {
         json j;
         f >> j;
+
+        // Validate required fields
+        if (!j.contains("streams") || !j["streams"].is_array()) {
+            throw std::runtime_error("Config must contain 'streams' array");
+        }
 
         if (j.contains("model_path")) config.model_path = j["model_path"];
         if (j.contains("database_path")) config.database_path = j["database_path"];
@@ -44,6 +48,12 @@ AppConfig ConfigLoader::load(const std::string& path) {
         if (j.contains("streams")) {
             for (const auto& s : j["streams"]) {
                 StreamConfig stream;
+                
+                // Validate required stream fields
+                if (!s.contains("id") || !s.contains("uri")) {
+                    throw std::runtime_error("Each stream must have 'id' and 'uri' fields");
+                }
+                
                 if (s.contains("id")) stream.id = s["id"];
                 if (s.contains("name")) stream.name = s["name"];
                 
@@ -66,12 +76,20 @@ AppConfig ConfigLoader::load(const std::string& path) {
                 if (s.contains("zones")) {
                     for (const auto& z : s["zones"]) {
                         ZoneConfig zone;
+                        
+                        // Validate zone fields
+                        if (!z.contains("id") || !z.contains("points") || !z["points"].is_array()) {
+                            throw std::runtime_error("Each zone must have 'id' and 'points' array");
+                        }
+                        
                         if (z.contains("id")) zone.id = z["id"];
                         if (z.contains("name")) zone.name = z["name"];
                         if (z.contains("points")) {
                             for (const auto& p : z["points"]) {
-                                if (p.size() == 2) {
+                                if (p.size() == 2 && p[0].is_number() && p[1].is_number()) {
                                     zone.points.emplace_back(p[0], p[1]);
+                                } else {
+                                    throw std::runtime_error("Zone points must be [x,y] number pairs");
                                 }
                             }
                         }
@@ -93,8 +111,10 @@ AppConfig ConfigLoader::load(const std::string& path) {
                 config.streams.push_back(stream);
             }
         }
+    } catch (const json::exception& e) {
+        throw std::runtime_error("JSON parsing error: " + std::string(e.what()));
     } catch (const std::exception& e) {
-        std::cerr << "Error parsing config: " << e.what() << std::endl;
+        throw std::runtime_error("Config validation error: " + std::string(e.what()));
     }
 
     return config;

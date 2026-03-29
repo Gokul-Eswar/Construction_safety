@@ -251,7 +251,7 @@ void PipelineManager::checkAlerts(const std::string& stream_id, const std::vecto
     auto& ctx = it->second;
 
     for (const auto& det : detections) {
-        // Person's feet center in image coordinates
+        // Person's feet position (bottom center of bounding box) in image coordinates
         cv::Point2f feet_img(det.box.x + det.box.width / 2.0f, det.box.y + det.box.height);
         
         // Map to world if calibrated
@@ -262,18 +262,20 @@ void PipelineManager::checkAlerts(const std::string& stream_id, const std::vecto
         
         for (const auto& zone : zones) {
             double dist = cv::pointPolygonTest(zone.points, feet_final, false);
-            if (dist >= 0) {
+            bool is_violating = (dist >= 0);
+            
+            if (is_violating) {
                 if (violation_logger_) {
                     violation_logger_->log_violation(zone.id, det.confidence, det.track_id);
                 }
+            }
 
-                if (alert_throttler_ && alert_throttler_->should_alert(zone.id, det.track_id)) {
-                    if (mqtt_client_ && mqtt_client_->isConnected()) {
-                        std::string alert = "{\"alert\": \"zone_violation\", \"stream_id\": \"" + stream_id + 
-                                        "\", \"zone_name\": \"" + zone.name + 
-                                        "\", \"track_id\": " + std::to_string(det.track_id) + "}";
-                        mqtt_client_->publish(config_.mqtt.topic, alert);
-                    }
+            if (alert_throttler_ && alert_throttler_->should_alert(zone.id, det.track_id, is_violating)) {
+                if (mqtt_client_ && mqtt_client_->isConnected()) {
+                    std::string alert = "{\"alert\": \"zone_violation\", \"stream_id\": \"" + stream_id + 
+                                    "\", \"zone_name\": \"" + zone.name + 
+                                    "\", \"track_id\": " + std::to_string(det.track_id) + "}";
+                    mqtt_client_->publish(config_.mqtt.topic, alert);
                 }
             }
         }
