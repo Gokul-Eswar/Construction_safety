@@ -1,8 +1,8 @@
 const fs = require('fs');
 const path = require('path');
 
-// Use CONFIG_PATH env var if available, otherwise resolve relative to project root
-const configPath = process.env.CONFIG_PATH || path.resolve(process.cwd(), '../../config.json');
+// Use CONFIG_PATH env var if available, otherwise resolve from this file's location.
+const configPath = process.env.CONFIG_PATH || path.resolve(__dirname, '../../../config.json');
 let projectConfig = {};
 
 const loadConfig = () => {
@@ -39,9 +39,27 @@ const saveConfig = (newConfig) => {
 
 const updateGlobalSettings = (settings) => {
     loadConfig();
-    if (settings.mqtt) projectConfig.mqtt = settings.mqtt;
-    if (settings.alert_cooldown) projectConfig.alert_cooldown = parseInt(settings.alert_cooldown);
-    if (settings.model_path) projectConfig.model_path = settings.model_path;
+
+    if (settings && typeof settings === 'object') {
+        if (settings.mqtt && typeof settings.mqtt === 'object') {
+            projectConfig.mqtt = {
+                ...projectConfig.mqtt,
+                ...settings.mqtt
+            };
+        }
+
+        if (Object.prototype.hasOwnProperty.call(settings, 'alert_cooldown')) {
+            const cooldown = Number.parseInt(settings.alert_cooldown, 10);
+            if (Number.isFinite(cooldown) && cooldown >= 0) {
+                projectConfig.alert_cooldown = cooldown;
+            }
+        }
+
+        if (Object.prototype.hasOwnProperty.call(settings, 'model_path') && typeof settings.model_path === 'string') {
+            projectConfig.model_path = settings.model_path;
+        }
+    }
+
     return saveConfig(projectConfig);
 };
 

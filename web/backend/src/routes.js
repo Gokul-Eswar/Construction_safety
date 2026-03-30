@@ -32,18 +32,19 @@ const filterConfig = (config) => {
 // Helper to get zone name
 const getZoneName = (id) => {
     const config = configManager.getConfig();
+    const normalizedId = String(id);
     // Check in streams
     if (config.streams) {
         for (const stream of config.streams) {
             if (stream.zones) {
-                const zone = stream.zones.find(z => z.id === id);
+                const zone = stream.zones.find(z => String(z.id) === normalizedId);
                 if (zone) return zone.name;
             }
         }
     }
     // Fallback for legacy format or missing zones
     if (config.zones) {
-        const zone = config.zones.find(z => z.id === id);
+        const zone = config.zones.find(z => String(z.id) === normalizedId);
         return zone ? zone.name : `Zone ${id}`;
     }
     return `Zone ${id}`;
@@ -51,8 +52,10 @@ const getZoneName = (id) => {
 
 // GET /api/violations
 router.get('/violations', (req, res) => {
-    const limit = parseInt(req.query.limit) || 10;
-    const offset = parseInt(req.query.offset) || 0;
+    const parsedLimit = Number.parseInt(req.query.limit, 10);
+    const parsedOffset = Number.parseInt(req.query.offset, 10);
+    const limit = Number.isFinite(parsedLimit) ? Math.min(Math.max(parsedLimit, 1), 200) : 10;
+    const offset = Number.isFinite(parsedOffset) ? Math.max(parsedOffset, 0) : 0;
 
     const sql = `SELECT * FROM violations ORDER BY id DESC LIMIT ? OFFSET ?`;
     const countSql = `SELECT count(*) as count FROM violations`;
@@ -123,6 +126,17 @@ router.post('/config', (req, res) => {
 
 // POST /api/config/global
 router.post('/config/global', (req, res) => {
+    if (!req.body || typeof req.body !== 'object') {
+        return res.status(400).json({ error: 'Invalid payload' });
+    }
+
+    if (Object.prototype.hasOwnProperty.call(req.body, 'alert_cooldown')) {
+        const cooldown = Number.parseInt(req.body.alert_cooldown, 10);
+        if (!Number.isFinite(cooldown) || cooldown < 0) {
+            return res.status(400).json({ error: 'alert_cooldown must be a non-negative integer' });
+        }
+    }
+
     if (configManager.updateGlobalSettings(req.body)) {
         res.json({ success: true, config: filterConfig(configManager.getConfig()) });
     } else {
@@ -132,6 +146,10 @@ router.post('/config/global', (req, res) => {
 
 // POST /api/config/streams
 router.post('/config/streams', (req, res) => {
+    if (!Array.isArray(req.body)) {
+        return res.status(400).json({ error: 'Payload must be an array of streams' });
+    }
+
     if (configManager.updateStreams(req.body)) {
         res.json({ success: true, config: filterConfig(configManager.getConfig()) });
     } else {

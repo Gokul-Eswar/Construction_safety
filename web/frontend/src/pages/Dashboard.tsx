@@ -84,6 +84,13 @@ export default function Dashboard() {
 
   if (loading) return <Box display="flex" justifyContent="center"><CircularProgress /></Box>;
 
+    const latencyP99Values = telemetry?.latency
+        ? Object.values(telemetry.latency)
+                .map((metric: any) => Number(metric?.p99))
+                .filter((value: number) => Number.isFinite(value))
+        : [];
+    const aggregateP99 = latencyP99Values.length > 0 ? Math.max(...latencyP99Values) : 0;
+
   return (
     <Grid container spacing={3}>
       {!systemOnline && (
@@ -153,11 +160,7 @@ export default function Dashboard() {
                 ))}
                 {telemetry && telemetry.latency && (
                     <Chip 
-                        label={`Latency (P99): ${
-                            Object.values(telemetry.latency).find((l: any) => l.p99) 
-                            ? (Object.values(telemetry.latency)[0] as any).p99.toFixed(1) 
-                            : '0.0'
-                        }ms`} 
+                        label={`Latency (P99): ${aggregateP99.toFixed(1)}ms`} 
                         color="warning" 
                         variant="outlined" 
                         size="small" 

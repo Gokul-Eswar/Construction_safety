@@ -24,7 +24,7 @@ To start the system, follow these three steps:
 1.  **Plug in your cameras:** Ensure your USB cameras or network cameras are connected.
 2.  **Run the System:** Double-click the file named `start_system.bat` in the main folder.
 3.  **Open the Dashboard:** Open your web browser (Chrome or Edge) and type:
-    `http://localhost:3000`
+    `http://localhost:3001`
 
 ---
 

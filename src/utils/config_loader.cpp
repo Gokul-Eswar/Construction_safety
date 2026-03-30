@@ -4,8 +4,28 @@
 #include <nlohmann/json.hpp>
 
 #include <cstdlib>
+#include <string>
 
 using json = nlohmann::json;
+
+namespace {
+int parseZoneId(const json& value) {
+    if (value.is_number_integer()) {
+        return value.get<int>();
+    }
+
+    if (value.is_string()) {
+        const std::string id_str = value.get<std::string>();
+        size_t parsed_chars = 0;
+        const int parsed = std::stoi(id_str, &parsed_chars);
+        if (parsed_chars == id_str.size()) {
+            return parsed;
+        }
+    }
+
+    throw std::runtime_error("Zone 'id' must be an integer or numeric string");
+}
+} // namespace
 
 AppConfig ConfigLoader::load(const std::string& path) {
     AppConfig config;
@@ -82,7 +102,7 @@ AppConfig ConfigLoader::load(const std::string& path) {
                             throw std::runtime_error("Each zone must have 'id' and 'points' array");
                         }
                         
-                        if (z.contains("id")) zone.id = z["id"];
+                        if (z.contains("id")) zone.id = parseZoneId(z["id"]);
                         if (z.contains("name")) zone.name = z["name"];
                         if (z.contains("points")) {
                             for (const auto& p : z["points"]) {

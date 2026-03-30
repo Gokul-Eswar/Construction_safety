@@ -19,10 +19,13 @@ echo "[OK] Docker is running."
 echo
 echo "[2/4] Starting system containers..."
 # Try 'docker compose' (v2) first, then 'docker-compose' (v1)
-if command -v docker-compose &> /dev/null; then
+if docker compose version > /dev/null 2>&1; then
+    docker compose up -d --build
+elif command -v docker-compose &> /dev/null; then
     docker-compose up -d --build
 else
-    docker compose up -d --build
+    echo "[ERROR] Docker Compose is not installed."
+    exit 1
 fi
 
 if [ $? -ne 0 ]; then

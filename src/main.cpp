@@ -2,6 +2,11 @@
 #include <fstream>
 #include <csignal>
 #include <atomic>
+#include <thread>
+#include <chrono>
+#include <string>
+#include <vector>
+#include <gst/gst.h>
 #include "pipeline/pipeline_manager.hpp"
 #include "inference/model_loader.hpp"
 #include "utils/config_loader.hpp"
@@ -24,14 +29,29 @@ int main(int argc, char* argv[]) {
     try {
         std::string config_path = "config.json";
         bool build_engine_only = false;
+        bool expect_config_path = false;
 
         for (int i = 1; i < argc; ++i) {
             std::string arg = argv[i];
-            if (arg == "--build-engine-only") {
+            if (expect_config_path) {
+                config_path = arg;
+                expect_config_path = false;
+            } else if (arg == "--build-engine-only") {
                 build_engine_only = true;
+            } else if (arg == "--config") {
+                expect_config_path = true;
+            } else if (arg == "--help" || arg == "-h") {
+                std::cout << "Usage: main_app [--build-engine-only] [--config <path>] [config_path]" << std::endl;
+                return EXIT_SUCCESS;
             } else {
+                // Backward-compatible positional config path.
                 config_path = arg;
             }
+        }
+
+        if (expect_config_path) {
+            spdlog::error("Missing value for --config");
+            return EXIT_FAILURE;
         }
         
         spdlog::info("Starting Construction Safety Inference System...");
@@ -58,6 +78,8 @@ int main(int argc, char* argv[]) {
 
         // Full system mode
         spdlog::info("Initializing full safety monitoring system...");
+
+        gst_init(&argc, &argv);
         
         PipelineManager pipeline(config);
         if (!pipeline.init()) {
@@ -65,17 +87,17 @@ int main(int argc, char* argv[]) {
             return EXIT_FAILURE;
         }
 
+        pipeline.start();
+
         spdlog::info("System initialized successfully. Starting monitoring...");
 
-        // Main processing loop
+        // Main service loop while stream processing runs in background threads.
         while (keep_running.load()) {
-            if (!pipeline.processFrame()) {
-                spdlog::warn("Frame processing failed, continuing...");
-                std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
 
         spdlog::info("Shutdown signal received. Cleaning up...");
+        pipeline.stop();
         return EXIT_SUCCESS;
         
     } catch (const std::exception& e) {
@@ -85,52 +107,4 @@ int main(int argc, char* argv[]) {
         spdlog::error("Unknown fatal error occurred");
         return EXIT_FAILURE;
     }
-}
-            return 0;
-        } else {
-            spdlog::error("Failed to build or load the engine.");
-            return 1;
-        }
-    }
-
-    if (config.streams.empty()) {
-        spdlog::warn("No streams configured in {}", config_path);
-    }
-    if (config.model_path.empty()) config.model_path = "yolo11n.onnx";
-
-    gst_init(&argc, &argv);
-
-    PipelineManager manager(config);
-
-    if (!manager.init()) {
-        spdlog::error("Failed to initialize pipeline manager.");
-        return 1;
-    }
-
-    manager.start();
-
-    spdlog::info("System is running. Press Ctrl+C to stop.");
-
-    auto last_heartbeat = std::chrono::steady_clock::now();
-
-    while (keep_running) {
-        auto now = std::chrono::steady_clock::now();
-        if (std::chrono::duration_cast<std::chrono::seconds>(now - last_heartbeat).count() >= 5) {
-            std::ofstream heartbeat_file("heartbeat.json");
-            if (heartbeat_file.is_open()) {
-                auto sys_now = std::chrono::system_clock::now();
-                auto sys_time = std::chrono::system_clock::to_time_t(sys_now);
-                heartbeat_file << "{\"timestamp\": " << sys_time << ", \"status\": \"running\"}";
-                heartbeat_file.close();
-            }
-            last_heartbeat = now;
-        }
-
-        g_usleep(100000); // 100ms
-    }
-
-    spdlog::info("Stopping system...");
-    manager.stop();
-
-    return 0;
 }

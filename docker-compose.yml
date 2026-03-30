@@ -1,11 +1,15 @@
 services:
   mqtt:
-    image: eclipse-mosquitto:1.6
+    image: eclipse-mosquitto:2
     container_name: safety-mqtt
     ports:
       - "1883:1883"
+    restart: always
+    volumes:
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_log:/mosquitto/log
     healthcheck:
-      test: ["CMD-SHELL", "mosquitto_sub -h localhost -t '$SYS/#' -C 1 > /dev/null || exit 1"]
+      test: ["CMD-SHELL", "mosquitto_sub -h localhost -t '$$SYS/#' -C 1 > /dev/null || exit 1"]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -30,6 +34,7 @@ services:
       - ./config.json:/app/config.json
       - ./safety_violations.db:/app/safety_violations.db
       - ./yolo11n.onnx:/app/yolo11n.onnx
+      - ./logs:/app/logs
     deploy:
       resources:
         reservations:
@@ -40,6 +45,11 @@ services:
     networks:
       - safety-net
     restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "grep -q '1' /app/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   web:
     build:
@@ -47,7 +57,8 @@ services:
       dockerfile: Dockerfile.web
     container_name: safety-web
     depends_on:
-      - engine
+      engine:
+        condition: service_started
     ports:
       - "3001:3001" 
     volumes:
@@ -63,3 +74,7 @@ services:
 networks:
   safety-net:
     driver: bridge
+
+volumes:
+  mosquitto_data:
+  mosquitto_log:

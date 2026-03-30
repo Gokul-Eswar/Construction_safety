@@ -21,7 +21,13 @@ echo [OK] Docker is running.
 echo.
 echo [2/4] Starting system containers...
 echo       (This may take a few minutes if running for the first time)
-docker-compose up -d --build
+set COMPOSE_CMD=docker compose
+docker compose version >nul 2>&1
+if %errorlevel% neq 0 (
+    set COMPOSE_CMD=docker-compose
+)
+
+%COMPOSE_CMD% up -d --build
 
 if %errorlevel% neq 0 (
     echo.

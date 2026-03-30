@@ -1,8 +1,11 @@
 #!/bin/bash
 echo "Stopping services..."
-if command -v docker-compose &> /dev/null; then
+if docker compose version > /dev/null 2>&1; then
+    docker compose down
+elif command -v docker-compose &> /dev/null; then
     docker-compose down
 else
-    docker compose down
+    echo "[ERROR] Docker Compose is not installed."
+    exit 1
 fi
 echo "[SUCCESS] System stopped successfully."
