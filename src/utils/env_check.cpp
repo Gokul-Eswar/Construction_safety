@@ -12,20 +12,20 @@
 int main(int argc, char *argv[]) {
     // Check GStreamer
 #ifdef ENABLE_GST
-    GError *err = NULL;
+    GError *err = nullptr;
     gboolean gst_init_success = gst_init_check(&argc, &argv, &err);
     
     if (gst_init_success) {
-        std::cout << "GStreamer Initialized: Yes" << std::endl;
+        std::cout << "GStreamer Initialized: Yes" << "\n";
     } else {
-        std::cout << "GStreamer Initialized: No" << std::endl;
+        std::cout << "GStreamer Initialized: No" << "\n";
         if (err) {
-            std::cerr << "Error: " << err->message << std::endl;
+            std::cerr << "Error: " << err->message << "\n";
             g_error_free(err);
         }
     }
 #else
-    std::cout << "GStreamer Initialized: No (Build Disabled)" << std::endl;
+    std::cout << "GStreamer Initialized: No (Build Disabled)" << "\n";
 #endif
 
     // Check CUDA
@@ -34,13 +34,13 @@ int main(int argc, char *argv[]) {
     cudaError_t cudaResult = cudaGetDeviceCount(&deviceCount);
 
     if (cudaResult == cudaSuccess && deviceCount > 0) {
-        std::cout << "CUDA Available: Yes" << std::endl;
-        std::cout << "CUDA Devices: " << deviceCount << std::endl;
+        std::cout << "CUDA Available: Yes" << "\n";
+        std::cout << "CUDA Devices: " << deviceCount << "\n";
     } else {
-        std::cout << "CUDA Available: No (Runtime Error)" << std::endl;
+        std::cout << "CUDA Available: No (Runtime Error)" << "\n";
     }
 #else
-    std::cout << "CUDA Available: No (Build Disabled)" << std::endl;
+    std::cout << "CUDA Available: No (Build Disabled)" << "\n";
 #endif
 
     return 0;

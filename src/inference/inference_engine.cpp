@@ -1,5 +1,6 @@
 #include "inference_engine.hpp"
 #include <iostream>
+#include <cstddef>  // for ptrdiff_t
 
 #ifdef ENABLE_CUDA
 #include <cuda_runtime_api.h>
@@ -21,7 +22,7 @@ InferenceEngine::~InferenceEngine() {
 bool InferenceEngine::init() {
     model_loader_ = std::make_unique<ModelLoader>(config_.model_path);
     if (!model_loader_->load()) {
-        std::cerr << "Failed to load model: " << config_.model_path << std::endl;
+        std::cerr << "Failed to load model: " << config_.model_path << "\n";
         return false;
     }
 
@@ -32,6 +33,9 @@ bool InferenceEngine::init() {
         );
         if (!context_) return false;
 
+        // Calculate memory requirement before allocation
+        size_t mem_requirement = 0;
+        
         // Allocate memory & Stream
         int nbBindings = engine->getNbBindings();
         for (int i = 0; i < nbBindings; ++i) {
@@ -43,13 +47,12 @@ bool InferenceEngine::init() {
                 vol *= dims.d[j] > 0 ? dims.d[j] : 1; 
             }
             size_t size = vol * sizeof(float);
+            mem_requirement += size;
 
             if (engine->bindingIsInput(i)) {
                 input_bytes_ = size;
-                cudaMalloc(&buffers_[i], input_bytes_);
             } else {
                 output_bytes_ = size;
-                cudaMalloc(&buffers_[i], output_bytes_);
                 
                 // Assuming [1, 84, 8400]
                 if (dims.nbDims >= 3) {
@@ -58,9 +61,26 @@ bool InferenceEngine::init() {
                 }
             }
         }
+        
+        required_memory_bytes_ = mem_requirement + (10 * 1024 * 1024);  // Add 10MB buffer for internal buffers
+        
+        // Check available GPU memory before allocation
+        if (!checkAvailableGPUMemory(required_memory_bytes_)) {
+            std::cerr << "Insufficient GPU memory for inference engine initialization" << "\n";
+            return false;
+        }
+        
+        // Safe to allocate now
+        for (int i = 0; i < nbBindings; ++i) {
+            if (i == 0 && input_bytes_ > 0) {
+                cudaMalloc(&buffers_[i], input_bytes_);
+            } else if (i == 1 && output_bytes_ > 0) {
+                cudaMalloc(&buffers_[i], output_bytes_);
+            }
+        }
 
         cudaStreamCreate(&stream_);
-        std::cout << "TensorRT Execution Context initialized." << std::endl;
+        std::cout << "TensorRT Execution Context initialized." << "\n";
         return true;
     }
 #endif
@@ -125,18 +145,19 @@ std::vector<Detection> InferenceEngine::parseDetections(const cv::Mat& output_t,
     int cols = output_t.cols; // 84
 
     // Calculate scaling params (matching preprocess logic)
-    float ratio_w = (float)config_.input_width / frame_w;
-    float ratio_h = (float)config_.input_height / frame_h;
+    float ratio_w = static_cast<float>(config_.input_width) / static_cast<float>(frame_w);
+    float ratio_h = static_cast<float>(config_.input_height) / static_cast<float>(frame_h);
     float scale = std::min(ratio_w, ratio_h);
     
-    float new_unpad_w = frame_w * scale;
-    float new_unpad_h = frame_h * scale;
+    float new_unpad_w = static_cast<float>(frame_w) * scale;
+    float new_unpad_h = static_cast<float>(frame_h) * scale;
     
-    float dw = (config_.input_width - new_unpad_w) / 2.0f;
-    float dh = (config_.input_height - new_unpad_h) / 2.0f;
+    float dw = (static_cast<float>(config_.input_width) - new_unpad_w) / 2.0f;
+    float dh = (static_cast<float>(config_.input_height) - new_unpad_h) / 2.0f;
 
     for (int i = 0; i < rows; ++i) {
-        float* row_ptr = data + (i * cols);
+        // Safe pointer arithmetic using ptrdiff_t
+        float* row_ptr = data + (static_cast<ptrdiff_t>(i) * static_cast<ptrdiff_t>(cols));
         
         float max_score = 0.0f;
         int class_id = -1;
@@ -162,10 +183,10 @@ std::vector<Detection> InferenceEngine::parseDetections(const cv::Mat& output_t,
                 float w_orig = w / scale;
                 float h_orig = h / scale;
 
-                int left = int(cx_orig - 0.5 * w_orig);
-                int top = int(cy_orig - 0.5 * h_orig);
-                int width = int(w_orig);
-                int height = int(h_orig);
+                int left = static_cast<int>(cx_orig - 0.5f * w_orig);
+                int top = static_cast<int>(cy_orig - 0.5f * h_orig);
+                int width = static_cast<int>(w_orig);
+                int height = static_cast<int>(h_orig);
 
                 Detection det;
                 det.class_id = class_id;
@@ -249,4 +270,30 @@ std::vector<Detection> InferenceEngine::applyNMS(const std::vector<Detection>& d
     }
 
     return result;
+}
+
+bool InferenceEngine::checkAvailableGPUMemory(size_t required_bytes) {
+#ifdef ENABLE_CUDA
+    size_t free_bytes = 0, total_bytes = 0;
+    cudaError_t cuda_status = cudaMemGetInfo(&free_bytes, &total_bytes);
+    
+    if (cuda_status != cudaSuccess) {
+        std::cerr << "Error querying GPU memory: " << cudaGetErrorString(cuda_status) << "\n";
+        return false;
+    }
+    
+    std::cout << "GPU Memory Status: " << (free_bytes / 1024 / 1024) << " MB free / " 
+              << (total_bytes / 1024 / 1024) << " MB total" << "\n";
+    
+    if (free_bytes < required_bytes) {
+        std::cerr << "Insufficient GPU memory. Required: " << (required_bytes / 1024 / 1024) << " MB, "
+                  << "Available: " << (free_bytes / 1024 / 1024) << " MB" << "\n";
+        return false;
+    }
+    
+    return true;
+#else
+    // Without CUDA, can't check; assume OK
+    return true;
+#endif
 }

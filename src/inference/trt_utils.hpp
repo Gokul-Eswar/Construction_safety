@@ -36,7 +36,7 @@ public:
         case Severity::kINFO: std::cout << "[TRT] INFO: "; break;
         default: std::cout << "[TRT] VERBOSE: "; break;
         }
-        std::cout << msg << std::endl;
+        std::cout << msg << "\n";
     }
 
     Severity reportableSeverity;

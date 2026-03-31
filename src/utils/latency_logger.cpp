@@ -22,7 +22,7 @@ void LatencyLogger::initNVML() {
 #ifdef ENABLE_NVML
     nvmlReturn_t result = nvmlInit();
     if (NVML_SUCCESS != result) {
-        std::cerr << "Failed to initialize NVML: " << nvmlErrorString(result) << std::endl;
+        std::cerr << "Failed to initialize NVML: " << nvmlErrorString(result) << "\n";
         nvml_initialized_ = false;
         return;
     }
@@ -30,7 +30,7 @@ void LatencyLogger::initNVML() {
     nvmlDevice_t device;
     result = nvmlDeviceGetHandleByIndex(0, &device);
     if (NVML_SUCCESS != result) {
-        std::cerr << "Failed to get handle for GPU 0: " << nvmlErrorString(result) << std::endl;
+        std::cerr << "Failed to get handle for GPU 0: " << nvmlErrorString(result) << "\n";
         nvmlShutdown();
         nvml_initialized_ = false;
         return;
@@ -114,7 +114,7 @@ void LatencyLogger::logStats(int interval) {
             
             std::cout << "[Latency] " << key << ": " 
                       << std::fixed << std::setprecision(2) << avg << " ms (avg over " 
-                      << latencies.size() << " samples)" << std::endl;
+                      << latencies.size() << " samples)" << "\n";
             
             latencies.clear();
         }

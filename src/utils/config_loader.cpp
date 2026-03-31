@@ -62,7 +62,7 @@ AppConfig ConfigLoader::load(const std::string& path) {
         const char* env_mqtt_host = std::getenv("MQTT_HOST");
         if (env_mqtt_host) {
             config.mqtt.host = env_mqtt_host;
-            std::cout << "Overriding MQTT Host from ENV: " << env_mqtt_host << std::endl;
+            std::cout << "Overriding MQTT Host from ENV: " << env_mqtt_host << "\n";
         }
 
         if (j.contains("streams")) {

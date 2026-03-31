@@ -1,7 +1,9 @@
 #include "kalman_box_tracker.hpp"
+#include <cmath>
 
 KalmanBoxTracker::KalmanBoxTracker(cv::Rect2f initialRect, int id) 
-    : id_(id), time_since_update_(0), hit_streak_(0), age_(0) {
+    : id_(id), time_since_update_(0), hit_streak_(0), age_(0), 
+      is_stationary_(false), stationary_frame_count_(0), last_velocity_magnitude_(0.0f) {
     
     // State: [x, y, s, r, dx, dy, ds]
     // Obs: [x, y, s, r]
@@ -52,8 +54,32 @@ cv::Rect2f KalmanBoxTracker::predict() {
 void KalmanBoxTracker::update(cv::Rect2f rect, const cv::Mat& feature) {
     time_since_update_ = 0;
     hit_streak_++;
+    
+    // Calculate velocity magnitude for stationary detection
+    cv::Mat state_before = kf_.statePost.clone();
+    float prev_x = state_before.at<float>(0);
+    float prev_y = state_before.at<float>(1);
+    
     cv::Mat measurement = rectToState(rect);
+    float curr_x = measurement.at<float>(0);
+    float curr_y = measurement.at<float>(1);
+    
+    float dx = curr_x - prev_x;
+    float dy = curr_y - prev_y;
+    last_velocity_magnitude_ = std::sqrt(dx * dx + dy * dy);
+    
     kf_.correct(measurement);
+
+    // Track stationary state
+    if (last_velocity_magnitude_ < VELOCITY_THRESHOLD) {
+        stationary_frame_count_++;
+        if (stationary_frame_count_ >= STATIONARY_CONFIRM_FRAMES) {
+            is_stationary_ = true;
+        }
+    } else {
+        stationary_frame_count_ = 0;
+        is_stationary_ = false;
+    }
 
     // Update Visual Feature (EMA)
     if (!feature.empty()) {

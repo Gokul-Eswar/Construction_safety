@@ -40,7 +40,7 @@ bool MJPEGStreamer::start(int port) {
     if (listen(server_socket_, 5) < 0) return false;
 
     server_thread_ = std::thread(&MJPEGStreamer::listenThread, this);
-    std::cout << "MJPEG Streamer started on port " << port_ << std::endl;
+    std::cout << "MJPEG Streamer started on port " << port_ << "\n";
     return true;
 }
 

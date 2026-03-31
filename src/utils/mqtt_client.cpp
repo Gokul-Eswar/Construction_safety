@@ -17,12 +17,12 @@ bool MQTTClient::connect(const std::string& host, int port) {
         mqtt::connect_options connOpts;
         connOpts.set_clean_session(true);
 
-        std::cout << "Connecting to MQTT broker at " << server_address << "..." << std::endl;
+        std::cout << "Connecting to MQTT broker at " << server_address << "..." << "\n";
         client_->connect(connOpts)->wait();
-        std::cout << "Connected to MQTT broker." << std::endl;
+        std::cout << "Connected to MQTT broker." << "\n";
         return true;
     } catch (const mqtt::exception& exc) {
-        std::cerr << "MQTT Connection Error: " << exc.what() << std::endl;
+        std::cerr << "MQTT Connection Error: " << exc.what() << "\n";
         return false;
     }
 }
@@ -34,7 +34,7 @@ bool MQTTClient::publish(const std::string& topic, const std::string& payload) {
         client_->publish(topic, payload, 1, false);
         return true;
     } catch (const mqtt::exception& exc) {
-        std::cerr << "MQTT Publish Error: " << exc.what() << std::endl;
+        std::cerr << "MQTT Publish Error: " << exc.what() << "\n";
         return false;
     }
 }
@@ -43,7 +43,7 @@ bool MQTTClient::subscribe(const std::string& topic, std::function<void(const st
     if (!client_ || !client_->is_connected()) return false;
 
     try {
-        std::cout << "Subscribing to topic: " << topic << std::endl;
+        std::cout << "Subscribing to topic: " << topic << "\n";
         client_->subscribe(topic, 1)->wait();
         
         client_->set_message_callback([callback](mqtt::const_message_ptr msg) {
@@ -52,7 +52,7 @@ bool MQTTClient::subscribe(const std::string& topic, std::function<void(const st
         
         return true;
     } catch (const mqtt::exception& exc) {
-        std::cerr << "MQTT Subscribe Error: " << exc.what() << std::endl;
+        std::cerr << "MQTT Subscribe Error: " << exc.what() << "\n";
         return false;
     }
 }
@@ -60,10 +60,10 @@ bool MQTTClient::subscribe(const std::string& topic, std::function<void(const st
 void MQTTClient::disconnect() {
     if (client_ && client_->is_connected()) {
         try {
-            std::cout << "Disconnecting from MQTT broker..." << std::endl;
+            std::cout << "Disconnecting from MQTT broker..." << "\n";
             client_->disconnect()->wait();
         } catch (const mqtt::exception& exc) {
-            std::cerr << "MQTT Disconnection Error: " << exc.what() << std::endl;
+            std::cerr << "MQTT Disconnection Error: " << exc.what() << "\n";
         }
     }
 }

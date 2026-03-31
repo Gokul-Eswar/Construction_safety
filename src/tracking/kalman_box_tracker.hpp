@@ -33,6 +33,7 @@ public:
     [[nodiscard]] int getId() const { return id_; }
     [[nodiscard]] int getTimeSinceUpdate() const { return time_since_update_; }
     [[nodiscard]] int getHitStreak() const { return hit_streak_; }
+    [[nodiscard]] bool isStationary() const { return is_stationary_; }
 
 private:
     cv::KalmanFilter kf_;
@@ -41,6 +42,14 @@ private:
     int hit_streak_;
     int age_;
     cv::Mat feature_; // EMA of visual features
+    
+    // Stationary persistence tracking
+    bool is_stationary_ = false;
+    int stationary_frame_count_ = 0;
+    float last_velocity_magnitude_ = 0.0f;
+    static constexpr float VELOCITY_THRESHOLD = 2.0f;        // pixels/frame
+    static constexpr int STATIONARY_CONFIRM_FRAMES = 3;      // frames to confirm stationary
+    static constexpr int MAX_STATIONARY_AGE = 10;            // max frames to keep stationary track
 
     // Utility to convert Rect to state vector [x, y, s, r]
     // x,y: center coords, s: area, r: aspect ratio

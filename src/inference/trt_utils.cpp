@@ -13,7 +13,7 @@ namespace trt {
         size_t free, total;
         cudaError_t res = cudaMemGetInfo(&free, &total);
         if (res != cudaSuccess) {
-            std::cerr << "Failed to get CUDA memory info: " << cudaGetErrorString(res) << std::endl;
+            std::cerr << "Failed to get CUDA memory info: " << cudaGetErrorString(res) << "\n";
             return 0;
         }
         return free;

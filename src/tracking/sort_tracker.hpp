@@ -27,4 +27,7 @@ private:
 
     [[nodiscard]] float calculateIou(cv::Rect2f bbTest, cv::Rect2f bbGt) const;
     [[nodiscard]] float calculateFeatureDist(const cv::Mat& f1, const cv::Mat& f2) const;
+    
+    // Distance-based matching to prevent ID swaps
+    [[nodiscard]] float calculateSpatialDistance(cv::Rect2f box1, cv::Rect2f box2) const;
 };

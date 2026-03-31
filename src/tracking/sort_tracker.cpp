@@ -1,6 +1,8 @@
 #include "sort_tracker.hpp"
 #include <algorithm>
 #include <set>
+#include <cmath>
+
 SortTracker::SortTracker(int maxAge, int minHits, float iouThreshold, float featureThreshold)
     : max_age_(maxAge), min_hits_(minHits), iou_threshold_(iouThreshold), feature_threshold_(featureThreshold), next_id_(1) {
 }
@@ -12,29 +14,36 @@ std::vector<Detection> SortTracker::update(const std::vector<Detection>& detecti
         predicted_boxes.push_back(trk->predict());
     }
 
-    // 2. Match detections to predicted boxes (Fused Score matching)
+    // 2. Match detections to predicted boxes (Fused Score matching with distance gating)
     std::vector<int> matched_indices_det;
     std::vector<int> matched_indices_trk;
 
     struct Match { int det_idx; int trk_idx; float score; };
     std::vector<Match> matches;
+    
+    // Distance gating threshold (pixels): Prevent matching if boxes are too far apart
+    const float MAX_SPATIAL_DISTANCE = 150.0f;
 
     for (size_t i = 0; i < detections.size(); ++i) {
         for (size_t j = 0; j < trackers_.size(); ++j) {
             float iou = calculateIou(detections[i].box, predicted_boxes[j]);
             float dist = calculateFeatureDist(detections[i].feature, trackers_[j]->getFeature());
+            float spatial_dist = calculateSpatialDistance(detections[i].box, predicted_boxes[j]);
 
             // Fused matching: If IOU is high OR feature is very similar
             // This handles occlusion where IOU drops but visual identity remains
-            bool match_gate = (iou >= iou_threshold_);
+            // BUT gates on spatial distance to prevent ID swaps
+            bool match_gate = (iou >= iou_threshold_) && (spatial_dist < MAX_SPATIAL_DISTANCE);
             if (!match_gate && !detections[i].feature.empty() && !trackers_[j]->getFeature().empty()) {
-                if (dist < feature_threshold_) match_gate = true;
+                if (dist < feature_threshold_ && spatial_dist < MAX_SPATIAL_DISTANCE) match_gate = true;
             }
 
             if (match_gate) {
-                // Score combines spatial overlap and visual similarity
+                // Score combines spatial overlap, visual similarity, and distance penalty
                 float visual_sim = 1.0f - dist;
-                float score = 0.6f * iou + 0.4f * visual_sim;
+                // Normalize spatial distance to [0, 1] for scoring
+                float spatial_penalty = spatial_dist / MAX_SPATIAL_DISTANCE;
+                float score = 0.5f * iou + 0.3f * visual_sim - 0.2f * spatial_penalty;
                 matches.push_back({(int)i, (int)j, score});
             }
         }
@@ -64,23 +73,24 @@ std::vector<Detection> SortTracker::update(const std::vector<Detection>& detecti
             trackers_.back()->update(detections[i].box, detections[i].feature);
         }
     }
-...
-float SortTracker::calculateIou(cv::Rect2f bbTest, cv::Rect2f bbGt) const {
-    float in = (bbTest & bbGt).area();
-    float un = bbTest.area() + bbGt.area() - in;
-    if (un <= 0) return 0;
-    return in / un;
-}
 
-float SortTracker::calculateFeatureDist(const cv::Mat& f1, const cv::Mat& f2) const {
-    if (f1.empty() || f2.empty()) return 1.0f; // Max distance
-    // Using Cosine Distance (1.0 - Cosine Similarity)
-    // Since we normalize vectors in KalmanBoxTracker, Dot Product = Similarity
-    double dot = f1.dot(f2);
-    return 1.0f - static_cast<float>(dot);
-}
-        } else if ((*it)->getTimeSinceUpdate() > max_age_) {
+    // 4. Prune old trackers (with stationary persistence support)
+    const int MAX_STATIONARY_AGE_LOCAL = 10;  // Replicate private constant
+    for (auto it = trackers_.begin(); it != trackers_.end(); ) {
+        if ((*it)->getHitStreak() < min_hits_) {
             it = trackers_.erase(it);
+        } else if ((*it)->getTimeSinceUpdate() > max_age_) {
+            // Allow stationary objects to persist beyond max_age
+            int effective_max_age = max_age_;
+            if ((*it)->isStationary()) {
+                effective_max_age = std::max(max_age_, (*it)->getTimeSinceUpdate() + MAX_STATIONARY_AGE_LOCAL);
+            }
+            
+            if ((*it)->getTimeSinceUpdate() > effective_max_age) {
+                it = trackers_.erase(it);
+            } else {
+                it++;
+            }
         } else {
             it++;
         }
@@ -112,4 +122,18 @@ float SortTracker::calculateIou(cv::Rect2f bbTest, cv::Rect2f bbGt) const {
     float un = bbTest.area() + bbGt.area() - in;
     if (un <= 0) return 0;
     return in / un;
+}
+
+float SortTracker::calculateFeatureDist(const cv::Mat& f1, const cv::Mat& f2) const {
+    if (f1.empty() || f2.empty()) return 1.0f; // Max distance
+    // Using Cosine Distance (1.0 - Cosine Similarity)
+    // Since we normalize vectors in KalmanBoxTracker, Dot Product = Similarity
+    double dot = f1.dot(f2);
+    return 1.0f - static_cast<float>(dot);
+}
+
+float SortTracker::calculateSpatialDistance(cv::Rect2f det, cv::Rect2f pred) const {
+    cv::Point2f det_center(det.x + det.width / 2.0f, det.y + det.height / 2.0f);
+    cv::Point2f pred_center(pred.x + pred.width / 2.0f, pred.y + pred.height / 2.0f);
+    return cv::norm(det_center - pred_center);
 }

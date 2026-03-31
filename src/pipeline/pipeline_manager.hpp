@@ -1,6 +1,6 @@
 #pragma once
 #include "camera_source.hpp"
-#include "inference_engine.hpp"
+#include "inference/inference_engine.hpp"
 #include "spatial_mapper.hpp"
 #include "utils/visualizer.hpp"
 #include "utils/mqtt_client.hpp"

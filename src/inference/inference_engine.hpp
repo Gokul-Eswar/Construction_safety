@@ -33,12 +33,17 @@ public:
     // Exposed for testing
     void preprocess(const cv::Mat& input, cv::Mat& output);
     std::vector<Detection> applyNMS(const std::vector<Detection>& detections, float nms_thresh);
+    
+    // GPU Memory Management
+    static bool checkAvailableGPUMemory(size_t required_bytes);
+    [[nodiscard]] size_t getRequiredMemory() const { return required_memory_bytes_; }
 
 private:
     std::vector<Detection> parseDetections(const cv::Mat& output_t, int frame_w, int frame_h);
 
     InferenceConfig config_;
     std::unique_ptr<ModelLoader> model_loader_;
+    size_t required_memory_bytes_ = 0;  // Per-stream memory requirement
 
 #ifdef ENABLE_TENSORRT
     struct InferDeleter {

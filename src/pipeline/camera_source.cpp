@@ -80,7 +80,7 @@ bool CameraSource::start() {
     pipeline_ = gst_parse_launch(pipeline_str.c_str(), &error);
     
     if (!pipeline_) {
-        std::cerr << "[" << id_ << "] Failed to create pipeline: " << (error ? error->message : "Unknown error") << std::endl;
+        std::cerr << "[" << id_ << "] Failed to create pipeline: " << (error ? error->message : "Unknown error") << "\n";
         if (error) g_error_free(error);
         return false;
     }
@@ -94,12 +94,12 @@ bool CameraSource::start() {
         g_signal_connect(sink, "new-sample", G_CALLBACK(on_new_sample), this);
         gst_object_unref(sink);
     } else {
-        std::cerr << "[" << id_ << "] Failed to find appsink 'mysink'" << std::endl;
+        std::cerr << "[" << id_ << "] Failed to find appsink 'mysink'" << "\n";
         should_reconnect_ = true;
     }
     
     if (gst_element_set_state(pipeline_, GST_STATE_PLAYING) == GST_STATE_CHANGE_FAILURE) {
-        std::cerr << "[" << id_ << "] Failed to set pipeline to PLAYING state" << std::endl;
+        std::cerr << "[" << id_ << "] Failed to set pipeline to PLAYING state" << "\n";
         should_reconnect_ = true;
     }
     
@@ -180,8 +180,8 @@ void CameraSource::handleMessage(GstMessage* msg) {
             GError *err;
             gchar *debug_info;
             gst_message_parse_error(msg, &err, &debug_info);
-            std::cerr << "[" << id_ << "] GStreamer Error: " << err->message << std::endl;
-            std::cerr << "[" << id_ << "] Debug info: " << (debug_info ? debug_info : "none") << std::endl;
+            std::cerr << "[" << id_ << "] GStreamer Error: " << err->message << "\n";
+            std::cerr << "[" << id_ << "] Debug info: " << (debug_info ? debug_info : "none") << "\n";
             g_clear_error(&err);
             g_free(debug_info);
             
@@ -190,7 +190,7 @@ void CameraSource::handleMessage(GstMessage* msg) {
             break;
         }
         case GST_MESSAGE_EOS:
-            std::cerr << "[" << id_ << "] End of Stream (EOS) received." << std::endl;
+            std::cerr << "[" << id_ << "] End of Stream (EOS) received." << "\n";
             should_reconnect_ = true;
             break;
         default:
@@ -205,7 +205,7 @@ void CameraSource::reconnectionLoop() {
             auto now = std::chrono::steady_clock::now();
             auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - last_frame_received_time_).count();
             if (elapsed > 10) {
-                std::cerr << "[" << id_ << "] Stream stale (10s no frames). Forcing reconnection..." << std::endl;
+                std::cerr << "[" << id_ << "] Stream stale (10s no frames). Forcing reconnection..." << "\n";
                 should_reconnect_ = true;
             }
         }
@@ -216,7 +216,7 @@ void CameraSource::reconnectionLoop() {
             if (delay_sec > 30) delay_sec = 30;
 
             std::cout << "[" << id_ << "] Connection lost (Attempt " << (reconnect_attempt_ + 1) 
-                      << "). Reconnecting in " << delay_sec << "s..." << std::endl;
+                      << "). Reconnecting in " << delay_sec << "s..." << "\n";
             
             // Wait while checking is_running_ frequently
             for (int i = 0; i < delay_sec * 2 && is_running_; ++i) {
@@ -226,7 +226,7 @@ void CameraSource::reconnectionLoop() {
             if (!is_running_) break;
 
             reconnect_attempt_++;
-            std::cout << "[" << id_ << "] Reconnecting..." << std::endl;
+            std::cout << "[" << id_ << "] Reconnecting..." << "\n";
             
             // Teardown existing pipeline
             {
@@ -263,12 +263,12 @@ void CameraSource::reconnectionLoop() {
                     if (gst_element_set_state(pipeline_, GST_STATE_PLAYING) != GST_STATE_CHANGE_FAILURE) {
                         should_reconnect_ = false;
                         last_frame_received_time_ = std::chrono::steady_clock::now(); // Reset staleness
-                        std::cout << "[" << id_ << "] Reconnection attempt successful." << std::endl;
+                        std::cout << "[" << id_ << "] Reconnection attempt successful." << "\n";
                     } else {
-                        std::cerr << "[" << id_ << "] Failed to set reconnected pipeline to PLAYING state." << std::endl;
+                        std::cerr << "[" << id_ << "] Failed to set reconnected pipeline to PLAYING state." << "\n";
                     }
                 } else {
-                     std::cerr << "[" << id_ << "] Rebuild failed: " << (error ? error->message : "Unknown") << std::endl;
+                     std::cerr << "[" << id_ << "] Rebuild failed: " << (error ? error->message : "Unknown") << "\n";
                      if (error) g_error_free(error);
                 }
             }

@@ -41,7 +41,7 @@ int main(int argc, char* argv[]) {
             } else if (arg == "--config") {
                 expect_config_path = true;
             } else if (arg == "--help" || arg == "-h") {
-                std::cout << "Usage: main_app [--build-engine-only] [--config <path>] [config_path]" << std::endl;
+                std::cout << "Usage: main_app [--build-engine-only] [--config <path>] [config_path]" << "\n";
                 return EXIT_SUCCESS;
             } else {
                 // Backward-compatible positional config path.

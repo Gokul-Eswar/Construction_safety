@@ -27,7 +27,7 @@ bool PipelineManager::init() {
     // 2. Init Shared Utilities
     violation_logger_ = std::make_unique<safety::ViolationLogger>();
     if (!violation_logger_->init(config_.database_path, config_.log_retention_days)) {
-        std::cerr << "Failed to initialize violation logger." << std::endl;
+        std::cerr << "Failed to initialize violation logger." << "\n";
         return false;
     }
 
@@ -47,7 +47,7 @@ bool PipelineManager::init() {
             mqtt_client_->subscribe("safety/control", [this](const std::string& topic, const std::string& payload) {
                  (void)topic;
                  if (payload.find("restart") != std::string::npos) {
-                     std::cout << "Received restart command via MQTT. Initiating shutdown..." << std::endl;
+                     std::cout << "Received restart command via MQTT. Initiating shutdown..." << "\n";
                      std::raise(SIGTERM);
                  }
             });
@@ -70,7 +70,7 @@ bool PipelineManager::init() {
                 world_pts.push_back(cp.world);
             }
             if (ctx->spatial_mapper->setCalibration(img_pts, world_pts)) {
-                std::cout << "[" << sc.id << "] Spatial calibration applied with " << img_pts.size() << " points." << std::endl;
+                std::cout << "[" << sc.id << "] Spatial calibration applied with " << img_pts.size() << " points." << "\n";
             }
         }
 
@@ -88,29 +88,28 @@ bool PipelineManager::init() {
 
 void PipelineManager::start() {
     running_ = true;
-    
-    // --- CORNER CASE: VRAM Governor ---
-    const size_t MIN_VRAM_PER_STREAM = 500 * 1024 * 1024; // 500MB safety margin
 
     for (auto& pair : streams_) {
 #ifdef ENABLE_CUDA
+        // --- CORNER CASE: VRAM Governor ---
+        const size_t MIN_VRAM_PER_STREAM = 500 * 1024 * 1024; // 500MB safety margin
         size_t free_vram = trt::getAvailableVRAM();
         if (free_vram < MIN_VRAM_PER_STREAM) {
             std::cerr << "CRITICAL: Insufficient VRAM to start stream '" << pair.first 
-                      << "'. Required: ~500MB, Available: " << (free_vram / 1024 / 1024) << "MB. Skipping." << std::endl;
+                      << "'. Required: ~500MB, Available: " << (free_vram / 1024 / 1024) << "MB. Skipping." << "\n";
             continue;
         }
         std::cout << "[VRAM Governor] Starting stream '" << pair.first << "' (Free VRAM: " 
-                  << (free_vram / 1024 / 1024) << "MB)" << std::endl;
+                  << (free_vram / 1024 / 1024) << "MB)" << "\n";
 #endif
 
         if (!pair.second->source->start()) {
-            std::cerr << "Failed to start stream: " << pair.first << std::endl;
+            std::cerr << "Failed to start stream: " << pair.first << "\n";
         }
     }
     
     tiling_thread_ = std::thread(&PipelineManager::updateTiledView, this);
-    std::cout << "Pipelines started (governor-controlled)." << std::endl;
+    std::cout << "Pipelines started (governor-controlled)." << "\n";
 }
 
 void PipelineManager::stop() {
@@ -124,7 +123,7 @@ void PipelineManager::stop() {
     if (mqtt_client_) {
         mqtt_client_->disconnect();
     }
-    std::cout << "All pipelines stopped." << std::endl;
+    std::cout << "All pipelines stopped." << "\n";
 }
 
 void PipelineManager::onFrameReceived(const std::string& stream_id, GstSample* sample) {
@@ -266,7 +265,19 @@ void PipelineManager::checkAlerts(const std::string& stream_id, const std::vecto
             
             if (is_violating) {
                 if (violation_logger_) {
-                    violation_logger_->log_violation(zone.id, det.confidence, det.track_id);
+                    // Capture spatial coordinates for analytics
+                    std::array<float, 4> detection_box = {
+                        static_cast<float>(det.box.x),
+                        static_cast<float>(det.box.y),
+                        static_cast<float>(det.box.width),
+                        static_cast<float>(det.box.height)
+                    };
+                    std::array<float, 2> world_coords = {
+                        feet_final.x,
+                        feet_final.y
+                    };
+                    violation_logger_->log_violation(zone.id, det.confidence, det.track_id,
+                                                    detection_box, world_coords, stream_id);
                 }
             }
 
@@ -408,7 +419,7 @@ void PipelineManager::updateTiledView() {
                     
                     if (mqtt_client_->publish("safety/cloud_sync", sync_payload.dump())) {
                         violation_logger_->mark_uploaded(uploaded_ids);
-                        std::cout << "Synced " << uploaded_ids.size() << " records to cloud." << std::endl;
+                        std::cout << "Synced " << uploaded_ids.size() << " records to cloud." << "\n";
                     }
                 }
             }
