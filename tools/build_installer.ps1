@@ -33,19 +33,43 @@ $Includes = @(
     "lint.bat"
 )
 
+$Excludes = @(".git", "node_modules", "build", "build_test", ".gemini", "tmp", "__pycache__", ".vscode", "coverage", ".venv")
+
 foreach ($Item in $Includes) {
     $SourcePath = "$ProjectRoot\$Item"
     if (Test-Path $SourcePath) {
-        Copy-Item -Path $SourcePath -Destination $StagingDir -Recurse
+        $Entry = Get-Item -LiteralPath $SourcePath
+        if ($Entry.PSIsContainer) {
+            $DestPath = Join-Path $StagingDir $Item
+            New-Item -ItemType Directory -Path $DestPath -Force | Out-Null
+
+            $RoboArgs = @(
+                "`"$SourcePath`"",
+                "`"$DestPath`"",
+                "/E",
+                "/R:1",
+                "/W:1",
+                "/NFL",
+                "/NDL",
+                "/NJH",
+                "/NJS",
+                "/NP"
+            )
+
+            foreach ($Ex in $Excludes) {
+                $RoboArgs += @("/XD", "$SourcePath\$Ex")
+            }
+
+            & robocopy @RoboArgs | Out-Null
+            if ($LASTEXITCODE -ge 8) {
+                throw "Robocopy failed for $Item with exit code $LASTEXITCODE"
+            }
+        } else {
+            Copy-Item -Path $SourcePath -Destination $StagingDir -Force
+        }
     } else {
         Write-Warning "Skipping missing item: $Item"
     }
-}
-
-# Cleanup excluded items from staging (just in case copy-recurse grabbed them)
-$Excludes = @(".git", "node_modules", "build", ".gemini", "tmp", "__pycache__", ".vscode", "coverage")
-foreach ($Ex in $Excludes) {
-    Get-ChildItem -Path $StagingDir -Recurse -Force | Where-Object { $_.Name -eq $Ex } | Remove-Item -Recurse -Force
 }
 
 Write-Host "[3/6] Creating payload.zip..."

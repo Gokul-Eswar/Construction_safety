@@ -12,4 +12,10 @@ else
     echo "[ERROR] Docker Compose is not installed."
     exit 1
 fi
+
+if [ $? -ne 0 ]; then
+    echo "[ERROR] Failed to stop services. Ensure Docker is running."
+    exit 1
+fi
+
 echo "[SUCCESS] System stopped successfully."
