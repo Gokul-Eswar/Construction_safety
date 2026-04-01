@@ -11,7 +11,7 @@ echo ============================================================
 echo.
 echo Select an operation:
 echo.
-echo   [1] Start System         - Launch all services (Docker)
+echo   [1] Start System         - Launch web+mqtt (Docker) + local engine
 echo   [2] Stop System          - Gracefully shut down all services
 echo   [3] Run Full Validation  - Test all system components
 echo   [4] Run Tests            - Execute unit and integration tests
@@ -48,15 +48,18 @@ goto MAIN_MENU
 :START_SYSTEM
 cls
 echo ============================================================
-echo                    STARTING SYSTEM...
+echo               STARTING HYBRID SYSTEM...
 echo ============================================================
 echo.
 
 set "SCRIPT_DIR=%~dp0"
 for %%I in ("%SCRIPT_DIR%..") do set "PROJECT_ROOT=%%~fI"
 cd /d "%PROJECT_ROOT%"
+set "ENGINE_PID_FILE=%PROJECT_ROOT%\logs\engine_native.pid"
 
-echo [1/4] Checking Docker status...
+if not exist "%PROJECT_ROOT%\logs" mkdir "%PROJECT_ROOT%\logs"
+
+echo [1/5] Checking Docker status...
 docker info >nul 2>&1
 if %errorlevel% neq 0 (
     echo.
@@ -69,7 +72,7 @@ if %errorlevel% neq 0 (
 echo [OK] Docker is running.
 
 echo.
-echo [2/4] Starting system containers...
+echo [2/5] Starting web and mqtt containers...
 echo       (This may take a few minutes if running for the first time)
 set COMPOSE_CMD=docker compose
 docker compose version >nul 2>&1
@@ -77,25 +80,46 @@ if %errorlevel% neq 0 (
     set COMPOSE_CMD=docker-compose
 )
 
-%COMPOSE_CMD% up -d --build
+%COMPOSE_CMD% -f docker-compose.edge.yml up -d --build
 
 if %errorlevel% neq 0 (
     echo.
-    echo [ERROR] Failed to start services. Check the output above.
+    echo [ERROR] Failed to start web/mqtt services. Check the output above.
     pause
     goto MAIN_MENU
 )
 
 echo.
-echo [3/4] Waiting for services to initialize...
+echo [3/5] Starting native engine process...
+set "ENGINE_EXE=%PROJECT_ROOT%\build\Release\main_app.exe"
+if not exist "%ENGINE_EXE%" set "ENGINE_EXE=%PROJECT_ROOT%\build\Debug\main_app.exe"
+if not exist "%ENGINE_EXE%" (
+    echo [ERROR] Engine executable not found at build\Release or build\Debug.
+    echo Run option 5 (Build Engine), then start again.
+    %COMPOSE_CMD% -f docker-compose.edge.yml down >nul 2>&1
+    pause
+    goto MAIN_MENU
+)
+
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$p = Start-Process -FilePath '%ENGINE_EXE%' -ArgumentList 'config.json' -WorkingDirectory '%PROJECT_ROOT%' -WindowStyle Hidden -PassThru; $p.Id | Out-File -FilePath '%ENGINE_PID_FILE%' -Encoding ascii -Force"
+if %errorlevel% neq 0 (
+    echo [ERROR] Failed to start native engine process.
+    %COMPOSE_CMD% -f docker-compose.edge.yml down >nul 2>&1
+    pause
+    goto MAIN_MENU
+)
+echo [OK] Native engine started.
+
+echo.
+echo [4/5] Waiting for services to initialize...
 timeout /t 20 /nobreak >nul
 
 echo.
-echo [4/4] Opening Dashboard...
+echo [5/5] Opening Dashboard...
 start http://localhost:3001
 
 echo.
-echo [SUCCESS] System is running!
+echo [SUCCESS] Hybrid system is running!
 echo You can manage the system via the Web Dashboard.
 echo.
 pause
@@ -107,13 +131,14 @@ goto MAIN_MENU
 :STOP_SYSTEM
 cls
 echo ============================================================
-echo                    STOPPING SYSTEM...
+echo               STOPPING HYBRID SYSTEM...
 echo ============================================================
 echo.
 
 set "SCRIPT_DIR=%~dp0"
 for %%I in ("%SCRIPT_DIR%..") do set "PROJECT_ROOT=%%~fI"
 cd /d "%PROJECT_ROOT%"
+set "ENGINE_PID_FILE=%PROJECT_ROOT%\logs\engine_native.pid"
 
 set COMPOSE_CMD=docker compose
 docker compose version >nul 2>&1
@@ -121,12 +146,23 @@ if %errorlevel% neq 0 (
     set COMPOSE_CMD=docker-compose
 )
 
-echo [1/2] Stopping Docker containers...
-%COMPOSE_CMD% down
+echo [1/3] Stopping native engine...
+if exist "%ENGINE_PID_FILE%" (
+    set /p ENGINE_PID=<"%ENGINE_PID_FILE%"
+    if defined ENGINE_PID (
+        powershell -NoProfile -ExecutionPolicy Bypass -Command "Stop-Process -Id %ENGINE_PID% -Force -ErrorAction SilentlyContinue"
+    )
+    del /f /q "%ENGINE_PID_FILE%" >nul 2>&1
+) else (
+    taskkill /IM main_app.exe /F >nul 2>&1
+)
+
+echo [2/3] Stopping web and mqtt containers...
+%COMPOSE_CMD% -f docker-compose.edge.yml down
 
 if %errorlevel% equ 0 (
     echo.
-    echo [SUCCESS] System stopped gracefully.
+    echo [SUCCESS] Hybrid system stopped gracefully.
 ) else (
     echo.
     echo [WARNING] Some containers may not have stopped cleanly.

@@ -24,13 +24,15 @@ Both launchers present an interactive menu where you can select any operation ne
 ## 📋 Available Operations
 
 ### 1. **Start System** (Menu Option 1)
-Launches all Docker containers and opens the web dashboard.
+Launches a compact hybrid runtime and opens the web dashboard.
+- Starts **web + MQTT** via Docker using `docker-compose.edge.yml`
+- Starts the heavy **engine natively** on the host machine
 - Automatically detects Docker installation
 - Handles `docker compose` vs `docker-compose` fallback
 - Opens http://localhost:3001 in browser
 
 ### 2. **Stop System** (Menu Option 2)
-Gracefully shuts down all running containers.
+Gracefully shuts down web/mqtt containers and the native engine process.
 
 ### 3. **Full Validation** (Menu Option 3)
 Comprehensive system health check:
@@ -50,7 +52,7 @@ Executes all test suites:
 Compiles the C++ engine from source:
 - Auto-detects Visual Studio (Windows)
 - Uses CMake Release build
-- Optional on Windows (Docker handles it automatically)
+- Required for hybrid runtime (engine runs locally)
 
 ### 6. **Rebuild All** (Menu Option 6)
 Clean rebuild of all components:

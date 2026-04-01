@@ -12,7 +12,7 @@ show_menu() {
     echo ""
     echo "Select an operation:"
     echo ""
-    echo "   [1] Start System         - Launch all services (Docker)"
+    echo "   [1] Start System         - Launch web+mqtt (Docker) + local engine"
     echo "   [2] Stop System          - Gracefully shut down all services"
     echo "   [3] Run Full Validation  - Test all system components"
     echo "   [4] Run Tests            - Execute unit and integration tests"
@@ -34,14 +34,14 @@ get_project_root() {
 start_system() {
     clear
     echo "============================================================"
-    echo "                    STARTING SYSTEM..."
+    echo "               STARTING HYBRID SYSTEM..."
     echo "============================================================"
     echo ""
     
     PROJECT_ROOT=$(get_project_root)
     cd "$PROJECT_ROOT"
     
-    echo "[1/4] Checking Docker status..."
+    echo "[1/5] Checking Docker status..."
     if ! docker info > /dev/null 2>&1; then
         echo ""
         echo "[ERROR] Docker is not running!"
@@ -51,32 +51,55 @@ start_system() {
         return
     fi
     echo "[OK] Docker is running."
+
+    mkdir -p "$PROJECT_ROOT/logs"
+    ENGINE_PID_FILE="$PROJECT_ROOT/logs/engine_native.pid"
     
     echo ""
-    echo "[2/4] Starting system containers..."
+    echo "[2/5] Starting web and mqtt containers..."
     echo "       (This may take a few minutes if running for the first time)"
     
     if docker compose version > /dev/null 2>&1; then
-        docker compose up -d --build
+        docker compose -f docker-compose.edge.yml up -d --build
     else
-        docker-compose up -d --build
+        docker-compose -f docker-compose.edge.yml up -d --build
     fi
     
     if [ $? -ne 0 ]; then
         echo ""
-        echo "[ERROR] Failed to start services. Check the output above."
+        echo "[ERROR] Failed to start web/mqtt services. Check the output above."
         read -p "Press Enter to continue..."
         return
     fi
+
+    echo ""
+    echo "[3/5] Starting native engine process..."
+    ENGINE_PATH="$PROJECT_ROOT/build/Release/main_app"
+    [ ! -f "$ENGINE_PATH" ] && ENGINE_PATH="$PROJECT_ROOT/build/Debug/main_app"
+    if [ ! -f "$ENGINE_PATH" ]; then
+        echo "[ERROR] Engine executable not found at build/Release or build/Debug."
+        echo "Run option 5 (Build Engine), then start again."
+        if docker compose version > /dev/null 2>&1; then
+            docker compose -f docker-compose.edge.yml down > /dev/null 2>&1
+        else
+            docker-compose -f docker-compose.edge.yml down > /dev/null 2>&1
+        fi
+        read -p "Press Enter to continue..."
+        return
+    fi
+
+    nohup "$ENGINE_PATH" config.json > "$PROJECT_ROOT/logs/engine_native.log" 2>&1 &
+    echo $! > "$ENGINE_PID_FILE"
+    echo "[OK] Native engine started."
     
     echo ""
-    echo "[3/4] Waiting for services to initialize..."
+    echo "[4/5] Waiting for services to initialize..."
     sleep 20
     
     echo ""
-    echo "[4/4] Dashboard URL: http://localhost:3001"
+    echo "[5/5] Dashboard URL: http://localhost:3001"
     echo ""
-    echo "[SUCCESS] System is running!"
+    echo "[SUCCESS] Hybrid system is running!"
     echo "Open http://localhost:3001 in your browser to access the dashboard."
     echo ""
     read -p "Press Enter to continue..."
@@ -85,24 +108,35 @@ start_system() {
 stop_system() {
     clear
     echo "============================================================"
-    echo "                    STOPPING SYSTEM..."
+    echo "               STOPPING HYBRID SYSTEM..."
     echo "============================================================"
     echo ""
     
     PROJECT_ROOT=$(get_project_root)
     cd "$PROJECT_ROOT"
     
-    echo "[1/2] Stopping Docker containers..."
+    ENGINE_PID_FILE="$PROJECT_ROOT/logs/engine_native.pid"
+
+    echo "[1/3] Stopping native engine..."
+    if [ -f "$ENGINE_PID_FILE" ]; then
+        ENGINE_PID="$(cat "$ENGINE_PID_FILE")"
+        kill "$ENGINE_PID" > /dev/null 2>&1 || true
+        rm -f "$ENGINE_PID_FILE"
+    else
+        pkill -f main_app > /dev/null 2>&1 || true
+    fi
+
+    echo "[2/3] Stopping web and mqtt containers..."
     
     if docker compose version > /dev/null 2>&1; then
-        docker compose down
+        docker compose -f docker-compose.edge.yml down
     else
-        docker-compose down
+        docker-compose -f docker-compose.edge.yml down
     fi
     
     if [ $? -eq 0 ]; then
         echo ""
-        echo "[SUCCESS] System stopped gracefully."
+        echo "[SUCCESS] Hybrid system stopped gracefully."
     else
         echo ""
         echo "[WARNING] Some containers may not have stopped cleanly."

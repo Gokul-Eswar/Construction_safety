@@ -62,9 +62,11 @@ This opens an interactive menu where you can:
 - ✅ More...
 
 **First Time Setup:**
-1.  Select **Option 1: Start System** from the menu.
-2.  Wait for the system to initialize (first run takes a few minutes to build).
-3.  The **Web Dashboard** will open automatically in your browser (`http://localhost:3001`).
+1.  Select **Option 5: Build Engine** once from the menu (required for native engine mode).
+2.  Select **Option 1: Start System** from the menu.
+3.  Launcher starts **web + mqtt in Docker** and **engine natively** on your machine.
+4.  Wait for the system to initialize (first run takes a few minutes to build).
+5.  The **Web Dashboard** will open automatically in your browser (`http://localhost:3001`).
 
 **To Stop:**
 1.  Run the launcher again and select **Option 2: Stop System**.
