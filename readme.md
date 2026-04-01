@@ -43,19 +43,33 @@ Follow the same steps as above, then restart the Docker daemon: `sudo systemctl 
 
 ---
 
-## 🚀 Quick Start (One-Click)
+## 🚀 Quick Start (Unified Launcher)
 
 **Prerequisites:**
 1.  **Docker Desktop** (Installed and Running).
 2.  **NVIDIA GPU** (Recommended for performance).
 
-**To Start:**
-1.  Run **`tools\\start_system.bat`** (Windows) or `./tools/start_system.sh` (Linux).
+**To Launch Control Widget:**
+1.  **Windows:** Run `tools\Sentinel.bat`
+2.  **Linux/macOS:** Run `./tools/Sentinel.sh`
+
+This opens an interactive menu where you can:
+- ✅ Start/Stop the system
+- ✅ Run validation & tests
+- ✅ Build the engine
+- ✅ Optimize performance
+- ✅ Lint code  
+- ✅ More...
+
+**First Time Setup:**
+1.  Select **Option 1: Start System** from the menu.
 2.  Wait for the system to initialize (first run takes a few minutes to build).
 3.  The **Web Dashboard** will open automatically in your browser (`http://localhost:3001`).
 
 **To Stop:**
-1.  Run **`tools\\stop_system.bat`** (Windows) or `./tools/stop_system.sh` (Linux).
+1.  Run the launcher again and select **Option 2: Stop System**.
+
+📚 **For detailed launcher documentation:** See [tools/README.md](tools/README.md)
 
 ---
 
