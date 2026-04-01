@@ -3,16 +3,30 @@
 
 $ErrorActionPreference = "Stop"
 $ProjectRoot = Resolve-Path "$PSScriptRoot\.."
-$BuildDir = "$PSScriptRoot\build_temp"
-$DistDir = "$PSScriptRoot\dist"
+$BuildDir = Join-Path $ProjectRoot ("build_installer_temp_" + [DateTime]::Now.ToString("yyyyMMdd_HHmmss"))
+$DistDir = "$ProjectRoot\dist_installer"
 $StagingDir = "$BuildDir\staging"
 $InstallerName = "SentinelSetup.exe"
 
 Write-Host "[1/6] Cleaning up..."
-if (Test-Path $BuildDir) { Remove-Item -Path $BuildDir -Recurse -Force }
-if (Test-Path $DistDir) { Remove-Item -Path $DistDir -Recurse -Force }
-New-Item -ItemType Directory -Path $StagingDir | Out-Null
-New-Item -ItemType Directory -Path $DistDir | Out-Null
+if (Test-Path $BuildDir) {
+    try {
+        Remove-Item -LiteralPath $BuildDir -Recurse -Force -ErrorAction Stop
+    } catch {
+        $LongBuildPath = "\\?\$BuildDir"
+        & cmd /c "if exist `"$LongBuildPath`" rmdir /s /q `"$LongBuildPath`"" | Out-Null
+    }
+}
+if (Test-Path $DistDir) {
+    try {
+        Remove-Item -LiteralPath $DistDir -Recurse -Force -ErrorAction Stop
+    } catch {
+        $LongDistPath = "\\?\$DistDir"
+        & cmd /c "if exist `"$LongDistPath`" rmdir /s /q `"$LongDistPath`"" | Out-Null
+    }
+}
+New-Item -ItemType Directory -Path $StagingDir -Force | Out-Null
+New-Item -ItemType Directory -Path $DistDir -Force | Out-Null
 
 Write-Host "[2/6] Copying project files..."
 # Allow-list approach to avoid copying garbage
@@ -20,7 +34,18 @@ $Includes = @(
     "installer",
     "src",
     "web",
-    "tools",
+    "tools\\Setup.bat",
+    "tools\\start_system.bat",
+    "tools\\start_system.sh",
+    "tools\\stop_system.bat",
+    "tools\\stop_system.sh",
+    "tools\\build_engine.bat",
+    "tools\\rebuild.bat",
+    "tools\\run_demo.bat",
+    "tools\\run_full_validation.bat",
+    "tools\\run_tests.bat",
+    "tools\\optimize_system.ps1",
+    "tools\\lint.bat",
     "docs",
     "config.json",
     "docker-compose.yml",
@@ -29,11 +54,10 @@ $Includes = @(
     "Dockerfile.web",
     "readme.md",
     "yolo11n.onnx",
-    ".clang-tidy",
-    "lint.bat"
+    ".clang-tidy"
 )
 
-$Excludes = @(".git", "node_modules", "build", "build_test", ".gemini", "tmp", "__pycache__", ".vscode", "coverage", ".venv")
+$Excludes = @(".git", "node_modules", "build", "build_test", "build_temp", "build_installer_temp", "dist", "dist_installer", ".gemini", "tmp", "__pycache__", ".vscode", "coverage", ".venv")
 
 foreach ($Item in $Includes) {
     $SourcePath = "$ProjectRoot\$Item"

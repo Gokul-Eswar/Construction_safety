@@ -1,6 +1,9 @@
 # Build and Binary Directories
 build/
 build_test/
+build_installer_temp/
+build_installer_temp_*/
+dist_installer/
 bin/
 lib/
 tools/build_temp/
