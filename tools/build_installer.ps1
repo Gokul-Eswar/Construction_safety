@@ -17,10 +17,10 @@ New-Item -ItemType Directory -Path $DistDir | Out-Null
 Write-Host "[2/6] Copying project files..."
 # Allow-list approach to avoid copying garbage
 $Includes = @(
-    "Setup.bat",
     "installer",
     "src",
     "web",
+    "tools",
     "docs",
     "config.json",
     "docker-compose.yml",
@@ -28,10 +28,6 @@ $Includes = @(
     "Dockerfile.engine",
     "Dockerfile.web",
     "readme.md",
-    "start_system.bat",
-    "start_system.sh",
-    "stop_system.bat",
-    "stop_system.sh",
     "yolo11n.onnx",
     ".clang-tidy",
     "lint.bat"
@@ -97,8 +93,18 @@ namespace SentinelInstaller
                 if (unzipProc.ExitCode != 0) throw new Exception("Extraction failed.");
 
                 // 3. Run Setup.bat
+                string setupPath = Path.Combine(tempPath, "tools", "Setup.bat");
+                if (!File.Exists(setupPath))
+                {
+                    setupPath = Path.Combine(tempPath, "Setup.bat");
+                }
+                if (!File.Exists(setupPath))
+                {
+                    throw new Exception("Setup.bat not found in installer payload.");
+                }
+
                 ProcessStartInfo psiSetup = new ProcessStartInfo();
-                psiSetup.FileName = Path.Combine(tempPath, "Setup.bat");
+                psiSetup.FileName = setupPath;
                 psiSetup.WorkingDirectory = tempPath;
                 psiSetup.UseShellExecute = true; // Use shell to handle .bat
                 

@@ -21,7 +21,7 @@ This file summarizes the completed major phases of the project. All core feature
 
 ### ✅ Phase 4: Refinement
 - **System Optimization**: Latency reduction and end-to-end performance tuning.
-- **Documentation Refinement**: Consolidation of technical specifications into `conductor/spec.md`.
+- **Documentation Refinement**: Consolidation of technical specifications into `docs/conductor/spec.md`.
 
 ---
 *Last Updated: March 4, 2026*

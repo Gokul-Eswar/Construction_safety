@@ -80,5 +80,5 @@ if (Get-Command docker-compose -ErrorAction SilentlyContinue) {
 Write-Host ""
 Write-Host "==============================================" -ForegroundColor Cyan
 Write-Host "   OPTIMIZATION COMPLETE" -ForegroundColor Cyan
-Write-Host "   You can now run 'start_system.bat'" -ForegroundColor Cyan
+Write-Host "   You can now run 'tools\\start_system.bat'" -ForegroundColor Cyan     
 Write-Host "==============================================" -ForegroundColor Cyan

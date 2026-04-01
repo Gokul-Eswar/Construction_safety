@@ -1,6 +1,10 @@
 @echo off
 title Sentinel Safety System Launcher
 
+set "SCRIPT_DIR=%~dp0"
+for %%I in ("%SCRIPT_DIR%..") do set "PROJECT_ROOT=%%~fI"
+cd /d "%PROJECT_ROOT%"
+
 echo ==============================================
 echo      SENTINEL CONSTRUCTION SAFETY SYSTEM
 echo ==============================================
@@ -47,6 +51,6 @@ start http://localhost:3001
 echo.
 echo [SUCCESS] System is running!
 echo You can manage the system via the Web Dashboard.
-echo To stop the system, run stop_system.bat
+echo To stop the system, run tools\stop_system.bat
 echo.
 pause

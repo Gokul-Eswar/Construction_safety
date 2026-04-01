@@ -22,7 +22,7 @@ This system uses Artificial Intelligence (AI) to monitor construction sites in r
 To start the system, follow these three steps:
 
 1.  **Plug in your cameras:** Ensure your USB cameras or network cameras are connected.
-2.  **Run the System:** Double-click the file named `start_system.bat` in the main folder.
+2.  **Run the System:** Launch `tools\\start_system.bat` from the main project folder.
 3.  **Open the Dashboard:** Open your web browser (Chrome or Edge) and type:
     `http://localhost:3001`
 
@@ -97,7 +97,7 @@ The system is designed to be highly "smart" to avoid annoying false alarms:
 | **Black Screen** | Ensure the camera is plugged in. For USB cameras, try changing the "Device Index" from `0` to `1`. |
 | **Too many alerts** | Increase the "Alert Cooldown" in the **Settings** page so the system doesn't beep every second for the same person. |
 | **System is slow** | Ensure you have an NVIDIA GPU with the latest drivers. The system relies on "TensorRT" for speed. |
-| **Can't open Dashboard** | Ensure you ran `start_system.bat` first and that it didn't show any red error messages. |
+| **Can't open Dashboard** | Ensure you ran `tools\\start_system.bat` first and that it didn't show any red error messages. |
 | **"System Offline" Alert** | The AI engine may be starting up or optimizing. Wait 1-2 minutes. If it persists, check your MQTT broker connection. |
 
 ---

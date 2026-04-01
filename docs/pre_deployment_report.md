@@ -10,7 +10,7 @@
 ## ⚠️ Action Items / Warnings
 1.  **Native Build Failed:** The `build_engine.bat` script failed because the Visual Studio C++ compiler (`cl.exe`) is not in your PATH.
     -   *Impact:* You cannot run `run_demo.bat` (native mode) at this moment.
-    -   *Solution:* Use the Docker mode (`start_system.bat`) which handles the build internally.
+    -   *Solution:* Use the Docker mode (`tools\\start_system.bat`) which handles the build internally.
 
 2.  **Docker Requirement:**
     -   Ensure **Docker Desktop** is running.
@@ -18,7 +18,7 @@
     -   If you do not have an NVIDIA GPU available to Docker, the system might fail to initialize the TensorRT engine.
 
 ## 🚀 How to Run (Recommended)
-Double-click **`start_system.bat`**.
+Run **`tools\\start_system.bat`**.
 1.  It will check for Docker.
 2.  It will build the engine and web containers.
 3.  It will automatically open the dashboard at `http://localhost:3001`.

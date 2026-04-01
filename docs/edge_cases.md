@@ -86,7 +86,7 @@ This document outlines specific scenarios where the system may encounter degrade
 - **Impact:** Developer cannot compile the C++ engine from source without Docker.
 - **Mitigation:**
     - **Documentation:** Explicitly require Visual Studio C++ Build Tools in `readme.md`.
-    - **Scripting:** The Docker build (`start_system.bat`) isolates the build environment, bypassing the need for local toolchains.
+    - **Scripting:** The Docker build (`tools\\start_system.bat`) isolates the build environment, bypassing the need for local toolchains.
 
 ---
 

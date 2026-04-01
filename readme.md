@@ -50,12 +50,12 @@ Follow the same steps as above, then restart the Docker daemon: `sudo systemctl 
 2.  **NVIDIA GPU** (Recommended for performance).
 
 **To Start:**
-1.  Double-click **`start_system.bat`** (Windows) or run `./start_system.sh` (Linux).
+1.  Run **`tools\\start_system.bat`** (Windows) or `./tools/start_system.sh` (Linux).
 2.  Wait for the system to initialize (first run takes a few minutes to build).
 3.  The **Web Dashboard** will open automatically in your browser (`http://localhost:3001`).
 
 **To Stop:**
-1.  Double-click **`stop_system.bat`**.
+1.  Run **`tools\\stop_system.bat`** (Windows) or `./tools/stop_system.sh` (Linux).
 
 ---
 

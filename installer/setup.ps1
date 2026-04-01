@@ -191,6 +191,7 @@ $DoInstall = {
     # START INSTALLATION
     $Dest = $TxtDir.Text
     $Log = { param($msg) $TxtLog.AppendText("$msg`r`n"); $Form.Refresh() }
+    $script:LaunchScriptPath = Join-Path $Dest "tools\start_system.bat"
     
     # Exclude list
     $Excludes = @("installer", ".git", "build", "node_modules", ".gemini", "tmp", "coverage")
@@ -202,7 +203,7 @@ $DoInstall = {
         }
 
         # Check for existing installation
-        if (Test-Path "$Dest\start_system.bat") {
+           if ((Test-Path "$Dest\tools\start_system.bat") -or (Test-Path "$Dest\start_system.bat")) {
              &$Log "Existing installation detected. Updating files..."
         }
 
@@ -325,11 +326,19 @@ $DoInstall = {
             }
         }
 
+        # Resolve launcher path from the current layout (tools/) with legacy fallback.
+        if (-not (Test-Path $script:LaunchScriptPath)) {
+            $script:LaunchScriptPath = Join-Path $Dest "start_system.bat"
+        }
+        if (-not (Test-Path $script:LaunchScriptPath)) {
+            throw "Launcher script not found after install. Expected tools\\start_system.bat or start_system.bat."
+        }
+
         &$Log "Creating Desktop Shortcut..."
         $WshShell = New-Object -ComObject WScript.Shell
         $ShortcutPath = "$Home\Desktop\Sentinel Safety.lnk"
         $Shortcut = $WshShell.CreateShortcut($ShortcutPath)
-        $Shortcut.TargetPath = "$Dest\start_system.bat"
+        $Shortcut.TargetPath = $script:LaunchScriptPath
         $Shortcut.WorkingDirectory = "$Dest"
         $Shortcut.IconLocation = "shell32.dll, 15"
         $Shortcut.Save()
@@ -338,7 +347,7 @@ $DoInstall = {
         &$Log "Creating Start Menu Shortcut..."
         $StartMenuPath = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Sentinel Safety.lnk"
         $Shortcut = $WshShell.CreateShortcut($StartMenuPath)
-        $Shortcut.TargetPath = "$Dest\start_system.bat"
+        $Shortcut.TargetPath = $script:LaunchScriptPath
         $Shortcut.WorkingDirectory = "$Dest"
         $Shortcut.IconLocation = "shell32.dll, 15"
         $Shortcut.Save()
@@ -404,7 +413,18 @@ $BtnNext.Add_Click({
     }
     elseif ($script:CurrentStep -eq 4) {
         if ($ChkLaunch.Checked) {
-            Start-Process "$($TxtDir.Text)\start_system.bat"
+            if (-not (Test-Path $script:LaunchScriptPath)) {
+                $script:LaunchScriptPath = Join-Path $TxtDir.Text "tools\start_system.bat"
+                if (-not (Test-Path $script:LaunchScriptPath)) {
+                    $script:LaunchScriptPath = Join-Path $TxtDir.Text "start_system.bat"
+                }
+            }
+
+            if (Test-Path $script:LaunchScriptPath) {
+                Start-Process $script:LaunchScriptPath -WorkingDirectory $TxtDir.Text
+            } else {
+                [System.Windows.Forms.MessageBox]::Show("Launcher script not found. Please start manually from the install folder.", "Launch Error", "OK", "Warning")
+            }
         }
         $Form.Close()
     }
