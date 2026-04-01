@@ -18,7 +18,8 @@ COPY src/ ./src/
 # Compile the application (parallel build)
 RUN mkdir build_dir && cd build_dir && \
     cmake .. -DCMAKE_BUILD_TYPE=Release -DENABLE_CUDA=ON -DBUILD_UNIT_TESTS=OFF && \
-    cmake --build . --config Release --parallel $(nproc)
+    cmake --build . --config Release --parallel $(nproc) && \
+    strip /build/build_dir/main_app || true
 
 # Stage 2: Runtime Stage (Lightweight)
 # Note: Using the same base to ensure library compatibility, but we clean up everything else.

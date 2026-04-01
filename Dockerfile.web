@@ -3,7 +3,7 @@ FROM node:18-alpine AS frontend-builder
 WORKDIR /app/frontend
 COPY web/frontend/package*.json ./
 # Using 'npm ci' for faster, immutable installs
-RUN npm ci
+RUN npm ci --no-audit --no-fund
 COPY web/frontend/ ./
 RUN npm run build
 
@@ -14,7 +14,7 @@ WORKDIR /app/backend
 RUN apk add --no-cache python3 make g++
 COPY web/backend/package*.json ./
 # Only install production dependencies
-RUN npm ci --only=production
+RUN npm ci --omit=dev --no-audit --no-fund
 
 # Stage 3: Final Production Image
 FROM node:18-alpine AS runner
