@@ -1,20 +1,5 @@
 {
-    "streams": [
-        {
-            "id": "",
-            "name": "",
-            "type": "rtsp",
-            "uri": "192.168.20.119",
-            "zones": []
-        },
-        {
-            "id": "Generic",
-            "name": "",
-            "type": "rtsp",
-            "uri": "rtsp://192.168.29.161:554/stream1",
-            "zones": []
-        }
-    ],
+    "streams": [],
     "model_path": "yolo11n.onnx",
     "database_path": "safety_violations.db",
     "alert_cooldown": 3000,
