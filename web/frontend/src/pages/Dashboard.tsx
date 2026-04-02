@@ -3,7 +3,7 @@ import { Grid, Card, CardContent, Typography, Box, CircularProgress, Chip, Alert
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import VideocamOffIcon from '@mui/icons-material/VideocamOff';
 import axios from 'axios';
-import io from 'socket.io-client';
+import io, { Socket } from 'socket.io-client';
 import MJPEGPlayer from '../components/MJPEGPlayer';
 
 interface Stats {
@@ -12,18 +12,29 @@ interface Stats {
   active_streams: number;
 }
 
-const socket = io(); // Connects to same host/port by default in prod
-
 export default function Dashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [recentAlert, setRecentAlert] = useState<string | null>(null);
-  const [systemOnline, setSystemOnline] = useState(false); // Default false until heartbeat
+  const [systemOnline, setSystemOnline] = useState(false);
   const [telemetry, setTelemetry] = useState<any>(null);
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
   const lastHeartbeat = useRef<number>(0);
+  const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
+    // Initialize Socket.IO connection inside the component
+    console.log('🔌 [Dashboard] Initializing Socket.IO connection to http://localhost:3001');
+    
+    const socket = io('http://localhost:3001', {
+        reconnection: true,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        reconnectionAttempts: 5
+    });
+    
+    socketRef.current = socket;
+
     const fetchStats = async () => {
       try {
         const res = await axios.get('/api/stats');
@@ -36,7 +47,6 @@ export default function Dashboard() {
     };
     
     fetchStats();
-    // Keep polling for stats as backup/sync, but slower
     const interval = setInterval(fetchStats, 10000); 
 
     // Watchdog for Heartbeat
@@ -46,39 +56,47 @@ export default function Dashboard() {
         }
     }, 1000);
 
-    // Socket.IO Listeners
+    // Socket.IO Connection Events
     socket.on('connect', () => {
-        console.log('Connected to WebSocket');
+        console.log('✓ [Socket.IO] Connected - Client ID:', socket.id);
     });
 
+    socket.on('connect_error', (error) => {
+        console.error('✗ [Socket.IO] Connection Error:', error);
+    });
+
+    socket.on('disconnect', () => {
+        console.log('✗ [Socket.IO] Disconnected');
+    });
+
+    // Socket.IO Message Listeners
     socket.on('violation_alert', (data: any) => {
-        console.log('Real-time Alert:', data);
+        console.log('[Socket.IO] Real-time Alert:', data);
         setRecentAlert(`Zone Violation: ${data.zone_name || 'Unknown Zone'}`);
-        // Increment stats locally for instant feedback
         setStats(prev => prev ? { ...prev, today_violations: prev.today_violations + 1 } : null);
     });
 
-    socket.on('system_heartbeat', () => {
+    socket.on('system_heartbeat', (data: any) => {
+        console.log('[Socket.IO] ♥ Heartbeat received:', data);
         lastHeartbeat.current = Date.now();
         setSystemOnline(true);
     });
 
     socket.on('system_telemetry', (data: any) => {
+        console.log('[Socket.IO] Telemetry:', data);
         setTelemetry(data);
     });
 
-    socket.on('cloud_sync_event', () => {
+    socket.on('cloud_sync_event', (data: any) => {
+        console.log('[Socket.IO] Cloud sync event:', data);
         setLastSyncTime(new Date());
     });
 
     return () => {
         clearInterval(interval);
         clearInterval(watchdog);
-        socket.off('connect');
-        socket.off('violation_alert');
-        socket.off('system_heartbeat');
-        socket.off('system_telemetry');
-        socket.off('cloud_sync_event');
+        if (socket) socket.disconnect();
+        console.log('🔌 [Dashboard] Cleanup - Socket.IO disconnected');
     };
   }, []);
 
@@ -104,213 +122,69 @@ export default function Dashboard() {
           </Grid>
       )}
 
-      <Snackbar open={!!recentAlert} autoHideDuration={6000} onClose={() => setRecentAlert(null)} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
-        <Alert severity="error" variant="filled" sx={{ width: '100%' }}>
-          {recentAlert}
-        </Alert>
+      <Grid item xs={12} sm={6} md={3}>
+          <Card>
+              <CardContent>
+                  <Typography color="text.secondary" gutterBottom>System Health</Typography>
+                  <Box display="flex" alignItems="center">
+                      <CheckCircleIcon sx={{ mr: 1, color: systemOnline ? 'green' : 'gray' }} />
+                      <Typography variant="h4">{systemOnline ? 'Online' : 'Offline'}</Typography>
+                  </Box>
+              </CardContent>
+          </Card>
+      </Grid>
+
+      <Grid item xs={12} sm={6} md={3}>
+          <Card>
+              <CardContent>
+                  <Typography color="text.secondary" gutterBottom>Active Cameras</Typography>
+                  <Typography variant="h4">{stats?.active_streams || 0}</Typography>
+              </CardContent>
+          </Card>
+      </Grid>
+
+      <Grid item xs={12} sm={6} md={3}>
+          <Card>
+              <CardContent>
+                  <Typography color="text.secondary" gutterBottom>Violations Today</Typography>
+                  <Typography variant="h4" color="error">{stats?.today_violations || 0}</Typography>
+              </CardContent>
+          </Card>
+      </Grid>
+
+      <Grid item xs={12} sm={6} md={3}>
+          <Card>
+              <CardContent>
+                  <Typography color="text.secondary" gutterBottom>Status</Typography>
+                  <Chip 
+                      label={systemOnline ? 'LIVE' : 'OFFLINE'} 
+                      color={systemOnline ? 'success' : 'default'}
+                      variant="outlined"
+                  />
+              </CardContent>
+          </Card>
+      </Grid>
+
+      <Grid item xs={12}>
+          <Card>
+              <CardContent>
+                  <Typography variant="h6" gutterBottom>Live Feed</Typography>
+                  <Box sx={{ backgroundColor: '#000', minHeight: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Typography color="textSecondary">No camera selected</Typography>
+                  </Box>
+              </CardContent>
+          </Card>
+      </Grid>
+
+      <Snackbar
+          open={!!recentAlert}
+          autoHideDuration={6000}
+          onClose={() => setRecentAlert(null)}
+      >
+          <Alert onClose={() => setRecentAlert(null)} severity="warning">
+              {recentAlert}
+          </Alert>
       </Snackbar>
-
-      {/* Metrics Row */}
-      <Grid item xs={12} md={4}>
-        <Card sx={{ height: '100%', bgcolor: 'background.paper' }}>
-          <CardContent>
-            <Typography color="text.secondary" gutterBottom>System Health</Typography>
-            <Box display="flex" alignItems="center" gap={1} mb={1}>
-              <CheckCircleIcon color="success" fontSize="large" />
-              <Typography variant="h4">{stats?.system_status || 'Unknown'}</Typography>
-            </Box>
-            {lastSyncTime && (
-                 <Chip label={`Cloud Synced: ${lastSyncTime.toLocaleTimeString()}`} size="small" variant="outlined" color="info" />
-            )}
-          </CardContent>
-        </Card>
-      </Grid>
-      <Grid item xs={12} md={4}>
-        <Card sx={{ height: '100%' }}>
-          <CardContent>
-             <Typography color="text.secondary" gutterBottom>Active Cameras</Typography>
-             <Typography variant="h4">{stats?.active_streams || 0}</Typography>
-          </CardContent>
-        </Card>
-      </Grid>
-      <Grid item xs={12} md={4}>
-        <Card sx={{ height: '100%' }}>
-          <CardContent>
-             <Typography color="text.secondary" gutterBottom>Violations Today</Typography>
-             <Typography variant="h4" color="error">{stats?.today_violations || 0}</Typography>
-          </CardContent>
-        </Card>
-      </Grid>
-
-      {/* Live Feed Section */}
-      <Grid item xs={12}>
-        <Card>
-          <CardContent>
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-              <Typography variant="h6">Live Surveillance Grid</Typography>
-              <Box display="flex" gap={2}>
-                {telemetry && Object.entries(telemetry.streams || {}).map(([key, val]: any) => (
-                    <Chip 
-                        key={key} 
-                        label={`${key}: ${val.fps.toFixed(1)} FPS`} 
-                        color={val.active ? "success" : "default"} 
-                        variant="outlined" 
-                        size="small" 
-                    />
-                ))}
-                {telemetry && telemetry.latency && (
-                    <Chip 
-                        label={`Latency (P99): ${aggregateP99.toFixed(1)}ms`} 
-                        color="warning" 
-                        variant="outlined" 
-                        size="small" 
-                    />
-                )}
-                <Chip icon={<CheckCircleIcon />} label="Live" color="success" size="small" variant="outlined" />
-              </Box>
-            </Box>
-            
-            <MJPEGPlayer 
-                url={`http://${window.location.hostname}:8081`} 
-                label="Primary Site Camera"
-            />
-          </CardContent>
-        </Card>
-      </Grid>
-
-      {/* Detailed Metrics Section */}
-      <Grid item xs={12}>
-        <Card>
-          <CardContent>
-             <Typography variant="h6" gutterBottom>System Metrics</Typography>
-             <Typography variant="body2" color="text.secondary" paragraph>
-                Real-time performance statistics from the inference engine.
-             </Typography>
-             
-             <Grid container spacing={3}>
-                {/* Operation Stats */}
-                <Grid item xs={12} md={4}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>Operation Statistics</Typography>
-                    <TableContainer component={Paper} variant="outlined">
-                        <Table size="small">
-                            <TableHead>
-                                <TableRow>
-                                    <TableCell>Stream ID</TableCell>
-                                    <TableCell align="right">FPS</TableCell>
-                                    <TableCell align="right">Frames</TableCell>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {telemetry && telemetry.streams ? (
-                                    Object.entries(telemetry.streams).map(([key, val]: any) => (
-                                        <TableRow key={key}>
-                                            <TableCell component="th" scope="row">{key}</TableCell>
-                                            <TableCell align="right">{val.fps.toFixed(1)}</TableCell>
-                                            <TableCell align="right">{val.frame_count.toLocaleString()}</TableCell>
-                                        </TableRow>
-                                    ))
-                                ) : (
-                                    <TableRow>
-                                        <TableCell colSpan={3} align="center">No telemetry data</TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
-                </Grid>
-
-                {/* Model Stats */}
-                <Grid item xs={12} md={4}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>Model Latency (ms)</Typography>
-                    <TableContainer component={Paper} variant="outlined">
-                        <Table size="small">
-                            <TableHead>
-                                <TableRow>
-                                    <TableCell>Component</TableCell>
-                                    <TableCell align="right">Avg</TableCell>
-                                    <TableCell align="right">P99</TableCell>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {telemetry && telemetry.latency ? (
-                                    Object.entries(telemetry.latency).map(([key, val]: any) => {
-                                        const parts = key.split('_');
-                                        const label = parts[parts.length - 1].charAt(0).toUpperCase() + parts[parts.length - 1].slice(1);
-                                        const stream = parts.slice(0, -1).join('_');
-
-                                        return (
-                                            <TableRow key={key}>
-                                                <TableCell component="th" scope="row">
-                                                    {label} <Typography variant="caption" color="text.secondary">({stream})</Typography>
-                                                </TableCell>
-                                                <TableCell align="right">{val.avg.toFixed(1)}</TableCell>
-                                                <TableCell align="right" sx={{ fontWeight: 'bold' }}>{val.p99.toFixed(1)}</TableCell>
-                                            </TableRow>
-                                        );
-                                    })
-                                ) : (
-                                    <TableRow>
-                                        <TableCell colSpan={3} align="center">No latency data</TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
-                </Grid>
-
-                {/* GPU Infrastructure */}
-                <Grid item xs={12} md={4}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>GPU Infrastructure</Typography>
-                    <TableContainer component={Paper} variant="outlined">
-                        <Table size="small">
-                            <TableHead>
-                                <TableRow>
-                                    <TableCell>Metric</TableCell>
-                                    <TableCell align="right">Value</TableCell>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {telemetry && telemetry.gpu ? (
-                                    <>
-                                        <TableRow>
-                                            <TableCell component="th" scope="row">Utilization</TableCell>
-                                            <TableCell align="right">
-                                                <Chip 
-                                                    label={`${telemetry.gpu.utilization}%`} 
-                                                    color={telemetry.gpu.utilization > 80 ? "error" : "primary"} 
-                                                    size="small" 
-                                                    sx={{ height: 20, fontSize: '0.75rem' }}
-                                                />
-                                            </TableCell>
-                                        </TableRow>
-                                        <TableRow>
-                                            <TableCell component="th" scope="row">Temperature</TableCell>
-                                            <TableCell align="right">
-                                                <Typography variant="body2" color={telemetry.gpu.temperature > 75 ? "error" : "text.primary"}>
-                                                    {telemetry.gpu.temperature}°C
-                                                </Typography>
-                                            </TableCell>
-                                        </TableRow>
-                                        <TableRow>
-                                            <TableCell component="th" scope="row">Memory</TableCell>
-                                            <TableCell align="right">
-                                                {telemetry.gpu.memory_used_mb} / {telemetry.gpu.memory_total_mb} MB
-                                            </TableCell>
-                                        </TableRow>
-                                    </>
-                                ) : (
-                                    <TableRow>
-                                        <TableCell colSpan={2} align="center">No GPU data</TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
-                </Grid>
-             </Grid>
-          </CardContent>
-        </Card>
-      </Grid>
     </Grid>
   );
 }

@@ -31,7 +31,14 @@ else()
 endif()
 
 include(CheckLanguage)
-check_language(CUDA)
+
+# CUDA probing is only supported in this project on non-Windows toolchains or MSVC on Windows.
+# MinGW + nvcc on Windows is not supported and causes configure failures.
+if(WIN32 AND NOT MSVC)
+    message(STATUS "Windows non-MSVC toolchain detected. Skipping CUDA language detection and using CPU-only inference path.")
+else()
+    check_language(CUDA)
+endif()
 
 if(CMAKE_CUDA_COMPILER)
     enable_language(CUDA)

@@ -1,13 +1,6 @@
 {
     "streams": [
         {
-            "id": "cam_usb",
-            "name": "Wired Camera",
-            "type": "usb",
-            "uri": "0",
-            "zones": []
-        },
-        {
             "id": "",
             "name": "",
             "type": "rtsp",

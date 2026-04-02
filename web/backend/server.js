@@ -19,9 +19,21 @@ mqttService.setup(io);
 
 // Socket.IO Connection Events
 io.on('connection', (socket) => {
-    console.log('New client connected');
-    socket.on('disconnect', () => console.log('Client disconnected'));
+    console.log(`[Socket.IO] ✓ Client connected: ${socket.id}`);
+    
+    socket.on('disconnect', () => {
+        console.log(`[Socket.IO] ✗ Client disconnected: ${socket.id}`);
+    });
 });
+
+// Setup a global event listener to verify emissions
+const originalEmit = io.emit.bind(io);
+io.emit = function(eventName, ...args) {
+    if (eventName === 'system_heartbeat' || eventName === 'violation_alert' || eventName === 'system_telemetry') {
+        console.log(`[Socket.IO EMIT] Event: ${eventName}, Clients: ${io.engine.clientsCount}`);
+    }
+    return originalEmit(eventName, ...args);
+};
 
 server.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);

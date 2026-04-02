@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Socket.IO Test</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #f0f0f0; }
+        pre { background: #222; color: #0f0; padding: 15px; border-radius: 5px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; font-weight: bold; }
+        .online { background: #90EE90; }
+        .offline { background: #FFB6C1; }
+    </style>
+</head>
+<body>
+    <h1>Socket.IO Connection Test</h1>
+    <div id="status" class="status offline">DISCONNECTED</div>
+    <pre id="log"></pre>
+    
+    <script>
+        const log = document.getElementById('log');
+        const status = document.getElementById('status');
+        
+        function logMessage(msg) {
+            console.log(msg);
+            log.textContent += msg + '\n';
+            log.scrollTop = log.scrollHeight;
+        }
+        
+        logMessage('🔌 Attempting to connect to http://localhost:3001');
+        
+        const socket = io('http://localhost:3001', {
+            reconnection: true,
+            reconnectionDelay: 1000,
+            reconnectionDelayMax: 5000,
+            reconnectionAttempts: 5
+        });
+        
+        socket.on('connect', () => {
+            logMessage('✓ CONNECTED! Socket ID: ' + socket.id);
+            status.classList.remove('offline');
+            status.classList.add('online');
+            status.textContent = 'CONNECTED';
+        });
+        
+        socket.on('system_heartbeat', (data) => {
+            logMessage('♥ HEARTBEAT received: ' + JSON.stringify(data));
+        });
+        
+        socket.on('connect_error', (error) => {
+            logMessage('✗ Connection Error: ' + error);
+        });
+        
+        socket.on('disconnect', () => {
+            logMessage('✗ DISCONNECTED');
+            status.classList.add('offline');
+            status.classList.remove('online');
+            status.textContent = 'DISCONNECTED';
+        });
+        
+        logMessage('✓ Socket.IO client initialized');
+    </script>
+</body>
+</html>

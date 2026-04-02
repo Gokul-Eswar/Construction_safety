@@ -118,7 +118,34 @@ bool CameraSource::start() {
     return true;
 }
 
-// ... stop method ...
+void CameraSource::stop() {
+    if (!is_running_) return;
+
+    is_running_ = false;
+    should_reconnect_ = false;
+
+    if (reconnection_thread_.joinable()) {
+        reconnection_thread_.join();
+    }
+
+    std::lock_guard<std::mutex> lock(pipeline_mutex_);
+    if (pipeline_) {
+        gst_element_set_state(pipeline_, GST_STATE_NULL);
+
+        if (bus_watch_id_ > 0) {
+            g_source_remove(bus_watch_id_);
+            bus_watch_id_ = 0;
+        }
+
+        if (bus_) {
+            gst_object_unref(bus_);
+            bus_ = nullptr;
+        }
+
+        gst_object_unref(pipeline_);
+        pipeline_ = nullptr;
+    }
+}
 
 SourceStats CameraSource::getStats() const {
     const_cast<CameraSource*>(this)->updateStats();

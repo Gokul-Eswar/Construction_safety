@@ -52,17 +52,21 @@ const connect = () => {
             const payload = JSON.parse(message.toString());
             
             if (topic === 'safety/heartbeat') {
+                console.log('[MQTT→Socket.IO] Broadcasting system_heartbeat to all clients');
                 ioInstance.emit('system_heartbeat', payload);
             } else if (topic === 'safety/telemetry') {
+                console.log('[MQTT→Socket.IO] Broadcasting system_telemetry to all clients');
                 ioInstance.emit('system_telemetry', payload);
             } else if (topic === 'safety/cloud_sync') {
+                console.log('[MQTT→Socket.IO] Broadcasting cloud_sync_event to all clients');
                 ioInstance.emit('cloud_sync_event', payload);
             } else {
                 // Default: Violation Alert
+                console.log('[MQTT→Socket.IO] Broadcasting violation_alert to all clients');
                 ioInstance.emit('violation_alert', payload);
             }
         } catch (e) {
-            console.error('[MQTT] Failed to parse message from', topic);
+            console.error('[MQTT] Failed to parse message from', topic, ':', e.message);
         }
     });
 
