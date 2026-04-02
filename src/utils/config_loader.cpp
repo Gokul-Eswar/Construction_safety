@@ -2,6 +2,7 @@
 #include <fstream>
 #include <iostream>
 #include <nlohmann/json.hpp>
+#include <cctype>
 
 #include <cstdlib>
 #include <string>
@@ -87,10 +88,15 @@ AppConfig ConfigLoader::load(const std::string& path) {
                 if (s.contains("type")) {
                     stream.type = s["type"];
                 } else {
-                    // Inference type from uri
-                    if (stream.uri == "test") stream.type = "test";
-                    else if (stream.uri.find("rtsp://") == 0) stream.type = "rtsp";
-                    else if (stream.uri.find("/dev/video") == 0 || (stream.uri.length() > 0 && std::isdigit(stream.uri[0]))) stream.type = "usb";
+                    if (stream.uri.find("/dev/video") == 0 || (stream.uri.length() > 0 && std::isdigit(static_cast<unsigned char>(stream.uri[0])))) {
+                        stream.type = "usb";
+                    } else {
+                        stream.type = "rtsp";
+                    }
+                }
+
+                if (stream.type != "rtsp" && stream.type != "usb") {
+                    throw std::runtime_error("Unsupported stream type: " + stream.type + " (supported: rtsp, usb)");
                 }
                 
                 if (s.contains("zones")) {

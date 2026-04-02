@@ -32,6 +32,7 @@ bool ModelLoader::load() {
         std::ifstream engine_file(engine_path);
         
         if (engine_file.good()) {
+#ifdef ENABLE_TENSORRT
             std::cout << "Found existing TensorRT engine: " << engine_path << ". Loading directly..." << "\n";
             // Temporarily switch path to load the engine
             std::string original_path = model_path_;
@@ -39,9 +40,12 @@ bool ModelLoader::load() {
             bool success = deserializeEngine();
             model_path_ = original_path; // Restore original path
             return success;
+#else
+            std::cout << "Found existing TensorRT engine: " << engine_path << ", but TensorRT is disabled. Falling back to ONNX." << "\n";
+#endif
         }
 
-        std::cout << "Detected ONNX model. Starting conversion to TensorRT..." << "\n";
+        std::cout << "Detected ONNX model. Loading with the available inference backend..." << "\n";
         return buildFromOnnx();
     } else if (model_path_.find(".engine") != std::string::npos) {
          std::cout << "Detected TensorRT engine. Deserializing..." << "\n";
@@ -210,15 +214,10 @@ bool ModelLoader::deserializeEngine() {
     std::cout << "TensorRT Engine loaded successfully." << "\n";
     loaded_ = true;
     return true;
-
-#elif defined(ENABLE_CUDA)
-    std::cout << "[Mock] Deserializing TensorRT engine..." << "\n";
-    loaded_ = true;
-    return true;
 #else
-    std::cout << "[Mock] CUDA/TRT disabled. Skipping actual deserialization." << "\n";
-    loaded_ = true;
-    return true;
+    std::cerr << "TensorRT engine loading requested, but TensorRT is disabled in this build." << "\n";
+    loaded_ = false;
+    return false;
 #endif
 }
 

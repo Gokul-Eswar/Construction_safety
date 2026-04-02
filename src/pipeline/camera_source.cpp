@@ -14,8 +14,9 @@ CameraSource::~CameraSource() {
 }
 
 std::string CameraSource::getPipelineString() const {
-    if (type_ == "test") {
-        return "videotestsrc ! video/x-raw,format=I420,width=1280,height=720,framerate=30/1 ! appsink name=mysink emit-signals=true max-buffers=1 drop=true";
+    if (type_ != "rtsp" && type_ != "usb") {
+        std::cerr << "[" << id_ << "] Unsupported camera type: " << type_ << " (supported: rtsp, usb)" << "\n";
+        return "";
     }
 
     const char* use_nv = std::getenv("USE_NVIDIA_HW");
@@ -76,6 +77,9 @@ bool CameraSource::start() {
     
     GError* error = nullptr;
     std::string pipeline_str = getPipelineString();
+    if (pipeline_str.empty()) {
+        return false;
+    }
     
     pipeline_ = gst_parse_launch(pipeline_str.c_str(), &error);
     
@@ -227,8 +231,8 @@ void CameraSource::handleMessage(GstMessage* msg) {
 
 void CameraSource::reconnectionLoop() {
     while (is_running_) {
-        // Staleness check: If no frames for 10 seconds (for RTSP/USB), trigger reconnect
-        if (!should_reconnect_ && type_ != "test") {
+        // Staleness check: If no frames for 10 seconds, trigger reconnect
+        if (!should_reconnect_) {
             auto now = std::chrono::steady_clock::now();
             auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - last_frame_received_time_).count();
             if (elapsed > 10) {

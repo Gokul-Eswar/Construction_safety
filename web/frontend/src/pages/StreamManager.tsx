@@ -33,6 +33,12 @@ export default function StreamManager() {
         fetchConfig();
     }, []);
 
+    const inferStreamType = (uri: string) => {
+        if (uri.startsWith('rtsp://')) return 'rtsp';
+        if (uri.startsWith('/dev/video') || (uri.length > 0 && /^[0-9]+$/.test(uri))) return 'usb';
+        return 'rtsp';
+    };
+
     const fetchConfig = async () => {
         try {
             const res = await axios.get('/api/config');
@@ -41,7 +47,7 @@ export default function StreamManager() {
                 const normalizedStreams = res.data.streams.map((s: any) => ({
                     id: s.id || '',
                     name: s.name || '',
-                    type: s.type || (s.rtsp_uri === 'test' ? 'test' : 'rtsp'),
+                    type: s.type || inferStreamType(s.uri || s.rtsp_uri || ''),
                     uri: s.uri || s.rtsp_uri || '',
                     zones: s.zones || []
                 }));
@@ -154,7 +160,7 @@ export default function StreamManager() {
                                     <Chip 
                                         label={stream.type.toUpperCase()} 
                                         size="small" 
-                                        color={stream.type === 'usb' ? 'primary' : (stream.type === 'test' ? 'secondary' : 'default')}
+                                            color={stream.type === 'usb' ? 'primary' : 'default'}
                                     />
                                 </TableCell>
                                 <TableCell sx={{ fontFamily: 'monospace' }}>{stream.uri}</TableCell>
@@ -212,17 +218,16 @@ export default function StreamManager() {
                             >
                                 <MenuItem value="rtsp">RTSP (Network IP Camera)</MenuItem>
                                 <MenuItem value="usb">Wired / USB Camera</MenuItem>
-                                <MenuItem value="test">Test Source (Simulation)</MenuItem>
                             </Select>
                         </FormControl>
 
                         <TextField
                             margin="dense"
-                            label={formType === 'usb' ? "Device Index or Path" : (formType === 'test' ? "Source Mode" : "RTSP URI")}
+                            label={formType === 'usb' ? "Device Index or Path" : "RTSP URI"}
                             fullWidth
                             value={formUri}
                             onChange={(e) => setFormUri(e.target.value)}
-                            placeholder={formType === 'usb' ? "e.g. 0 or /dev/video0" : (formType === 'test' ? "test" : "rtsp://...")}
+                            placeholder={formType === 'usb' ? "e.g. 0 or /dev/video0" : "rtsp://..."}
                             helperText={formType === 'usb' ? "Wired cameras usually start from index 0" : ""}
                         />
                     </Box>
