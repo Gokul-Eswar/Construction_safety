@@ -61,11 +61,14 @@ if(CMAKE_CUDA_COMPILER)
     if(NVML_LIBRARY)
         message(STATUS "NVML Found: ${NVML_LIBRARY}")
         add_compile_definitions(ENABLE_NVML)
+        set(OPTIONAL_NVML_LIB ${NVML_LIBRARY})
     else()
         message(STATUS "NVML Not Found. GPU monitoring will be disabled.")
+        set(OPTIONAL_NVML_LIB)
     endif()
 else()
     message(STATUS "CUDA Not Found. Disabling CUDA support.")
+    set(OPTIONAL_NVML_LIB)
 endif()
 
 # Dependencies
@@ -216,7 +219,7 @@ target_link_libraries(main_app PRIVATE
     SQLite::SQLite3
     ${TENSORRT_LIBS}
     ${CUDA_CUDART_LIBRARY}
-    ${NVML_LIBRARY}
+    ${OPTIONAL_NVML_LIB}
     paho-mqttpp3-static
 )
 if(GST_FOUND OR GSTREAMER_FOUND)
@@ -275,7 +278,7 @@ target_link_libraries(unit_tests PRIVATE
     SQLite::SQLite3
     ${TENSORRT_LIBS}
     ${CUDA_CUDART_LIBRARY}
-    ${NVML_LIBRARY}
+    ${OPTIONAL_NVML_LIB}
 )
 if(GST_FOUND OR GSTREAMER_FOUND)
      target_include_directories(unit_tests PRIVATE ${GST_INCLUDE_DIRS})
