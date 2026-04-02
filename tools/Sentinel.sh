@@ -21,6 +21,7 @@ show_menu() {
     echo "   [7] Run Demo             - Execute demo mode"
     echo "   [8] Lint Code            - Check code style and quality"
     echo "   [9] Optimize System      - Performance optimization"
+    echo "   [10] Configure Deployment - Choose local or cloud mode (optional)"
     echo ""
     echo "   [0] Exit"
     echo ""
@@ -29,6 +30,85 @@ show_menu() {
 get_project_root() {
     local SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     echo "$(dirname "$SCRIPT_DIR")"
+}
+
+load_deployment_profile() {
+    local project_root="$1"
+    DEPLOYMENT_MODE="local"
+    ENGINE_EXECUTION_MODE="native"
+    COMPOSE_FILE="docker-compose.edge.yml"
+    DASHBOARD_URL="http://localhost:3001"
+
+    local deploy_profile="$project_root/.sentinel-deploy.env"
+    if [ -f "$deploy_profile" ]; then
+        while IFS='=' read -r key value; do
+            [ -z "$key" ] && continue
+            case "$key" in
+                DEPLOYMENT_MODE) DEPLOYMENT_MODE="$value" ;;
+                ENGINE_EXECUTION_MODE) ENGINE_EXECUTION_MODE="$value" ;;
+                COMPOSE_FILE) COMPOSE_FILE="$value" ;;
+                DASHBOARD_URL) DASHBOARD_URL="$value" ;;
+            esac
+        done < "$deploy_profile"
+    fi
+
+    if [ "$DEPLOYMENT_MODE" = "cloud" ]; then
+        ENGINE_EXECUTION_MODE="docker"
+        [ -z "$COMPOSE_FILE" ] && COMPOSE_FILE="docker-compose.prod.yml"
+    else
+        DEPLOYMENT_MODE="local"
+        ENGINE_EXECUTION_MODE="native"
+        [ -z "$COMPOSE_FILE" ] && COMPOSE_FILE="docker-compose.edge.yml"
+    fi
+
+    [ -z "$DASHBOARD_URL" ] && DASHBOARD_URL="http://localhost:3001"
+}
+
+configure_deployment() {
+    clear
+    echo "============================================================"
+    echo "              DEPLOYMENT CONFIGURATION WIZARD"
+    echo "============================================================"
+    echo ""
+
+    PROJECT_ROOT=$(get_project_root)
+    DEPLOY_PROFILE="$PROJECT_ROOT/.sentinel-deploy.env"
+
+    echo "This wizard is optional. It only applies if you opt in."
+    echo ""
+    echo "Choose deployment mode:"
+    echo "  [1] Local (default) - Docker web+mqtt + native engine"
+    echo "  [2] Cloud           - Full Docker stack (engine in container)"
+    echo ""
+    read -p "Enter choice [1-2]: " deploy_choice
+
+    if [ "$deploy_choice" = "2" ]; then
+        DEPLOYMENT_MODE="cloud"
+        ENGINE_EXECUTION_MODE="docker"
+        COMPOSE_FILE="docker-compose.prod.yml"
+        read -p "Dashboard URL (e.g., https://sentinel.example.com or http://localhost:3001): " DASHBOARD_URL
+        [ -z "$DASHBOARD_URL" ] && DASHBOARD_URL="http://localhost:3001"
+    else
+        DEPLOYMENT_MODE="local"
+        ENGINE_EXECUTION_MODE="native"
+        COMPOSE_FILE="docker-compose.edge.yml"
+        DASHBOARD_URL="http://localhost:3001"
+    fi
+
+    cat > "$DEPLOY_PROFILE" <<EOF
+DEPLOYMENT_MODE=$DEPLOYMENT_MODE
+ENGINE_EXECUTION_MODE=$ENGINE_EXECUTION_MODE
+COMPOSE_FILE=$COMPOSE_FILE
+DASHBOARD_URL=$DASHBOARD_URL
+EOF
+
+    echo ""
+    echo "[SUCCESS] Deployment profile saved to .sentinel-deploy.env"
+    echo "Mode: $DEPLOYMENT_MODE"
+    echo "Compose: $COMPOSE_FILE"
+    echo "Dashboard: $DASHBOARD_URL"
+    echo ""
+    read -p "Press Enter to continue..."
 }
 
 start_system() {
@@ -40,6 +120,7 @@ start_system() {
     
     PROJECT_ROOT=$(get_project_root)
     cd "$PROJECT_ROOT"
+    load_deployment_profile "$PROJECT_ROOT"
     
     echo "[1/5] Checking Docker status..."
     if ! docker info > /dev/null 2>&1; then
@@ -56,13 +137,13 @@ start_system() {
     ENGINE_PID_FILE="$PROJECT_ROOT/logs/engine_native.pid"
     
     echo ""
-    echo "[2/5] Starting web and mqtt containers..."
+    echo "[2/5] Starting containers using $COMPOSE_FILE..."
     echo "       (This may take a few minutes if running for the first time)"
     
     if docker compose version > /dev/null 2>&1; then
-        docker compose -f docker-compose.edge.yml up -d --build
+        docker compose -f "$COMPOSE_FILE" up -d --build
     else
-        docker-compose -f docker-compose.edge.yml up -d --build
+        docker-compose -f "$COMPOSE_FILE" up -d --build
     fi
     
     if [ $? -ne 0 ]; then
@@ -73,34 +154,38 @@ start_system() {
     fi
 
     echo ""
-    echo "[3/5] Starting native engine process..."
-    ENGINE_PATH="$PROJECT_ROOT/build/Release/main_app"
-    [ ! -f "$ENGINE_PATH" ] && ENGINE_PATH="$PROJECT_ROOT/build/Debug/main_app"
-    if [ ! -f "$ENGINE_PATH" ]; then
-        echo "[ERROR] Engine executable not found at build/Release or build/Debug."
-        echo "Run option 5 (Build Engine), then start again."
-        if docker compose version > /dev/null 2>&1; then
-            docker compose -f docker-compose.edge.yml down > /dev/null 2>&1
-        else
-            docker-compose -f docker-compose.edge.yml down > /dev/null 2>&1
+    if [ "$ENGINE_EXECUTION_MODE" = "native" ]; then
+        echo "[3/5] Starting native engine process..."
+        ENGINE_PATH="$PROJECT_ROOT/build/Release/main_app"
+        [ ! -f "$ENGINE_PATH" ] && ENGINE_PATH="$PROJECT_ROOT/build/Debug/main_app"
+        if [ ! -f "$ENGINE_PATH" ]; then
+            echo "[ERROR] Engine executable not found at build/Release or build/Debug."
+            echo "Run option 5 (Build Engine), then start again."
+            if docker compose version > /dev/null 2>&1; then
+                docker compose -f "$COMPOSE_FILE" down > /dev/null 2>&1
+            else
+                docker-compose -f "$COMPOSE_FILE" down > /dev/null 2>&1
+            fi
+            read -p "Press Enter to continue..."
+            return
         fi
-        read -p "Press Enter to continue..."
-        return
-    fi
 
-    nohup "$ENGINE_PATH" config.json > "$PROJECT_ROOT/logs/engine_native.log" 2>&1 &
-    echo $! > "$ENGINE_PID_FILE"
-    echo "[OK] Native engine started."
+        nohup "$ENGINE_PATH" config.json > "$PROJECT_ROOT/logs/engine_native.log" 2>&1 &
+        echo $! > "$ENGINE_PID_FILE"
+        echo "[OK] Native engine started."
+    else
+        echo "[3/5] Engine runs in container mode for this deployment profile."
+    fi
     
     echo ""
     echo "[4/5] Waiting for services to initialize..."
     sleep 20
     
     echo ""
-    echo "[5/5] Dashboard URL: http://localhost:3001"
+    echo "[5/5] Dashboard URL: $DASHBOARD_URL"
     echo ""
-    echo "[SUCCESS] Hybrid system is running!"
-    echo "Open http://localhost:3001 in your browser to access the dashboard."
+    echo "[SUCCESS] System is running in $DEPLOYMENT_MODE mode!"
+    echo "Open $DASHBOARD_URL in your browser to access the dashboard."
     echo ""
     read -p "Press Enter to continue..."
 }
@@ -114,24 +199,29 @@ stop_system() {
     
     PROJECT_ROOT=$(get_project_root)
     cd "$PROJECT_ROOT"
+    load_deployment_profile "$PROJECT_ROOT"
     
     ENGINE_PID_FILE="$PROJECT_ROOT/logs/engine_native.pid"
 
-    echo "[1/3] Stopping native engine..."
-    if [ -f "$ENGINE_PID_FILE" ]; then
-        ENGINE_PID="$(cat "$ENGINE_PID_FILE")"
-        kill "$ENGINE_PID" > /dev/null 2>&1 || true
-        rm -f "$ENGINE_PID_FILE"
+    if [ "$ENGINE_EXECUTION_MODE" = "native" ]; then
+        echo "[1/3] Stopping native engine..."
+        if [ -f "$ENGINE_PID_FILE" ]; then
+            ENGINE_PID="$(cat "$ENGINE_PID_FILE")"
+            kill "$ENGINE_PID" > /dev/null 2>&1 || true
+            rm -f "$ENGINE_PID_FILE"
+        else
+            pkill -f main_app > /dev/null 2>&1 || true
+        fi
     else
-        pkill -f main_app > /dev/null 2>&1 || true
+        echo "[1/3] Native engine stop skipped (container mode)."
     fi
 
     echo "[2/3] Stopping web and mqtt containers..."
     
     if docker compose version > /dev/null 2>&1; then
-        docker compose -f docker-compose.edge.yml down
+        docker compose -f "$COMPOSE_FILE" down
     else
-        docker-compose -f docker-compose.edge.yml down
+        docker-compose -f "$COMPOSE_FILE" down
     fi
     
     if [ $? -eq 0 ]; then
@@ -432,7 +522,7 @@ optimize_system() {
 # Main loop
 while true; do
     show_menu
-    read -p "Enter your choice [0-9]: " choice
+    read -p "Enter your choice [0-10]: " choice
     
     case $choice in
         1) start_system ;;
@@ -444,6 +534,7 @@ while true; do
         7) run_demo ;;
         8) lint_code ;;
         9) optimize_system ;;
+        10) configure_deployment ;;
         0) echo "Exiting..."; exit 0 ;;
         *) echo "Invalid choice. Please try again."; sleep 2 ;;
     esac

@@ -23,13 +23,25 @@ Both launchers present an interactive menu where you can select any operation ne
 
 ## 📋 Available Operations
 
+### 10. **Configure Deployment** (Menu Option 10)
+Optional setup wizard for deployment preferences.
+- Lets the user choose **Local** or **Cloud** mode
+- Stores preferences in `.sentinel-deploy.env` at project root
+- No default mandate: if user does nothing, launcher keeps local defaults
+
+Mode behavior:
+- **Local mode**: `docker-compose.edge.yml` + native engine process
+- **Cloud mode**: `docker-compose.prod.yml` + engine in Docker
+
+You can rerun this option any time to switch modes.
+
 ### 1. **Start System** (Menu Option 1)
 Launches a compact hybrid runtime and opens the web dashboard.
 - Starts **web + MQTT** via Docker using `docker-compose.edge.yml`
 - Starts the heavy **engine natively** on the host machine
 - Automatically detects Docker installation
 - Handles `docker compose` vs `docker-compose` fallback
-- Opens http://localhost:3001 in browser
+- Opens the configured dashboard URL (default: http://localhost:3001)
 
 ### 2. **Stop System** (Menu Option 2)
 Gracefully shuts down web/mqtt containers and the native engine process.
