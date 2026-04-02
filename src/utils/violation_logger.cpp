@@ -73,9 +73,9 @@ bool ViolationLogger::init(const std::string& db_path, int retention_days) {
 bool ViolationLogger::create_tables_if_not_exist() {
     const char* sql = "CREATE TABLE IF NOT EXISTS violations ("
                       "id INTEGER PRIMARY KEY AUTOINCREMENT,"
-                      "timestamp TEXT NOT nullptr,"
-                      "zone_id INTEGER NOT nullptr,"
-                      "confidence REAL NOT nullptr,"
+                      "timestamp TEXT NOT NULL,"
+                      "zone_id INTEGER NOT NULL,"
+                      "confidence REAL NOT NULL,"
                       "object_id INTEGER,"
                       "is_active INTEGER DEFAULT 1,"
                       "uploaded INTEGER DEFAULT 0"

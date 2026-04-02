@@ -90,3 +90,9 @@
 1857	2022	7968110406363668	_deps/pahomqttc-build/src/libpaho-mqtt3c-static.a	372cee7cc2b9341
 36	1453	7968110622804948	CMakeFiles/main_app.dir/src/pipeline/camera_source.cpp.obj	2504e664d7dccd3e
 1453	1873	7968110637056756	main_app.exe	a63c01d2a664a7b2
+27	2389	7968124741882861	CMakeFiles/main_app.dir/src/pipeline/camera_source.cpp.obj	2504e664d7dccd3e
+33	2559	7968124741926707	CMakeFiles/main_app.dir/src/inference/model_loader.cpp.obj	4f914cd18ccfbb03
+39	8040	7968124742003925	CMakeFiles/main_app.dir/src/utils/config_loader.cpp.obj	f4169198fe37bbc9
+8040	8611	7968124821981910	main_app.exe	a63c01d2a664a7b2
+38	1131	7968127126729458	CMakeFiles/main_app.dir/src/utils/violation_logger.cpp.obj	15d4fe8008fd334d
+1132	1483	7968127137667519	main_app.exe	a63c01d2a664a7b2

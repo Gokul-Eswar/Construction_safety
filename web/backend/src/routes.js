@@ -61,11 +61,35 @@ router.get('/violations', (req, res) => {
     const countSql = `SELECT count(*) as count FROM violations`;
 
     db.get(countSql, [], (err, row) => {
-        if (err) return res.status(500).json({ error: err.message });
+        if (err) {
+            if (err.message && err.message.includes('no such table')) {
+                return res.json({
+                    data: [],
+                    pagination: {
+                        total: 0,
+                        limit,
+                        offset
+                    }
+                });
+            }
+            return res.status(500).json({ error: err.message });
+        }
         const total = row.count;
 
         db.all(sql, [limit, offset], (err, rows) => {
-            if (err) return res.status(500).json({ error: err.message });
+            if (err) {
+                if (err.message && err.message.includes('no such table')) {
+                    return res.json({
+                        data: [],
+                        pagination: {
+                            total,
+                            limit,
+                            offset
+                        }
+                    });
+                }
+                return res.status(500).json({ error: err.message });
+            }
 
             // Enrich with zone names
             const enrichedRows = rows.map(r => ({
@@ -91,7 +115,19 @@ router.get('/stats', (req, res) => {
     
     const sql = `SELECT count(*) as count FROM violations WHERE timestamp LIKE ?`;
     db.get(sql, [`${today}%`], (err, row) => {
-        if (err) return res.status(500).json({ error: err.message });
+        if (err) {
+            if (err.message && err.message.includes('no such table')) {
+                const config = configManager.getConfig();
+                const activeStreams = config.streams ? config.streams.length : 0;
+
+                return res.json({
+                    today_violations: 0,
+                    system_status: 'online',
+                    active_streams: activeStreams
+                });
+            }
+            return res.status(500).json({ error: err.message });
+        }
         
         const config = configManager.getConfig();
         const activeStreams = config.streams ? config.streams.length : 0;

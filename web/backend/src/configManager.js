@@ -3,15 +3,20 @@ const path = require('path');
 
 // Use CONFIG_PATH env var if available, otherwise resolve from this file's location.
 const configPath = process.env.CONFIG_PATH || path.resolve(__dirname, '../../../config.json');
+const exampleConfigPath = path.resolve(__dirname, '../../../config.json.example');
 let projectConfig = {};
 
 const loadConfig = () => {
     try {
-        if (!fs.existsSync(configPath)) {
-            console.warn(`Config file not found at ${configPath}. Using empty config.`);
+        const resolvedConfigPath = fs.existsSync(configPath)
+            ? configPath
+            : (fs.existsSync(exampleConfigPath) ? exampleConfigPath : null);
+
+        if (!resolvedConfigPath) {
+            console.warn(`Config file not found at ${configPath} or ${exampleConfigPath}. Using empty config.`);
             return {};
         }
-        const rawData = fs.readFileSync(configPath);
+        const rawData = fs.readFileSync(resolvedConfigPath);
         projectConfig = JSON.parse(rawData);
         return projectConfig;
     } catch (error) {
