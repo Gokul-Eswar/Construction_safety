@@ -22,6 +22,10 @@ export default function Dashboard() {
   const lastHeartbeat = useRef<number>(0);
   const socketRef = useRef<Socket | null>(null);
 
+    const streamTelemetry = telemetry?.streams ? Object.entries(telemetry.streams) : [];
+    const latencyTelemetry = telemetry?.latency ? Object.entries(telemetry.latency) : [];
+    const gpuTelemetry = telemetry?.gpu || null;
+
   useEffect(() => {
     // Initialize Socket.IO connection inside the component
     console.log('🔌 [Dashboard] Initializing Socket.IO connection to http://localhost:3001');
@@ -108,6 +112,7 @@ export default function Dashboard() {
                 .filter((value: number) => Number.isFinite(value))
         : [];
     const aggregateP99 = latencyP99Values.length > 0 ? Math.max(...latencyP99Values) : 0;
+        const formatMetricLabel = (key: string) => key.replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase());
 
   return (
     <Grid container spacing={3}>
@@ -168,10 +173,174 @@ export default function Dashboard() {
       <Grid item xs={12}>
           <Card>
               <CardContent>
-                  <Typography variant="h6" gutterBottom>Live Feed</Typography>
-                  <Box sx={{ backgroundColor: '#000', minHeight: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Typography color="textSecondary">No camera selected</Typography>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
+                      <Typography variant="h6">Live Surveillance Grid</Typography>
+                      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                          {streamTelemetry.map(([streamId, stream]: any) => (
+                              <Chip
+                                  key={streamId}
+                                  label={`${streamId}: ${Number(stream?.fps || 0).toFixed(1)} FPS`}
+                                  color={stream?.active ? 'success' : 'default'}
+                                  variant="outlined"
+                                  size="small"
+                              />
+                          ))}
+                          {telemetry?.latency && (
+                              <Chip
+                                  label={`Latency (P99): ${aggregateP99.toFixed(1)}ms`}
+                                  color="warning"
+                                  variant="outlined"
+                                  size="small"
+                              />
+                          )}
+                          <Chip
+                              label={systemOnline ? 'Live' : 'Offline'}
+                              color={systemOnline ? 'success' : 'default'}
+                              variant="outlined"
+                              size="small"
+                          />
+                      </Box>
                   </Box>
+                  <MJPEGPlayer
+                      url={`http://${window.location.hostname}:8081`}
+                      label="Primary Site Camera"
+                  />
+              </CardContent>
+          </Card>
+      </Grid>
+
+      <Grid item xs={12}>
+          <Card>
+              <CardContent>
+                  <Typography variant="h6" gutterBottom>System Metrics</Typography>
+                  <Typography variant="body2" color="text.secondary" paragraph>
+                      Real-time performance statistics from the inference engine.
+                  </Typography>
+
+                  <Grid container spacing={3}>
+                      <Grid item xs={12} md={4}>
+                          <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
+                              Operation Statistics
+                          </Typography>
+                          <TableContainer component={Paper} variant="outlined">
+                              <Table size="small">
+                                  <TableHead>
+                                      <TableRow>
+                                          <TableCell>Stream ID</TableCell>
+                                          <TableCell align="right">FPS</TableCell>
+                                          <TableCell align="right">Frames</TableCell>
+                                      </TableRow>
+                                  </TableHead>
+                                  <TableBody>
+                                      {streamTelemetry.length > 0 ? (
+                                          streamTelemetry.map(([streamId, stream]: any) => (
+                                              <TableRow key={streamId}>
+                                                  <TableCell component="th" scope="row">
+                                                      {streamId}
+                                                  </TableCell>
+                                                  <TableCell align="right">{Number(stream?.fps || 0).toFixed(1)}</TableCell>
+                                                  <TableCell align="right">{Number(stream?.frame_count || 0).toLocaleString()}</TableCell>
+                                              </TableRow>
+                                          ))
+                                      ) : (
+                                          <TableRow>
+                                              <TableCell colSpan={3} align="center">No stream telemetry</TableCell>
+                                          </TableRow>
+                                      )}
+                                  </TableBody>
+                              </Table>
+                          </TableContainer>
+                      </Grid>
+
+                      <Grid item xs={12} md={4}>
+                          <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
+                              Latency Profile
+                          </Typography>
+                          <TableContainer component={Paper} variant="outlined">
+                              <Table size="small">
+                                  <TableHead>
+                                      <TableRow>
+                                          <TableCell>Stage</TableCell>
+                                          <TableCell align="right">Avg</TableCell>
+                                          <TableCell align="right">P99</TableCell>
+                                      </TableRow>
+                                  </TableHead>
+                                  <TableBody>
+                                      {latencyTelemetry.length > 0 ? (
+                                          latencyTelemetry.map(([metricName, metric]: any) => (
+                                              <TableRow key={metricName}>
+                                                  <TableCell component="th" scope="row">
+                                                      {formatMetricLabel(metricName)}
+                                                  </TableCell>
+                                                  <TableCell align="right">{Number(metric?.avg || 0).toFixed(1)}</TableCell>
+                                                  <TableCell align="right" sx={{ fontWeight: 'bold' }}>{Number(metric?.p99 || 0).toFixed(1)}</TableCell>
+                                              </TableRow>
+                                          ))
+                                      ) : (
+                                          <TableRow>
+                                              <TableCell colSpan={3} align="center">No latency data</TableCell>
+                                          </TableRow>
+                                      )}
+                                  </TableBody>
+                              </Table>
+                          </TableContainer>
+                      </Grid>
+
+                      <Grid item xs={12} md={4}>
+                          <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
+                              GPU Infrastructure
+                          </Typography>
+                          <TableContainer component={Paper} variant="outlined">
+                              <Table size="small">
+                                  <TableHead>
+                                      <TableRow>
+                                          <TableCell>Metric</TableCell>
+                                          <TableCell align="right">Value</TableCell>
+                                      </TableRow>
+                                  </TableHead>
+                                  <TableBody>
+                                      {gpuTelemetry ? (
+                                          <>
+                                              <TableRow>
+                                                  <TableCell component="th" scope="row">Utilization</TableCell>
+                                                  <TableCell align="right">
+                                                      <Chip
+                                                          label={`${Number(gpuTelemetry.utilization || 0)}%`}
+                                                          color={Number(gpuTelemetry.utilization || 0) > 80 ? 'error' : 'primary'}
+                                                          size="small"
+                                                          sx={{ height: 20, fontSize: '0.75rem' }}
+                                                      />
+                                                  </TableCell>
+                                              </TableRow>
+                                              <TableRow>
+                                                  <TableCell component="th" scope="row">Temperature</TableCell>
+                                                  <TableCell align="right">{Number(gpuTelemetry.temperature || 0).toFixed(1)}°C</TableCell>
+                                              </TableRow>
+                                              <TableRow>
+                                                  <TableCell component="th" scope="row">Memory Used</TableCell>
+                                                  <TableCell align="right">{Number(gpuTelemetry.memory_used_mb || 0).toLocaleString()} MB</TableCell>
+                                              </TableRow>
+                                              <TableRow>
+                                                  <TableCell component="th" scope="row">Memory Total</TableCell>
+                                                  <TableCell align="right">{Number(gpuTelemetry.memory_total_mb || 0).toLocaleString()} MB</TableCell>
+                                              </TableRow>
+                                          </>
+                                      ) : (
+                                          <TableRow>
+                                              <TableCell colSpan={2} align="center">No GPU metrics</TableCell>
+                                          </TableRow>
+                                      )}
+                                  </TableBody>
+                              </Table>
+                          </TableContainer>
+                      </Grid>
+                  </Grid>
+
+                  {lastSyncTime && (
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 2 }}>
+                          Last cloud sync: {lastSyncTime.toLocaleString()}
+                      </Typography>
+                  )}
               </CardContent>
           </Card>
       </Grid>
