@@ -295,9 +295,11 @@ void PipelineManager::checkAlerts(const std::string& stream_id, const std::vecto
 
 void PipelineManager::updateTiledView() {
     while (running_) {
-        // Health Check
+        // Health check: stay healthy while active, and also when intentionally idle (no streams configured).
         auto now = std::time(nullptr);
-        if (now - last_activity_ < 30) {
+        bool has_streams = !streams_.empty();
+        bool recently_active = (now - last_activity_ < 30);
+        if (!has_streams || recently_active) {
              std::ofstream health_file("/app/health");
              if (health_file.good()) health_file << "1";
         }

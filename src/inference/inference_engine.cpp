@@ -22,8 +22,10 @@ InferenceEngine::~InferenceEngine() {
 bool InferenceEngine::init() {
     model_loader_ = std::make_unique<ModelLoader>(config_.model_path);
     if (!model_loader_->load()) {
-        std::cerr << "Failed to load model: " << config_.model_path << "\n";
-        return false;
+        std::cerr << "Failed to load model: " << config_.model_path
+                  << ". Continuing in degraded mode (no inference)." << "\n";
+        operational_ = false;
+        return true;
     }
 
 #ifdef ENABLE_TENSORRT
@@ -81,17 +83,22 @@ bool InferenceEngine::init() {
 
         cudaStreamCreate(&stream_);
         std::cout << "TensorRT Execution Context initialized." << "\n";
+        operational_ = true;
         return true;
     }
 #endif
     
     // Check for OpenCV Net
-    if (model_loader_->getNet().empty()) return false;
+    if (model_loader_->getNet().empty()) {
+        operational_ = false;
+        return true;
+    }
+    operational_ = true;
     return true;
 }
 
 std::vector<Detection> InferenceEngine::runInference(const cv::Mat& frame) {
-    if (frame.empty()) return {};
+    if (frame.empty() || !operational_) return {};
 
     cv::Mat input_blob;
     preprocess(frame, input_blob);

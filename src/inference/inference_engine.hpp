@@ -43,6 +43,7 @@ private:
 
     InferenceConfig config_;
     std::unique_ptr<ModelLoader> model_loader_;
+    bool operational_ = false;
     size_t required_memory_bytes_ = 0;  // Per-stream memory requirement
 
 #ifdef ENABLE_TENSORRT

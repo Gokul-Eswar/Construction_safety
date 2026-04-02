@@ -163,7 +163,8 @@ set(PahoMqttC_FOUND TRUE CACHE BOOL "" FORCE)
 if(MSVC)
     set(PAHO_MQTT_C_LIBRARIES ${pahomqttc_BINARY_DIR}/src/paho-mqtt3a-static.lib CACHE STRING "" FORCE)
 else()
-    set(PAHO_MQTT_C_LIBRARIES ${pahomqttc_BINARY_DIR}/src/libpaho-mqtt3a-static.a CACHE STRING "" FORCE)
+    # paho.mqtt.c static targets are emitted as libpaho-mqtt3a.a/libpaho-mqtt3c.a on Linux.
+    set(PAHO_MQTT_C_LIBRARIES ${pahomqttc_BINARY_DIR}/src/libpaho-mqtt3a.a CACHE STRING "" FORCE)
 endif()
 set(PAHO_MQTT_C_INCLUDE_DIRS ${pahomqttc_SOURCE_DIR}/src CACHE STRING "" FORCE)
 

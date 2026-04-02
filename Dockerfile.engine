@@ -25,9 +25,10 @@ RUN mkdir build_dir && cd build_dir && \
 # Note: Using the same base to ensure library compatibility, but we clean up everything else.
 FROM nvcr.io/nvidia/tensorrt:23.05-py3
 
-# Install ONLY runtime libraries needed for execution
+# Install runtime libraries needed by the linked binary.
+# Use libopencv-dev here to ensure all OpenCV modules loaded at link time are available.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libopencv-videoio4.5 libopencv-imgcodecs4.5 \
+    libopencv-dev \
     libgstreamer1.0-0 gstreamer1.0-plugins-base gstreamer1.0-plugins-good \
     libsqlite3-0 libssl3 \
     && rm -rf /var/lib/apt/lists/*

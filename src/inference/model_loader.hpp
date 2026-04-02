@@ -24,6 +24,7 @@ public:
 private:
     bool buildFromOnnx();
     bool deserializeEngine();
+    bool loadOnnxWithOpenCVDnn();
 
     std::string model_path_;
     bool loaded_;
