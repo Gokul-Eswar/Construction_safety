@@ -73,6 +73,8 @@ This opens an interactive menu where you can:
 
 📚 **For detailed launcher documentation:** See [tools/README.md](tools/README.md)
 
+📖 **For development setup and troubleshooting:** See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)
+
 ---
 
 ## ✨ Key Features

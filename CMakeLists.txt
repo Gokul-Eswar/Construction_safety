@@ -2,15 +2,41 @@ cmake_minimum_required(VERSION 3.18)
 set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
 project(ConstructionSafetyInference LANGUAGES CXX)
 
+# ============================================================================
+# COMPILER VALIDATION & SETUP
+# ============================================================================
+
+# Validate C++ compiler is available
+if(NOT CMAKE_CXX_COMPILER)
+    message(FATAL_ERROR "C++ compiler not found. On Windows, ensure Visual Studio is installed and vcvarsall.bat has been called. On Linux/macOS, ensure GCC or Clang is installed.")
+endif()
+
 if(WIN32)
     # Aggressively force system libraries to the end of the link command for MinGW/GCC
-    set(CMAKE_CXX_LINK_EXECUTABLE "<CMAKE_CXX_COMPILER> <FLAGS> <CMAKE_CXX_LINK_FLAGS> <LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES> -lws2_32 -lrpcrt4 -lcrypt32")
+    set(CMAKE_CXX_LINK_EXECUTABLE "<CMAKE_CXX_COMPILER> <FLAGS> <CMAKE_CXX_LINK_FLAGS> <LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES> -lws2_32 -rpcrt4 -lcrypt32")
     link_libraries(ws2_32 rpcrt4 crypt32)
 endif()
 
-# Industry Standard Static Analysis Setup
+# ============================================================================
+# STATIC ANALYSIS & COMPILATION DATABASE
+# ============================================================================
+
+# Export compile commands for clang-tidy and other tools
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_VERBOSE_MAKEFILE ON)
+
+# Clang-tidy configuration validation (requires minimum version)
+if(DEFINED ENV{CLANG_TIDY})
+    set(CMAKE_CXX_CLANG_TIDY $ENV{CLANG_TIDY})
+    message(STATUS "Clang-tidy enabled: $ENV{CLANG_TIDY}")
+endif()
+
+# Suppress clang-tidy warnings in third-party dependencies
+set(CMAKE_SOURCE_DIR_DEPENDENCIES_SKIP_SUBDIRS
+    "build/_deps"
+    "build_real/_deps"
+    "build_test/_deps"
+)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

@@ -133,6 +133,13 @@ The following individual scripts are now consolidated into `Sentinel.bat` / `Sen
 ### cl.exe not found (Windows)
 - Install Visual Studio with "Desktop development with C++" workload
 - Or run from x64 Native Tools Command Prompt
+- **Note:** Sentinel.bat (Option 5) auto-detects and initializes VS compiler environment
+
+### Clang-Tidy Configuration Errors
+- **Error:** `unknown key 'AnalyzeTemporaryDtors'`
+- **Fix:** Root `.clang-tidy` file now overrides dependency configs and excludes `_deps/` directories
+- **Details:** See [docs/DEVELOPMENT.md](../docs/DEVELOPMENT.md#problem-clang-tidy-errors-analyzetemporarydetors-unknown-key)
+- **Minimum clang-tidy version:** 14.0
 
 ### Python not found
 - **Windows**: `winget install Python.Python.3.11` or [python.org](https://www.python.org)

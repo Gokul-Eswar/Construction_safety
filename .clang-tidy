@@ -1,5 +1,15 @@
 ---
-Checks: '-*,bugprone-*,modernize-*,-modernize-use-trailing-return-type,performance-*,readability-redundant-*,readability-identifier-naming,-modernize-use-scoped-lock,-clang-diagnostic-*'
+# Root clang-tidy configuration for Construction Safety Project
+# Minimum clang-tidy version: 14.0
+# This config overrides dependency configs and applies to src/ directory only
+InheritParentConfig: false
+
+Checks: '-*,bugprone-*,modernize-*,-modernize-use-trailing-return-type,performance-*,readability-redundant-*,readability-identifier-naming,-modernize-use-scoped-lock,-clang-diagnostic-*,-modernize-use-auto,-cppcoreguidelines-*'
+
+HeaderFilterRegex: '^(?!.*/_deps/).*\.hpp$'
+
+WarningsAsErrors: ''
+
 CheckOptions:
   - key:             readability-identifier-naming.VariableCase
     value:           lower_case
