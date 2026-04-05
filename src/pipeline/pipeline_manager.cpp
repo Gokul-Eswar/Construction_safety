@@ -250,18 +250,92 @@ void PipelineManager::checkAlerts(const std::string& stream_id, const std::vecto
     auto& ctx = it->second;
 
     for (const auto& det : detections) {
-        // Person's feet position (bottom center of bounding box) in image coordinates
-        cv::Point2f feet_img(det.box.x + det.box.width / 2.0f, det.box.y + det.box.height);
-        
-        // Map to world if calibrated
-        cv::Point2f feet_final = feet_img;
-        if (ctx->spatial_mapper) {
-            feet_final = ctx->spatial_mapper->mapToWorld(feet_img);
-        }
+        // ================================================================================
+        // Perspective Detection Logic (Issue 3 Implementation)
+        // Detects zone violations based on bounding box positioning with multiple strategies
+        // ================================================================================
         
         for (const auto& zone : zones) {
-            double dist = cv::pointPolygonTest(zone.points, feet_final, false);
-            bool is_violating = (dist >= 0);
+            bool is_violating = false;
+            
+            switch (config_.zone_detection.mode) {
+                // ========================================================================
+                // Mode 1: POINT - Single point detection (legacy, simple)
+                // ========================================================================
+                case ZoneDetectionConfig::Mode::POINT: {
+                    cv::Point2f feet_img(det.box.x + det.box.width / 2.0f, det.box.y + det.box.height);
+                    cv::Point2f feet_final = feet_img;
+                    if (ctx->spatial_mapper) {
+                        feet_final = ctx->spatial_mapper->mapToWorld(feet_img);
+                    }
+                    double dist = cv::pointPolygonTest(zone.points, feet_final, true);
+                    is_violating = (dist >= config_.zone_detection.boundary_margin);
+                    break;
+                }
+                
+                // ========================================================================
+                // Mode 2: FOOTPRINT - Multiple points on bbox bottom edge (recommended)
+                // Reduces false positives from bounding box detection errors
+                // ========================================================================
+                case ZoneDetectionConfig::Mode::FOOTPRINT: {
+                    // Project 3 footprint points: bottom-left, bottom-center, bottom-right
+                    // This accounts for detection box width uncertainty
+                    std::vector<cv::Point2f> footprint = {
+                        {det.box.x, det.box.y + det.box.height},                           // Bottom-left
+                        {det.box.x + det.box.width / 2.0f, det.box.y + det.box.height},   // Bottom-center
+                        {det.box.x + det.box.width, det.box.y + det.box.height}            // Bottom-right
+                    };
+                    
+                    // Map to world coordinates if calibrated
+                    int points_in_zone = 0;
+                    for (auto& pt : footprint) {
+                        cv::Point2f pt_final = pt;
+                        if (ctx->spatial_mapper) {
+                            pt_final = ctx->spatial_mapper->mapToWorld(pt);
+                        }
+                        double dist = cv::pointPolygonTest(zone.points, pt_final, true);
+                        if (dist >= config_.zone_detection.boundary_margin) {
+                            points_in_zone++;
+                        }
+                    }
+                    
+                    // Apply voting strategy
+                    switch (config_.zone_detection.footprint_voting) {
+                        case ZoneDetectionConfig::VotingStrategy::ALL:
+                            is_violating = (points_in_zone == 3);
+                            break;
+                        case ZoneDetectionConfig::VotingStrategy::MAJORITY:
+                            is_violating = (points_in_zone >= 2);  // 2/3 or more
+                            break;
+                        case ZoneDetectionConfig::VotingStrategy::ANY:
+                            is_violating = (points_in_zone >= 1);   // At least 1
+                            break;
+                    }
+                    break;
+                }
+                
+                // ========================================================================
+                // Mode 3: CALIBRATED - Uses full perspective transform (highest accuracy)
+                // Requires spatial calibration; falls back to footprint if unavailable
+                // ========================================================================
+                case ZoneDetectionConfig::Mode::CALIBRATED: {
+                    if (ctx->spatial_mapper && ctx->spatial_mapper->isCalibrated()) {
+                        // Use full homography transform for most accurate positioning
+                        cv::Point2f feet_img(det.box.x + det.box.width / 2.0f, det.box.y + det.box.height);
+                        cv::Point2f feet_world = ctx->spatial_mapper->mapToWorld(feet_img);
+                        double dist = cv::pointPolygonTest(zone.points, feet_world, true);
+                        is_violating = (dist >= config_.zone_detection.boundary_margin);
+                    } else {
+                        // Fallback to footprint mode if calibration unavailable
+                        std::vector<cv::Point2f> footprint = {
+                            {det.box.x + det.box.width / 2.0f, det.box.y + det.box.height}
+                        };
+                        double dist = cv::pointPolygonTest(zone.points, footprint[0], true);
+                        is_violating = (dist >= config_.zone_detection.boundary_margin);
+                    }
+                    break;
+                }
+            }
             
             if (is_violating) {
                 if (violation_logger_) {
@@ -272,9 +346,15 @@ void PipelineManager::checkAlerts(const std::string& stream_id, const std::vecto
                         static_cast<float>(det.box.width),
                         static_cast<float>(det.box.height)
                     };
+                    // Get world coordinates for logging
+                    cv::Point2f feet_img(det.box.x + det.box.width / 2.0f, det.box.y + det.box.height);
+                    cv::Point2f feet_world = feet_img;
+                    if (ctx->spatial_mapper) {
+                        feet_world = ctx->spatial_mapper->mapToWorld(feet_img);
+                    }
                     std::array<float, 2> world_coords = {
-                        feet_final.x,
-                        feet_final.y
+                        feet_world.x,
+                        feet_world.y
                     };
                     violation_logger_->log_violation(zone.id, det.confidence, det.track_id,
                                                     detection_box, world_coords, stream_id);

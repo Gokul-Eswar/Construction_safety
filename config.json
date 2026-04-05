@@ -40,7 +40,6 @@
   "database_path": "safety_violations.db",
   
   "alert_cooldown": 5000,
-  "inference_interval": 1,
   "log_retention_days": 30,
   
   "stream_port": 8081,
@@ -48,6 +47,33 @@
   "auth": {
     "username": "admin",
     "password": "password"
+  },
+  
+  "detection_tuning": {
+    "confidence_threshold": 0.20,
+    "nms_threshold": 0.50,
+    "inference_interval": 1
+  },
+  
+  "tracking_tuning": {
+    "max_age": 45,
+    "min_hits": 3,
+    "iou_threshold": 0.3,
+    "feature_threshold": 0.5,
+    "occlusion_extension_frames": 15
+  },
+  
+  "preprocessing": {
+    "clahe_enabled": true,
+    "clahe_clip_limit": 2.0,
+    "clahe_tile_size": 8,
+    "clahe_blur_kernel": 3
+  },
+  
+  "zone_detection": {
+    "mode": "footprint",
+    "boundary_margin": 5,
+    "footprint_voting": "majority"
   },
   
   "mqtt": {

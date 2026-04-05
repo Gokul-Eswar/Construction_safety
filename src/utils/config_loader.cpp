@@ -94,6 +94,179 @@ AppConfig ConfigLoader::load(const std::string& path) {
         }
         
         // ================================================================================
+        // Detection Tuning Configuration Validation
+        // ================================================================================
+        if (j.contains("detection_tuning")) {
+            auto& det = j["detection_tuning"];
+            
+            if (det.contains("confidence_threshold")) {
+                float conf = det["confidence_threshold"];
+                if (conf < 0.05f || conf > 0.95f) {
+                    throw std::runtime_error("detection_tuning.confidence_threshold must be 0.05-0.95; got " + std::to_string(conf));
+                }
+                config.detection.confidence_threshold = conf;
+            }
+            
+            if (det.contains("nms_threshold")) {
+                float nms = det["nms_threshold"];
+                if (nms < 0.1f || nms > 0.95f) {
+                    throw std::runtime_error("detection_tuning.nms_threshold must be 0.1-0.95; got " + std::to_string(nms));
+                }
+                config.detection.nms_threshold = nms;
+            }
+            
+            if (det.contains("inference_interval")) {
+                int interval = det["inference_interval"];
+                if (interval < 1 || interval > 30) {
+                    throw std::runtime_error("detection_tuning.inference_interval must be 1-30; got " + std::to_string(interval));
+                }
+                config.detection.inference_interval = interval;
+            }
+            
+            spdlog::info("Loaded detection_tuning: conf_threshold={}, nms_threshold={}, inference_interval={}",
+                        config.detection.confidence_threshold, config.detection.nms_threshold, 
+                        config.detection.inference_interval);
+        }
+        
+        // ================================================================================
+        // Tracking Tuning Configuration Validation (Occlusion Robustness)
+        // ================================================================================
+        if (j.contains("tracking_tuning")) {
+            auto& track = j["tracking_tuning"];
+            
+            if (track.contains("max_age")) {
+                int max_age = track["max_age"];
+                if (max_age < 15 || max_age > 120) {
+                    throw std::runtime_error("tracking_tuning.max_age must be 15-120; got " + std::to_string(max_age));
+                }
+                config.tracking.max_age = max_age;
+            }
+            
+            if (track.contains("min_hits")) {
+                int min_hits = track["min_hits"];
+                if (min_hits < 1 || min_hits > 10) {
+                    throw std::runtime_error("tracking_tuning.min_hits must be 1-10; got " + std::to_string(min_hits));
+                }
+                config.tracking.min_hits = min_hits;
+            }
+            
+            if (track.contains("iou_threshold")) {
+                float iou = track["iou_threshold"];
+                if (iou < 0.1f || iou > 0.9f) {
+                    throw std::runtime_error("tracking_tuning.iou_threshold must be 0.1-0.9; got " + std::to_string(iou));
+                }
+                config.tracking.iou_threshold = iou;
+            }
+            
+            if (track.contains("feature_threshold")) {
+                float feat = track["feature_threshold"];
+                if (feat < 0.3f || feat > 0.9f) {
+                    throw std::runtime_error("tracking_tuning.feature_threshold must be 0.3-0.9; got " + std::to_string(feat));
+                }
+                config.tracking.feature_threshold = feat;
+            }
+            
+            if (track.contains("occlusion_extension_frames")) {
+                int occ_ext = track["occlusion_extension_frames"];
+                if (occ_ext < 5 || occ_ext > 60) {
+                    throw std::runtime_error("tracking_tuning.occlusion_extension_frames must be 5-60; got " + std::to_string(occ_ext));
+                }
+                config.tracking.occlusion_extension_frames = occ_ext;
+            }
+            
+            spdlog::info("Loaded tracking_tuning: max_age={}, min_hits={}, iou_threshold={}, feature_threshold={}, occlusion_extension_frames={}",
+                        config.tracking.max_age, config.tracking.min_hits, config.tracking.iou_threshold,
+                        config.tracking.feature_threshold, config.tracking.occlusion_extension_frames);
+        }
+        
+        // ================================================================================
+        // Preprocessing Configuration Validation (CLAHE for Extreme Lighting)
+        // ================================================================================
+        if (j.contains("preprocessing")) {
+            auto& prep = j["preprocessing"];
+            
+            if (prep.contains("clahe_enabled")) {
+                config.preprocessing.clahe_enabled = prep["clahe_enabled"];
+            }
+            
+            if (prep.contains("clahe_clip_limit")) {
+                float clip = prep["clahe_clip_limit"];
+                if (clip < 1.0f || clip > 4.0f) {
+                    throw std::runtime_error("preprocessing.clahe_clip_limit must be 1.0-4.0; got " + std::to_string(clip));
+                }
+                config.preprocessing.clahe_clip_limit = clip;
+            }
+            
+            if (prep.contains("clahe_tile_size")) {
+                int tile = prep["clahe_tile_size"];
+                if (tile < 4 || tile > 16) {
+                    throw std::runtime_error("preprocessing.clahe_tile_size must be 4-16; got " + std::to_string(tile));
+                }
+                config.preprocessing.clahe_tile_size = tile;
+            }
+            
+            if (prep.contains("clahe_blur_kernel")) {
+                int blur = prep["clahe_blur_kernel"];
+                if (blur < 1 || blur > 7 || blur % 2 == 0) {
+                    throw std::runtime_error("preprocessing.clahe_blur_kernel must be odd 1-7; got " + std::to_string(blur));
+                }
+                config.preprocessing.clahe_blur_kernel = blur;
+            }
+            
+            spdlog::info("Loaded preprocessing: clahe_enabled={}, clahe_clip_limit={}, clahe_tile_size={}, clahe_blur_kernel={}",
+                        config.preprocessing.clahe_enabled, config.preprocessing.clahe_clip_limit,
+                        config.preprocessing.clahe_tile_size, config.preprocessing.clahe_blur_kernel);
+        }
+        
+        // ================================================================================
+        // Zone Detection Configuration Validation (Perspective Error Handling)
+        // ================================================================================
+        if (j.contains("zone_detection")) {
+            auto& zone_det = j["zone_detection"];
+            
+            if (zone_det.contains("mode")) {
+                std::string mode_str = zone_det["mode"];
+                if (mode_str == "point") {
+                    config.zone_detection.mode = ZoneDetectionConfig::Mode::POINT;
+                } else if (mode_str == "footprint") {
+                    config.zone_detection.mode = ZoneDetectionConfig::Mode::FOOTPRINT;
+                } else if (mode_str == "calibrated") {
+                    config.zone_detection.mode = ZoneDetectionConfig::Mode::CALIBRATED;
+                } else {
+                    throw std::runtime_error("zone_detection.mode must be 'point', 'footprint', or 'calibrated'; got " + mode_str);
+                }
+            }
+            
+            if (zone_det.contains("boundary_margin")) {
+                float margin = zone_det["boundary_margin"];
+                if (margin < -20.0f || margin > 20.0f) {
+                    throw std::runtime_error("zone_detection.boundary_margin must be -20 to 20; got " + std::to_string(margin));
+                }
+                config.zone_detection.boundary_margin = margin;
+            }
+            
+            if (zone_det.contains("footprint_voting")) {
+                std::string voting_str = zone_det["footprint_voting"];
+                if (voting_str == "all") {
+                    config.zone_detection.footprint_voting = ZoneDetectionConfig::VotingStrategy::ALL;
+                } else if (voting_str == "majority") {
+                    config.zone_detection.footprint_voting = ZoneDetectionConfig::VotingStrategy::MAJORITY;
+                } else if (voting_str == "any") {
+                    config.zone_detection.footprint_voting = ZoneDetectionConfig::VotingStrategy::ANY;
+                } else {
+                    throw std::runtime_error("zone_detection.footprint_voting must be 'all', 'majority', or 'any'; got " + voting_str);
+                }
+            }
+            
+            std::string mode_name = config.zone_detection.mode == ZoneDetectionConfig::Mode::POINT ? "point" :
+                                    config.zone_detection.mode == ZoneDetectionConfig::Mode::FOOTPRINT ? "footprint" : "calibrated";
+            std::string voting_name = config.zone_detection.footprint_voting == ZoneDetectionConfig::VotingStrategy::ALL ? "all" :
+                                      config.zone_detection.footprint_voting == ZoneDetectionConfig::VotingStrategy::MAJORITY ? "majority" : "any";
+            spdlog::info("Loaded zone_detection: mode={}, boundary_margin={}, footprint_voting={}", 
+                        mode_name, config.zone_detection.boundary_margin, voting_name);
+        }
+        
+        // ================================================================================
         // MQTT Configuration Validation
         // ================================================================================
         auto& mqtt_obj = j["mqtt"];
@@ -288,8 +461,32 @@ bool ConfigLoader::save(const std::string& path, const AppConfig& config) {
     j["database_path"] = config.database_path;
     j["alert_cooldown"] = config.alert_cooldown;
     j["log_retention_days"] = config.log_retention_days;
-    j["inference_interval"] = config.inference_interval;
     j["stream_port"] = config.stream_port;
+    
+    // Detection tuning
+    j["detection_tuning"]["confidence_threshold"] = config.detection.confidence_threshold;
+    j["detection_tuning"]["nms_threshold"] = config.detection.nms_threshold;
+    j["detection_tuning"]["inference_interval"] = config.detection.inference_interval;
+    
+    // Tracking tuning
+    j["tracking_tuning"]["max_age"] = config.tracking.max_age;
+    j["tracking_tuning"]["min_hits"] = config.tracking.min_hits;
+    j["tracking_tuning"]["iou_threshold"] = config.tracking.iou_threshold;
+    j["tracking_tuning"]["feature_threshold"] = config.tracking.feature_threshold;
+    j["tracking_tuning"]["occlusion_extension_frames"] = config.tracking.occlusion_extension_frames;
+    
+    // Preprocessing config
+    j["preprocessing"]["clahe_enabled"] = config.preprocessing.clahe_enabled;
+    j["preprocessing"]["clahe_clip_limit"] = config.preprocessing.clahe_clip_limit;
+    j["preprocessing"]["clahe_tile_size"] = config.preprocessing.clahe_tile_size;
+    j["preprocessing"]["clahe_blur_kernel"] = config.preprocessing.clahe_blur_kernel;
+    
+    // Zone detection config
+    j["zone_detection"]["mode"] = config.zone_detection.mode == ZoneDetectionConfig::Mode::POINT ? "point" :
+                                   config.zone_detection.mode == ZoneDetectionConfig::Mode::FOOTPRINT ? "footprint" : "calibrated";
+    j["zone_detection"]["boundary_margin"] = config.zone_detection.boundary_margin;
+    j["zone_detection"]["footprint_voting"] = config.zone_detection.footprint_voting == ZoneDetectionConfig::VotingStrategy::ALL ? "all" :
+                                              config.zone_detection.footprint_voting == ZoneDetectionConfig::VotingStrategy::MAJORITY ? "majority" : "any";
     
     j["mqtt"]["host"] = config.mqtt.host;
     j["mqtt"]["port"] = config.mqtt.port;

@@ -28,6 +28,16 @@ bool InferenceEngine::init() {
         return true;
     }
 
+    // Initialize CLAHE object if enabled
+    if (config_.clahe.enabled) {
+        clahe_ = cv::createCLAHE(config_.clahe.clip_limit, 
+                                 cv::Size(config_.clahe.tile_size, config_.clahe.tile_size));
+        if (!clahe_) {
+            std::cerr << "Failed to initialize CLAHE; continuing without lighting correction" << "\n";
+            config_.clahe.enabled = false;
+        }
+    }
+
 #ifdef ENABLE_TENSORRT
     if (auto engine = model_loader_->getEngine()) {
         context_ = std::unique_ptr<nvinfer1::IExecutionContext, InferDeleter>(
@@ -206,34 +216,61 @@ std::vector<Detection> InferenceEngine::parseDetections(const cv::Mat& output_t,
     return raw_detections;
 }
 
-void InferenceEngine::preprocess(const cv::Mat& input, cv::Mat& output) {
-    if (input.empty()) return;
-
-    // --- CORNER CASE: Lighting Normalization (CLAHE) ---
+void InferenceEngine::applyCLAHE(const cv::Mat& input, cv::Mat& output) {
+    if (!config_.clahe.enabled || !clahe_) {
+        output = input.clone();
+        return;
+    }
+    
+    // ================================================================================
+    // CLAHE Preprocessing for Extreme Lighting (Issue 2 Implementation)
+    // ================================================================================
+    
+    // Step 1: Convert BGR to LAB color space (L = lightness, preserves color info)
     cv::Mat lab_image;
     cv::cvtColor(input, lab_image, cv::COLOR_BGR2Lab);
 
-    // Extract the L channel
+    // Step 2: Split LAB channels
     std::vector<cv::Mat> lab_planes(3);
     cv::split(lab_image, lab_planes);
 
-    // Apply CLAHE to the L channel
-    cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE();
-    clahe->setClipLimit(2.0); // Standard clip limit
+    // Step 3: Apply CLAHE to L (lightness) channel only
+    // This boosts contrast locally without destroying color information
     cv::Mat dst;
-    clahe->apply(lab_planes[0], dst);
-
-    // Merge the channels back
+    clahe_->apply(lab_planes[0], dst);
     dst.copyTo(lab_planes[0]);
-    cv::merge(lab_planes, lab_image);
 
-    // Convert back to BGR
-    cv::Mat normalized_input;
-    cv::cvtColor(lab_image, normalized_input, cv::COLOR_Lab2BGR);
+    // Step 4: Merge channels back
+    cv::Mat lab_corrected;
+    cv::merge(lab_planes, lab_corrected);
+
+    // Step 5: Convert back to BGR
+    cv::Mat bgr_corrected;
+    cv::cvtColor(lab_corrected, bgr_corrected, cv::COLOR_Lab2BGR);
     
-    // Letterbox Resize
-    int iw = normalized_input.cols;
-    int ih = normalized_input.rows;
+    // Step 6: Apply Gaussian blur to reduce CLAHE tile artifacts
+    // (CLAHE can create visible tile boundaries; blur smooths them)
+    if (config_.clahe.blur_kernel > 0 && config_.clahe.blur_kernel % 2 == 1) {
+        cv::GaussianBlur(bgr_corrected, output, cv::Size(config_.clahe.blur_kernel, config_.clahe.blur_kernel), 1.0);
+    } else {
+        output = bgr_corrected;
+    }
+}
+
+void InferenceEngine::preprocess(const cv::Mat& input, cv::Mat& output) {
+    if (input.empty()) return;
+
+    // ================================================================================
+    // Step 1: CLAHE Preprocessing for Extreme Lighting (configurable)
+    // ================================================================================
+    cv::Mat lighting_corrected;
+    applyCLAHE(input, lighting_corrected);
+    
+    // ================================================================================
+    // Step 2: Letterbox Resize
+    // ================================================================================
+    int iw = lighting_corrected.cols;
+    int ih = lighting_corrected.rows;
     int w = config_.input_width;
     int h = config_.input_height;
     
@@ -242,7 +279,7 @@ void InferenceEngine::preprocess(const cv::Mat& input, cv::Mat& output) {
     int nh = int(ih * scale);
     
     cv::Mat resized;
-    cv::resize(normalized_input, resized, cv::Size(nw, nh));
+    cv::resize(lighting_corrected, resized, cv::Size(nw, nh));
     
     // Create canvas with padding (114 is YOLO grey)
     cv::Mat canvas(h, w, CV_8UC3, cv::Scalar(114, 114, 114));
@@ -253,7 +290,9 @@ void InferenceEngine::preprocess(const cv::Mat& input, cv::Mat& output) {
     
     resized.copyTo(canvas(cv::Rect(dx, dy, nw, nh)));
     
-    // Normalize [0,1] and NCHW
+    // ================================================================================
+    // Step 3: Normalize [0,1] and NCHW for YOLO model
+    // ================================================================================
     cv::dnn::blobFromImage(canvas, output, 1.0/255.0, cv::Size(), cv::Scalar(), true, false);
 }
 

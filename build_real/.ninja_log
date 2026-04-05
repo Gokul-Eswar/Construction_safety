@@ -23,7 +23,7 @@
 7909	9015	7968109802075727	_deps/pahomqttc-build/src/CMakeFiles/common_obj_static.dir/WebSocket.c.obj	ee726e65b27029cc
 8490	9467	7968109807890423	_deps/pahomqttc-build/src/CMakeFiles/common_obj_static.dir/StackTrace.c.obj	14f84600b5150f97
 9004	9932	7968109813026604	_deps/pahomqttc-build/src/CMakeFiles/common_obj_static.dir/Heap.c.obj	17642399aa608346
-9015	10339	7968109813133599	_deps/pahomqttc-build/src/CMakeFiles/paho-mqtt3a-static.dir/MQTTAsync.c.obj	509c35bd8e858dfa
+60	1356	7968110388389088	_deps/pahomqttc-build/src/CMakeFiles/paho-mqtt3a-static.dir/MQTTAsync.c.obj	509c35bd8e858dfa
 9467	11183	7968109817666680	_deps/pahomqttc-build/src/CMakeFiles/paho-mqtt3a-static.dir/MQTTAsyncUtils.c.obj	47e0aa11ed859bed
 10340	11619	7968109826392516	_deps/googletest-build/googletest/CMakeFiles/gtest_main.dir/src/gtest_main.cc.obj	b0186fe84868a7f2
 9932	14636	7968109822307259	_deps/googletest-build/googlemock/CMakeFiles/gmock.dir/src/gmock-all.cc.obj	b55620beee6b05fc
@@ -32,7 +32,7 @@
 14636	18370	7968109869354486	_deps/spdlog-build/CMakeFiles/spdlog.dir/src/color_sinks.cpp.obj	6b5adaa2b30a04ab
 17269	19352	7968109895684765	_deps/spdlog-build/CMakeFiles/spdlog.dir/src/async.cpp.obj	a07530c7854b5318
 18370	19936	7968109906684043	_deps/spdlog-build/CMakeFiles/spdlog.dir/src/cfg.cpp.obj	ecb74b2ca623fc0
-19937	20350	7968109922354343	_deps/pahomqttc-build/src/libpaho-mqtt3a-static.a	25b2db7bf3f69c03
+1356	1522	7968110401352964	_deps/pahomqttc-build/src/libpaho-mqtt3a-static.a	25b2db7bf3f69c03
 38	20579	7968109723374575	_deps/googletest-build/googletest/CMakeFiles/gtest.dir/src/gtest-all.cc.obj	9ded4fd6312ecbc2
 20580	20726	7968109928778663	lib/libgtest.a	5e7c328868506031
 20726	23555	7968109930241559	_deps/pahomqttcpp-build/src/CMakeFiles/paho-cpp-objs.dir/client.cpp.obj	a3ae26a2fe981be2
@@ -52,8 +52,8 @@
 26978	28180	7968109992764254	_deps/pahomqttcpp-build/src/CMakeFiles/paho-cpp-objs.dir/topic.cpp.obj	2c0d7b2e29ac9949
 26724	28397	7968109990228912	_deps/pahomqttcpp-build/src/CMakeFiles/paho-cpp-objs.dir/token.cpp.obj	ffb72abcebf25ef8
 27232	28457	7968109995303610	_deps/pahomqttcpp-build/src/CMakeFiles/paho-cpp-objs.dir/will_options.cpp.obj	f9b7169f8576ce93
-28458	31149	7968110007563676	CMakeFiles/main_app.dir/src/inference/model_loader.cpp.obj	4f914cd18ccfbb03
-28180	31595	7968110004789706	CMakeFiles/main_app.dir/src/pipeline/camera_source.cpp.obj	2504e664d7dccd3e
+33	2559	7968124741926707	CMakeFiles/main_app.dir/src/inference/model_loader.cpp.obj	4f914cd18ccfbb03
+27	2389	7968124741882861	CMakeFiles/main_app.dir/src/pipeline/camera_source.cpp.obj	2504e664d7dccd3e
 31597	32202	7968110038926944	CMakeFiles/main_app.dir/src/inference/trt_utils.cpp.obj	f28e5519f6787b16
 31150	35575	7968110034491275	CMakeFiles/main_app.dir/src/inference/inference_engine.cpp.obj	227e6eb7e3f0cebd
 32203	35692	7968110045013093	CMakeFiles/main_app.dir/src/spatial/spatial_mapper.cpp.obj	e109fb98625a1d68
@@ -62,7 +62,7 @@
 39810	41620	7968110121077163	CMakeFiles/main_app.dir/src/utils/mqtt_client.cpp.obj	9b2cd13a5ace5fbd
 27483	41668	7968109997823842	CMakeFiles/main_app.dir/src/main.cpp.obj	a563c66bb15ea4bb
 39388	42616	7968110116871481	CMakeFiles/main_app.dir/src/utils/visualizer.cpp.obj	dbb9e2a6f8259856
-41669	42833	7968110139631961	CMakeFiles/main_app.dir/src/utils/violation_logger.cpp.obj	15d4fe8008fd334d
+38	1131	7968127126729458	CMakeFiles/main_app.dir/src/utils/violation_logger.cpp.obj	15d4fe8008fd334d
 28397	43109	7968110006931976	CMakeFiles/main_app.dir/src/pipeline/pipeline_manager.cpp.obj	d08b31f5a063b0ab
 42616	43143	7968110149147223	CMakeFiles/main_app.dir/src/utils/alert_throttler.cpp.obj	2f8dff898b80d9d5
 43111	44626	7968110154103747	CMakeFiles/main_app.dir/src/utils/latency_logger.cpp.obj	7405e510f9a9f675
@@ -70,7 +70,7 @@
 42833	46773	7968110151317964	CMakeFiles/main_app.dir/src/utils/mjpeg_streamer.cpp.obj	e23e35002dbb7fbf
 44626	47632	7968110169247489	CMakeFiles/unit_tests.dir/tests/unit/inference/test_model_loader.cpp.obj	a2720e20f91c86f3
 45615	49740	7968110179121726	CMakeFiles/unit_tests.dir/tests/unit/inference/test_inference_engine.cpp.obj	8b47689acf42a2b6
-41620	50077	7968110139187565	CMakeFiles/main_app.dir/src/utils/config_loader.cpp.obj	f4169198fe37bbc9
+39	8040	7968124742003925	CMakeFiles/main_app.dir/src/utils/config_loader.cpp.obj	f4169198fe37bbc9
 46774	50773	7968110190731561	CMakeFiles/unit_tests.dir/tests/unit/spatial/test_spatial_mapper.cpp.obj	d90dc67604c69a9f
 49740	51261	7968110220396853	CMakeFiles/unit_tests.dir/tests/unit/utils/test_mqtt_client.cpp.obj	da7e081a871f22ad
 51261	52864	7968110235586497	CMakeFiles/unit_tests.dir/tests/unit/utils/test_violation_logger.cpp.obj	81e682574ee074d8
@@ -81,18 +81,34 @@
 65	772	7968110388452913	CMakeFiles/env_check.dir/src/utils/env_check.cpp.obj	e8bdfc8ae2aa2dcd
 772	995	7968110395522637	env_check.exe	4005df2e909f88be
 995	1121	7968110397754576	lib/libgtest_main.a	2ef498cf96a6f023
-60	1356	7968110388389088	_deps/pahomqttc-build/src/CMakeFiles/paho-mqtt3a-static.dir/MQTTAsync.c.obj	509c35bd8e858dfa
-1356	1522	7968110401352964	_deps/pahomqttc-build/src/libpaho-mqtt3a-static.a	25b2db7bf3f69c03
 79	1618	7968110388594026	_deps/googletest-build/googlemock/CMakeFiles/gmock_main.dir/src/gmock_main.cc.obj	b954131cd040f2e2
 1522	1694	7968110403029892	_deps/pahomqttcpp-build/src/libpaho-mqttpp3-static.a	ef2de43200e0ced2
 1618	1747	7968110403981387	lib/libgmock_main.a	aeabc9f2cc392683
 377	1857	7968110391555627	_deps/pahomqttc-build/src/CMakeFiles/paho-mqtt3c-static.dir/MQTTClient.c.obj	d8ecd4b968fce31c
 1857	2022	7968110406363668	_deps/pahomqttc-build/src/libpaho-mqtt3c-static.a	372cee7cc2b9341
-36	1453	7968110622804948	CMakeFiles/main_app.dir/src/pipeline/camera_source.cpp.obj	2504e664d7dccd3e
-1453	1873	7968110637056756	main_app.exe	a63c01d2a664a7b2
-27	2389	7968124741882861	CMakeFiles/main_app.dir/src/pipeline/camera_source.cpp.obj	2504e664d7dccd3e
-33	2559	7968124741926707	CMakeFiles/main_app.dir/src/inference/model_loader.cpp.obj	4f914cd18ccfbb03
-39	8040	7968124742003925	CMakeFiles/main_app.dir/src/utils/config_loader.cpp.obj	f4169198fe37bbc9
-8040	8611	7968124821981910	main_app.exe	a63c01d2a664a7b2
-38	1131	7968127126729458	CMakeFiles/main_app.dir/src/utils/violation_logger.cpp.obj	15d4fe8008fd334d
 1132	1483	7968127137667519	main_app.exe	a63c01d2a664a7b2
+169	11659	7970836863645599	build.ninja	bf7a2fc06b7f50f3
+169	11659	7970836863645599	D:/GOKUL_ESWAR/Codebase/construction safety/build_real/cmake_install.cmake	bf7a2fc06b7f50f3
+169	11659	7970836863645599	D:/GOKUL_ESWAR/Codebase/construction safety/build_real/_deps/googletest-build/cmake_install.cmake	bf7a2fc06b7f50f3
+169	11659	7970836863645599	D:/GOKUL_ESWAR/Codebase/construction safety/build_real/_deps/googletest-build/googlemock/cmake_install.cmake	bf7a2fc06b7f50f3
+169	11659	7970836863645599	D:/GOKUL_ESWAR/Codebase/construction safety/build_real/_deps/googletest-build/googletest/cmake_install.cmake	bf7a2fc06b7f50f3
+169	11659	7970836863645599	D:/GOKUL_ESWAR/Codebase/construction safety/build_real/_deps/json-build/cmake_install.cmake	bf7a2fc06b7f50f3
+169	11659	7970836863645599	D:/GOKUL_ESWAR/Codebase/construction safety/build_real/_deps/spdlog-build/cmake_install.cmake	bf7a2fc06b7f50f3
+169	11659	7970836863645599	D:/GOKUL_ESWAR/Codebase/construction safety/build_real/_deps/pahomqttc-build/cmake_install.cmake	bf7a2fc06b7f50f3
+169	11659	7970836863645599	D:/GOKUL_ESWAR/Codebase/construction safety/build_real/_deps/pahomqttc-build/src/cmake_install.cmake	bf7a2fc06b7f50f3
+169	11659	7970836863645599	D:/GOKUL_ESWAR/Codebase/construction safety/build_real/_deps/pahomqttcpp-build/cmake_install.cmake	bf7a2fc06b7f50f3
+169	11659	7970836863645599	D:/GOKUL_ESWAR/Codebase/construction safety/build_real/_deps/pahomqttcpp-build/src/cmake_install.cmake	bf7a2fc06b7f50f3
+169	11659	7970836863645599	D:/GOKUL_ESWAR/Codebase/construction safety/build_real/_deps/pahomqttcpp-build/src/mqtt/cmake_install.cmake	bf7a2fc06b7f50f3
+169	11659	7970836863645599	D:/GOKUL_ESWAR/Codebase/construction safety/build_real/_deps/pahomqttcpp-build/cmake/cmake_install.cmake	bf7a2fc06b7f50f3
+169	11659	7970836863645599	D:/GOKUL_ESWAR/Codebase/construction safety/build_real/CTestTestfile.cmake	bf7a2fc06b7f50f3
+169	11659	7970836863645599	D:/GOKUL_ESWAR/Codebase/construction safety/build_real/_deps/googletest-build/CTestTestfile.cmake	bf7a2fc06b7f50f3
+169	11659	7970836863645599	D:/GOKUL_ESWAR/Codebase/construction safety/build_real/_deps/googletest-build/googlemock/CTestTestfile.cmake	bf7a2fc06b7f50f3
+169	11659	7970836863645599	D:/GOKUL_ESWAR/Codebase/construction safety/build_real/_deps/googletest-build/googletest/CTestTestfile.cmake	bf7a2fc06b7f50f3
+169	11659	7970836863645599	D:/GOKUL_ESWAR/Codebase/construction safety/build_real/_deps/json-build/CTestTestfile.cmake	bf7a2fc06b7f50f3
+169	11659	7970836863645599	D:/GOKUL_ESWAR/Codebase/construction safety/build_real/_deps/spdlog-build/CTestTestfile.cmake	bf7a2fc06b7f50f3
+169	11659	7970836863645599	D:/GOKUL_ESWAR/Codebase/construction safety/build_real/_deps/pahomqttc-build/CTestTestfile.cmake	bf7a2fc06b7f50f3
+169	11659	7970836863645599	D:/GOKUL_ESWAR/Codebase/construction safety/build_real/_deps/pahomqttc-build/src/CTestTestfile.cmake	bf7a2fc06b7f50f3
+169	11659	7970836863645599	D:/GOKUL_ESWAR/Codebase/construction safety/build_real/_deps/pahomqttcpp-build/CTestTestfile.cmake	bf7a2fc06b7f50f3
+169	11659	7970836863645599	D:/GOKUL_ESWAR/Codebase/construction safety/build_real/_deps/pahomqttcpp-build/src/CTestTestfile.cmake	bf7a2fc06b7f50f3
+169	11659	7970836863645599	D:/GOKUL_ESWAR/Codebase/construction safety/build_real/_deps/pahomqttcpp-build/src/mqtt/CTestTestfile.cmake	bf7a2fc06b7f50f3
+169	11659	7970836863645599	D:/GOKUL_ESWAR/Codebase/construction safety/build_real/_deps/pahomqttcpp-build/cmake/CTestTestfile.cmake	bf7a2fc06b7f50f3

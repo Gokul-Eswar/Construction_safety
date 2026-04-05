@@ -6,12 +6,23 @@
 #include "model_loader.hpp"
 #include "trt_utils.hpp"
 
+// ================================================================================
+// CLAHE (Contrast-Limited Adaptive Histogram Equalization) Configuration
+// ================================================================================
+struct CLAHEConfig {
+    bool enabled = true;               // Enable CLAHE preprocessing
+    double clip_limit = 2.0;           // Contrast amplification (1.0-4.0)
+    int tile_size = 8;                 // Tile grid size (8x8 typical)
+    int blur_kernel = 3;               // Gaussian blur kernel for artifact reduction
+};
+
 struct InferenceConfig {
     std::string model_path;
     int input_width = 640;
     int input_height = 640;
     float conf_threshold = 0.20f; // Lowered for higher recall (Safety Critical)
     float nms_threshold = 0.50f;  // Adjusted for crowded scenes
+    CLAHEConfig clahe;             // CLAHE preprocessing for extreme lighting
 };
 
 struct Detection {
@@ -40,9 +51,15 @@ public:
 
 private:
     std::vector<Detection> parseDetections(const cv::Mat& output_t, int frame_w, int frame_h);
+    
+    // ================================================================================
+    // CLAHE Preprocessing Helper
+    // ================================================================================
+    void applyCLAHE(const cv::Mat& input, cv::Mat& output);
 
     InferenceConfig config_;
     std::unique_ptr<ModelLoader> model_loader_;
+    std::unique_ptr<cv::CLAHE> clahe_;  // Cached CLAHE object
     bool operational_ = false;
     size_t required_memory_bytes_ = 0;  // Per-stream memory requirement
 
