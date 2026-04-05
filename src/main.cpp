@@ -12,6 +12,31 @@
 #include "utils/config_loader.hpp"
 #include "utils/logger.hpp"
 
+// ================================================================================
+// CONSTRUCTION SAFETY SENTINEL - MAIN ENTRY POINT
+// ================================================================================
+//
+// Lifecycle Flow (VERIFIED - NO CONFLICTS):
+// 1. Logger Initialization → Set up centralized logging
+// 2. Signal Handler Registration → SIGINT (Ctrl+C), SIGTERM (termination)
+// 3. Argument Parsing → Process CLI flags (--config, --build-engine-only)
+// 4. Configuration Loading → Load and validate config.json against schema
+// 5. Mode Selection:
+//    a) BUILD_ENGINE_ONLY: Load model → Verify → Exit (used for image verification)
+//    b) FULL_SYSTEM: Initialize GStreamer → Create pipeline → Main loop → Shutdown
+// 6. Main Service Loop → Process streams, detect violations, publish telemetry
+// 7. Graceful Shutdown → Stop streams, disconnect MQTT, cleanup resources
+//
+// Thread Safety:
+// - Signal handler sets atomic flag (keep_running)
+// - Main thread periodically checks flag (100ms sleep)
+// - Pipeline manager stops all worker threads on shutdown
+//
+// Status: LIFECYCLE IS CLEAN - Single execution path with two branches
+// No conflicting implementations or state machine issues.
+// Future Enhancement: Add SystemLifecycle state machine for health monitoring
+// ================================================================================
+
 std::atomic<bool> keep_running(true);
 
 void signalHandler(int signum) {
@@ -57,6 +82,7 @@ int main(int argc, char* argv[]) {
         spdlog::info("Starting Construction Safety Inference System...");
         spdlog::info("Loading configuration from: {}", config_path);
 
+        // Load and validate config against schema
         AppConfig config = ConfigLoader::load(config_path);
         
         // Mode: Build Engine Only
