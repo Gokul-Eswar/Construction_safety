@@ -43,8 +43,8 @@ bool PipelineManager::init() {
     if (!config_.mqtt.host.empty()) {
         mqtt_client_ = std::make_unique<MQTTClient>(config_.mqtt.client_id);
         if (mqtt_client_->connect(config_.mqtt.host, config_.mqtt.port)) {
-            // Subscribe to control topic
-            mqtt_client_->subscribe("safety/control", [this](const std::string& topic, const std::string& payload) {
+            // Subscribe to versioned control topic
+            mqtt_client_->subscribe("safety/v1/control", [this](const std::string& topic, const std::string& payload) {
                  (void)topic;
                  if (payload.find("restart") != std::string::npos) {
                      std::cout << "Received restart command via MQTT. Initiating shutdown..." << "\n";
@@ -286,7 +286,11 @@ void PipelineManager::checkAlerts(const std::string& stream_id, const std::vecto
                     std::string alert = "{\"alert\": \"zone_violation\", \"stream_id\": \"" + stream_id + 
                                     "\", \"zone_name\": \"" + zone.name + 
                                     "\", \"track_id\": " + std::to_string(det.track_id) + "}";
-                    mqtt_client_->publish(config_.mqtt.topic, alert);
+                    // Use versioned topic by default; fallback to config if empty
+                    std::string topic = config_.mqtt.topic.find("/v") != std::string::npos 
+                                      ? config_.mqtt.topic 
+                                      : "safety/v1/violations";
+                    mqtt_client_->publish(topic, alert);
                 }
             }
         }
@@ -350,7 +354,7 @@ void PipelineManager::updateTiledView() {
             if (mqtt_client_ && mqtt_client_->isConnected()) {
                 std::string beat = "{\"status\":\"online\", "
                                    "\"timestamp\":" + std::to_string(std::time(nullptr)) + "}";
-                mqtt_client_->publish("safety/heartbeat", beat);
+                mqtt_client_->publish("safety/v1/heartbeat", beat);
             }
             last_beat_time = now_beat_time;
         }
@@ -392,7 +396,7 @@ void PipelineManager::updateTiledView() {
                     {"memory_total_mb", gpu.memory_total / (1024 * 1024)}
                 };
 
-                mqtt_client_->publish("safety/telemetry", j.dump());
+                mqtt_client_->publish("safety/v1/telemetry", j.dump());
             }
             last_telemetry = now_beat_time;
         }
@@ -419,7 +423,7 @@ void PipelineManager::updateTiledView() {
                          uploaded_ids.push_back(rec.id);
                     }
                     
-                    if (mqtt_client_->publish("safety/cloud_sync", sync_payload.dump())) {
+                    if (mqtt_client_->publish("safety/v1/cloud_sync", sync_payload.dump())) {
                         violation_logger_->mark_uploaded(uploaded_ids);
                         std::cout << "Synced " << uploaded_ids.size() << " records to cloud." << "\n";
                     }

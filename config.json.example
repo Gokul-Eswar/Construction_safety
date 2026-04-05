@@ -28,7 +28,7 @@
   "mqtt": {
     "host": "localhost",
     "port": 1883,
-    "topic": "safety/alerts",
-    "client_id": "safety_system_single"
+    "topic": "safety/v1/violations",
+    "client_id": "safety_engine_01"
   }
 }

@@ -1,0 +1,183 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Construction Safety Sentinel Configuration Schema",
+  "description": "Complete configuration schema for the Sentinel safety monitoring system",
+  "version": "1.0",
+  "type": "object",
+  "required": ["streams", "mqtt"],
+  "additionalProperties": false,
+  "properties": {
+    "_comment": {
+      "type": "string",
+      "description": "Optional comment field (ignored by parser)"
+    },
+    "_demo_mode": {
+      "type": "string",
+      "description": "Optional demo mode indicator (ignored by parser)"
+    },
+    "streams": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Array of video stream configurations",
+      "items": {
+        "type": "object",
+        "required": ["id", "uri"],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "description": "Unique stream identifier (alphanumeric, underscore, hyphen)"
+          },
+          "name": {
+            "type": "string",
+            "description": "Human-readable stream name"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["rtsp", "usb", "http"],
+            "description": "Stream source type (rtsp, usb camera, http stream)"
+          },
+          "uri": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Stream URI (RTSP URL, USB device path, or HTTP URL)"
+          },
+          "zones": {
+            "type": "array",
+            "minItems": 1,
+            "description": "Safety zones to monitor within this stream",
+            "items": {
+              "type": "object",
+              "required": ["id", "name", "points"],
+              "additionalProperties": false,
+              "properties": {
+                "id": {
+                  "oneOf": [
+                    { "type": "integer", "minimum": 0 },
+                    { "type": "string", "pattern": "^[0-9]+$" }
+                  ],
+                  "description": "Unique zone identifier (numeric, can be string for compatibility)"
+                },
+                "name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Zone name (e.g., 'High Hazard Area')"
+                },
+                "polygon_type": {
+                  "type": "string",
+                  "enum": ["rectangle", "polygon"],
+                  "default": "polygon",
+                  "description": "Type of geometric area (rectangle or polygon)"
+                },
+                "points": {
+                  "type": "array",
+                  "minItems": 3,
+                  "description": "Polygon vertices as [x, y] coordinates (min 3 for triangle)",
+                  "items": {
+                    "type": "array",
+                    "minItems": 2,
+                    "maxItems": 2,
+                    "items": { "type": "number" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "model_path": {
+      "type": "string",
+      "default": "yolo11n.onnx",
+      "description": "Path to YOLO model file (ONNX format)"
+    },
+    "database_path": {
+      "type": "string",
+      "default": "safety_violations.db",
+      "description": "Path to SQLite database for storing violations"
+    },
+    "alert_cooldown": {
+      "type": "integer",
+      "minimum": 1000,
+      "maximum": 300000,
+      "default": 5000,
+      "description": "Minimum milliseconds between alerts for same zone+person (1-300 seconds)"
+    },
+    "inference_interval": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 30,
+      "default": 1,
+      "description": "Process every Nth frame (1=every frame, 2=every 2nd, etc.) for performance tuning"
+    },
+    "log_retention_days": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 365,
+      "default": 30,
+      "description": "Retain violation logs for N days before auto-cleanup"
+    },
+    "stream_port": {
+      "type": "integer",
+      "minimum": 1024,
+      "maximum": 65535,
+      "default": 8081,
+      "description": "HTTP port for MJPEG stream output"
+    },
+    "auth": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Optional API authentication credentials",
+      "properties": {
+        "username": {
+          "type": "string",
+          "description": "API username for basic auth"
+        },
+        "password": {
+          "type": "string",
+          "description": "API password for basic auth"
+        }
+      }
+    },
+    "mqtt": {
+      "type": "object",
+      "required": ["host", "port"],
+      "additionalProperties": false,
+      "description": "MQTT broker configuration for event publishing",
+      "properties": {
+        "host": {
+          "type": "string",
+          "minLength": 1,
+          "description": "MQTT broker hostname or IP address"
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535,
+          "default": 1883,
+          "description": "MQTT broker port (1883 = plain, 8883 = TLS)"
+        },
+        "topic": {
+          "type": "string",
+          "default": "safety/v1/violations",
+          "description": "MQTT base topic for publishing events (use v1 for version compatibility)"
+        },
+        "client_id": {
+          "type": "string",
+          "default": "safety_engine_01",
+          "description": "MQTT client identifier (should be unique per instance)"
+        },
+        "username": {
+          "type": "string",
+          "description": "Optional MQTT broker username"
+        },
+        "password": {
+          "type": "string",
+          "description": "Optional MQTT broker password"
+        }
+      }
+    }
+  }
+}
