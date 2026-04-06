@@ -2,6 +2,7 @@
 #include <iostream>
 #include <csignal>
 #include <fstream>
+#include <algorithm>
 #include <gst/video/video.h>
 #include <gst/app/gstappsink.h>
 #include "utils/latency_logger.hpp"
@@ -92,6 +93,10 @@ bool PipelineManager::init() {
             this->onFrameReceived(id, sample);
         });
 
+        ctx->dynamic_inference_interval = std::max(1, config_.detection.inference_interval);
+        ctx->dynamic_input_scale = 1.0;
+        ctx->estimated_vram_bytes = estimatePerStreamVramBytes(1920, 1080, inf_config.input_width, inf_config.input_height);
+
         streams_[sc.id] = std::move(ctx);
     }
 
@@ -100,18 +105,30 @@ bool PipelineManager::init() {
 
 void PipelineManager::start() {
     running_ = true;
+    admitted_vram_bytes_ = 0;
 
     for (auto& pair : streams_) {
 #ifdef ENABLE_CUDA
-        // --- CORNER CASE: VRAM Governor ---
-        const size_t MIN_VRAM_PER_STREAM = 500 * 1024 * 1024; // 500MB safety margin
+        // Stream-aware admission control based on projected incremental VRAM.
         size_t free_vram = trt::getAvailableVRAM();
-        if (free_vram < MIN_VRAM_PER_STREAM) {
-            std::cerr << "CRITICAL: Insufficient VRAM to start stream '" << pair.first 
-                      << "'. Required: ~500MB, Available: " << (free_vram / 1024 / 1024) << "MB. Skipping." << "\n";
+        last_reported_free_vram_ = free_vram;
+
+        auto& ctx = pair.second;
+        size_t projected_usage = admitted_vram_bytes_ + ctx->estimated_vram_bytes;
+        bool can_admit = projected_usage < static_cast<size_t>(free_vram * 0.90);
+
+        if (!can_admit) {
+            ctx->admitted = false;
+            ctx->admission_reason = "denied: projected VRAM " + std::to_string(projected_usage / (1024 * 1024)) +
+                                    "MB exceeds 90% of free " + std::to_string(free_vram / (1024 * 1024)) + "MB";
+            std::cerr << "[VRAM Admission] Denied stream '" << pair.first << "' - " << ctx->admission_reason << "\n";
             continue;
         }
-        std::cout << "[VRAM Governor] Starting stream '" << pair.first << "' (Free VRAM: " 
+
+        ctx->admitted = true;
+        ctx->admission_reason = "admitted";
+        admitted_vram_bytes_ += ctx->estimated_vram_bytes;
+        std::cout << "[VRAM Admission] Starting stream '" << pair.first << "' (Free VRAM: " 
                   << (free_vram / 1024 / 1024) << "MB)" << "\n";
 #endif
 
@@ -175,12 +192,8 @@ void PipelineManager::onFrameReceived(const std::string& stream_id, GstSample* s
                 LatencyLogger::getInstance().startTimer(key_proc, ctx->frame_count);
 
                 // Determine if we run inference
-                bool run_inference = true;
-                if (config_.detection.inference_interval > 1) {
-                    if (ctx->frame_count % config_.detection.inference_interval != 0) {
-                        run_inference = false;
-                    }
-                }
+                enforceRuntimeDegradationPolicy(*ctx, frame);
+                bool run_inference = shouldRunInferenceForStream(*ctx);
 
                 std::vector<Detection> detections;
                 
@@ -188,9 +201,24 @@ void PipelineManager::onFrameReceived(const std::string& stream_id, GstSample* s
                     // 1. Inference
                     LatencyLogger::getInstance().startTimer(key_inf, ctx->frame_count);
                     std::vector<Detection> raw_detections;
+                    cv::Mat inference_frame = frame;
+                    if (ctx->dynamic_input_scale < 0.999) {
+                        cv::resize(frame, inference_frame, cv::Size(), ctx->dynamic_input_scale, ctx->dynamic_input_scale, cv::INTER_LINEAR);
+                    }
                     {
                         std::lock_guard<std::mutex> lock(mutex_);
-                        raw_detections = engine_->runInference(frame);
+                        raw_detections = engine_->runInference(inference_frame);
+                    }
+
+                    if (ctx->dynamic_input_scale < 0.999 && !raw_detections.empty()) {
+                        const float inv_scale = static_cast<float>(1.0 / ctx->dynamic_input_scale);
+                        for (auto& det : raw_detections) {
+                            det.box.x = static_cast<int>(det.box.x * inv_scale);
+                            det.box.y = static_cast<int>(det.box.y * inv_scale);
+                            det.box.width = static_cast<int>(det.box.width * inv_scale);
+                            det.box.height = static_cast<int>(det.box.height * inv_scale);
+                            det.box &= cv::Rect(0, 0, frame.cols, frame.rows);
+                        }
                     }
                     LatencyLogger::getInstance().stopTimer(key_inf, ctx->frame_count);
                     
@@ -464,7 +492,21 @@ void PipelineManager::updateTiledView() {
                     j["streams"][pair.first] = {
                         {"fps", stats.fps},
                         {"active", stats.active},
-                        {"frame_count", stats.frame_count}
+                        {"frame_count", stats.frame_count},
+                        {"state", static_cast<int>(stats.state)},
+                        {"reconnect_attempt", stats.reconnect_attempt},
+                        {"reconnect_count", stats.reconnect_count},
+                        {"error_count", stats.error_count},
+                        {"stale_timeout_count", stats.stale_timeout_count},
+                        {"restart_timeout_count", stats.restart_timeout_count},
+                        {"teardown_timeout_count", stats.teardown_timeout_count},
+                        {"last_error", stats.last_error},
+                        {"dynamic_inference_interval", pair.second->dynamic_inference_interval},
+                        {"dynamic_input_scale", pair.second->dynamic_input_scale},
+                        {"estimated_vram_mb", pair.second->estimated_vram_bytes / (1024 * 1024)},
+                        {"admitted", pair.second->admitted},
+                        {"admission_reason", pair.second->admission_reason},
+                        {"low_vram_events", pair.second->low_vram_events}
                     };
                 }
 
@@ -527,4 +569,78 @@ void PipelineManager::updateTiledView() {
         // Reduced sleep for higher visual FPS (10ms ~= 100 FPS target)
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
+}
+
+size_t PipelineManager::estimatePerStreamVramBytes(int frame_width, int frame_height, int input_width, int input_height) const {
+    int w = std::max(1, frame_width);
+    int h = std::max(1, frame_height);
+    int iw = std::max(1, input_width);
+    int ih = std::max(1, input_height);
+
+    size_t decoder_surfaces = static_cast<size_t>(w) * static_cast<size_t>(h) * 3 / 2 * 4;
+    size_t bgr_buffers = static_cast<size_t>(w) * static_cast<size_t>(h) * 3 * 2;
+    size_t infer_input = static_cast<size_t>(iw) * static_cast<size_t>(ih) * 3 * sizeof(float);
+    size_t infer_output = 64ULL * 1024ULL * 1024ULL;
+    size_t margin = 32ULL * 1024ULL * 1024ULL;
+
+    return decoder_surfaces + bgr_buffers + infer_input + infer_output + margin;
+}
+
+bool PipelineManager::shouldRunInferenceForStream(const StreamContext& ctx) const {
+    int interval = std::max(1, ctx.dynamic_inference_interval);
+    return (ctx.frame_count % static_cast<uint64_t>(interval)) == 0;
+}
+
+void PipelineManager::enforceRuntimeDegradationPolicy(StreamContext& ctx, const cv::Mat& frame) {
+#ifdef ENABLE_CUDA
+    size_t free_vram = trt::getAvailableVRAM();
+    last_reported_free_vram_ = free_vram;
+
+    if (!frame.empty()) {
+        ctx.estimated_vram_bytes = estimatePerStreamVramBytes(frame.cols, frame.rows, 640, 640);
+    }
+
+    const size_t LOW_VRAM_WATERMARK = 600ULL * 1024ULL * 1024ULL;
+    const size_t CRITICAL_VRAM_WATERMARK = 350ULL * 1024ULL * 1024ULL;
+
+    if (free_vram < LOW_VRAM_WATERMARK) {
+        ++ctx.low_vram_events;
+
+        if (ctx.dynamic_inference_interval < 6) {
+            ++ctx.dynamic_inference_interval;
+            std::cout << "[VRAM Degrade][" << ctx.id << "] Increased inference interval to "
+                      << ctx.dynamic_inference_interval << " (free VRAM=" << (free_vram / (1024 * 1024)) << "MB)" << "\n";
+        }
+
+        if (ctx.dynamic_input_scale > 0.65) {
+            ctx.dynamic_input_scale = std::max(0.65, ctx.dynamic_input_scale - 0.10);
+            std::cout << "[VRAM Degrade][" << ctx.id << "] Reduced inference input scale to "
+                      << ctx.dynamic_input_scale << " (free VRAM=" << (free_vram / (1024 * 1024)) << "MB)" << "\n";
+        }
+
+        if (free_vram < CRITICAL_VRAM_WATERMARK && !ctx.paused_for_vram && ctx.source) {
+            ctx.paused_for_vram = true;
+            ctx.source->stop();
+            std::cout << "[VRAM Degrade][" << ctx.id << "] Stream paused due to critical low VRAM ("
+                      << (free_vram / (1024 * 1024)) << "MB free)" << "\n";
+        }
+    } else {
+        if (ctx.paused_for_vram && free_vram > (LOW_VRAM_WATERMARK + 150ULL * 1024ULL * 1024ULL) && ctx.source) {
+            if (ctx.source->start()) {
+                ctx.paused_for_vram = false;
+                std::cout << "[VRAM Recover][" << ctx.id << "] Stream resumed." << "\n";
+            }
+        }
+
+        if (ctx.dynamic_inference_interval > std::max(1, config_.detection.inference_interval)) {
+            --ctx.dynamic_inference_interval;
+        }
+        if (ctx.dynamic_input_scale < 1.0) {
+            ctx.dynamic_input_scale = std::min(1.0, ctx.dynamic_input_scale + 0.05);
+        }
+    }
+#else
+    (void)ctx;
+    (void)frame;
+#endif
 }

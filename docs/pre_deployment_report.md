@@ -27,3 +27,22 @@ Run **`tools\\start_system.bat`**.
 The system is designed to provide "real metrics". Once running:
 - Look for the **FPS** counter in the top-right of the video feed.
 - Check the **System Health** panel for "End-to-End Latency" stats.
+
+## 📈 Rollout Plan (Phase 5)
+1. **Canary (1 stream):**
+    - Deploy with a single camera for 24 hours.
+    - Monitor: reconnect rate, DB queue depth, ID-switch events, GPU free VRAM watermark behavior.
+2. **2-stream stress:**
+    - Enable two streams with realistic traffic for 24-48 hours.
+    - Validate admission/degradation policy behavior under bursts and transient drops.
+3. **Full target deployment:**
+    - Scale to target stream count only after canary and 2-stream pass criteria are met.
+    - Keep staged rollback toggles ready (config-level inference interval and stream disable controls).
+
+## 🚨 Rollback Triggers
+- **ID-switch spike:** sustained increase above baseline over rolling 15-minute window.
+- **Reconnect storm:** repeated reconnect loops on one or more streams (for example >50 reconnect events/hour/stream).
+- **Repeated OOM/degrade loop:** frequent pause/resume cycles or repeated admission denials after initial stabilization.
+- **DB queue overflow:** non-zero sustained queue overflow with dropped records over multiple telemetry intervals.
+
+If any trigger fires, revert to the previous stable build and reduce active stream count to canary scope before retrying rollout.

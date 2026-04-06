@@ -26,6 +26,13 @@ struct StreamContext {
     cv::Mat last_processed_frame;
     std::mutex frame_mutex;
     uint64_t frame_count = 0;
+    int dynamic_inference_interval = 1;
+    double dynamic_input_scale = 1.0;
+    size_t estimated_vram_bytes = 0;
+    bool admitted = true;
+    bool paused_for_vram = false;
+    std::string admission_reason;
+    uint64_t low_vram_events = 0;
 };
 
 class PipelineManager {
@@ -43,6 +50,9 @@ protected:
 private:
     void onFrameReceived(const std::string& stream_id, GstSample* sample);
     void updateTiledView();
+    size_t estimatePerStreamVramBytes(int frame_width, int frame_height, int input_width, int input_height) const;
+    void enforceRuntimeDegradationPolicy(StreamContext& ctx, const cv::Mat& frame);
+    bool shouldRunInferenceForStream(const StreamContext& ctx) const;
 
     AppConfig config_;
 
@@ -58,6 +68,8 @@ private:
     bool running_;
     std::mutex mutex_;
     std::atomic<std::time_t> last_activity_;
+    size_t admitted_vram_bytes_ = 0;
+    size_t last_reported_free_vram_ = 0;
     
     std::thread tiling_thread_;
 };

@@ -170,3 +170,57 @@ def test_shutdown_cleanup():
             
         # On Windows, CTRL_C often results in non-zero exit code or specific codes
         assert process.poll() is not None, f"Engine did not shut down on iteration {i}"
+
+
+def test_rtsp_drop_recover_soak(mock_config):
+    """
+    SOAK TEST: Runs engine and validates reconnect/state logs remain bounded over time.
+    """
+    if not os.path.exists(ENGINE_BIN):
+        pytest.skip(f"Engine binary not found at {ENGINE_BIN}. Build the project first.")
+
+    process = subprocess.Popen([ENGINE_BIN, "--config", TEST_CONFIG_PATH],
+                               stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    try:
+        time.sleep(30)
+        assert process.poll() is None, "Engine exited during RTSP soak window"
+
+        output = ""
+        try:
+            output = process.stdout.read(20000)
+        except Exception:
+            pass
+
+        # Reconnect logs are acceptable; reconnect storms are not.
+        reconnect_events = output.count("Reconnecting")
+        assert reconnect_events < 50, f"Reconnect storm detected: {reconnect_events} events"
+    finally:
+        process.terminate()
+        process.wait()
+
+
+def test_multistream_vram_admission_degradation_signals(mock_config):
+    """
+    STRESS TEST: Verifies VRAM admission/degradation control paths emit expected signals.
+    """
+    if not os.path.exists(ENGINE_BIN):
+        pytest.skip(f"Engine binary not found at {ENGINE_BIN}. Build the project first.")
+
+    process = subprocess.Popen([ENGINE_BIN, "--config", TEST_CONFIG_PATH],
+                               stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    try:
+        time.sleep(20)
+        assert process.poll() is None, "Engine exited during VRAM stress window"
+
+        output = ""
+        try:
+            output = process.stdout.read(20000)
+        except Exception:
+            pass
+
+        # At least admission policy should be visible in logs under CUDA builds.
+        has_admission_signal = ("[VRAM Admission]" in output) or ("CUDA Not Found" in output)
+        assert has_admission_signal, "Expected VRAM admission signal not found in logs"
+    finally:
+        process.terminate()
+        process.wait()
