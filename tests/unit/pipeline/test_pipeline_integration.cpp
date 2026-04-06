@@ -18,7 +18,7 @@ TEST(PipelineIntegrationTest, EndToEndFlow) {
         {}
     });
     config.model_path = "yolov11.engine"; // Needs to exist or be handled gracefully
-    config.inference_interval = 1;
+    config.detection.inference_interval = 1;
 
     // 2. Initialize Pipeline Manager
     PipelineManager manager(config);

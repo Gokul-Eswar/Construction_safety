@@ -8,6 +8,8 @@
  */
 class KalmanBoxTracker {
 public:
+    enum class LifecycleState { Tentative, Confirmed, Dormant };
+
     KalmanBoxTracker(cv::Rect2f initialRect, int id);
     ~KalmanBoxTracker() = default;
 
@@ -34,6 +36,12 @@ public:
     [[nodiscard]] int getTimeSinceUpdate() const { return time_since_update_; }
     [[nodiscard]] int getHitStreak() const { return hit_streak_; }
     [[nodiscard]] bool isStationary() const { return is_stationary_; }
+    [[nodiscard]] LifecycleState getLifecycleState() const { return lifecycle_state_; }
+
+    void setLifecycleState(LifecycleState state) { lifecycle_state_ = state; }
+    void markDormant() { lifecycle_state_ = LifecycleState::Dormant; }
+    void markConfirmed() { lifecycle_state_ = LifecycleState::Confirmed; }
+    void markTentative() { lifecycle_state_ = LifecycleState::Tentative; }
 
 private:
     cv::KalmanFilter kf_;
@@ -50,6 +58,7 @@ private:
     static constexpr float VELOCITY_THRESHOLD = 2.0f;        // pixels/frame
     static constexpr int STATIONARY_CONFIRM_FRAMES = 3;      // frames to confirm stationary
     static constexpr int MAX_STATIONARY_AGE = 10;            // max frames to keep stationary track
+    LifecycleState lifecycle_state_ = LifecycleState::Tentative;
 
     // Utility to convert Rect to state vector [x, y, s, r]
     // x,y: center coords, s: area, r: aspect ratio

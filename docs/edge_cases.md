@@ -10,7 +10,7 @@ This document outlines specific scenarios where the system may encounter degrade
 - **Scenario:** A worker is partially hidden behind a pillar, heavy machinery, or another worker.
 - **Impact:** The bounding box may flicker or disappear, leading to missed zone violations.
 - **Mitigation:**
-    - **Algorithmic:** The **Kalman Filter** in the SORT tracker predicts the worker's position for up to `max_age` frames (currently set to 1) even if detection is lost.
+    - **Algorithmic:** The **Kalman Filter** in the SORT tracker predicts the worker's position for up to `tracking_tuning.max_age` frames (default `45`), with additional occlusion extension and dormant-track reactivation for short confidence drops.
     - **Future Fix:** Implement **Re-Identification (Re-ID)** embeddings to link "person A" before occlusion to "person A" after occlusion based on visual appearance rather than just spatial IOU.
 
 ### 1.2 Extreme Lighting (Night/Glare)

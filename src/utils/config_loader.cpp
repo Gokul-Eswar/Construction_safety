@@ -81,7 +81,7 @@ AppConfig ConfigLoader::load(const std::string& path) {
             if (interval < 1 || interval > 30) {
                 throw std::runtime_error("inference_interval must be between 1-30; got " + std::to_string(interval));
             }
-            config.inference_interval = interval;
+            config.detection.inference_interval = interval;
         }
         
         // Stream port: 1024-65535

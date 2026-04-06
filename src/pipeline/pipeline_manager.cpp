@@ -21,6 +21,12 @@ bool PipelineManager::init() {
     // 1. Init Engine (Shared)
     InferenceConfig inf_config;
     inf_config.model_path = config_.model_path;
+    inf_config.conf_threshold = config_.detection.confidence_threshold;
+    inf_config.nms_threshold = config_.detection.nms_threshold;
+    inf_config.clahe.enabled = config_.preprocessing.clahe_enabled;
+    inf_config.clahe.clip_limit = config_.preprocessing.clahe_clip_limit;
+    inf_config.clahe.tile_size = config_.preprocessing.clahe_tile_size;
+    inf_config.clahe.blur_kernel = config_.preprocessing.clahe_blur_kernel;
     engine_ = std::make_unique<InferenceEngine>(inf_config);
     if (!engine_->init()) return false;
 
@@ -60,7 +66,13 @@ bool PipelineManager::init() {
         ctx->id = sc.id;
         ctx->name = sc.name;
         ctx->zones = sc.zones;
-        ctx->tracker = std::make_unique<SortTracker>();
+        TrackingConfig tracking_cfg;
+        tracking_cfg.max_age = config_.tracking.max_age;
+        tracking_cfg.min_hits = config_.tracking.min_hits;
+        tracking_cfg.iou_threshold = config_.tracking.iou_threshold;
+        tracking_cfg.feature_threshold = config_.tracking.feature_threshold;
+        tracking_cfg.occlusion_extension_frames = config_.tracking.occlusion_extension_frames;
+        ctx->tracker = std::make_unique<SortTracker>(tracking_cfg);
         ctx->spatial_mapper = std::make_unique<SpatialMapper>();
         
         if (!sc.calibration.empty()) {
@@ -164,8 +176,8 @@ void PipelineManager::onFrameReceived(const std::string& stream_id, GstSample* s
 
                 // Determine if we run inference
                 bool run_inference = true;
-                if (config_.inference_interval > 1) {
-                    if (ctx->frame_count % config_.inference_interval != 0) {
+                if (config_.detection.inference_interval > 1) {
+                    if (ctx->frame_count % config_.detection.inference_interval != 0) {
                         run_inference = false;
                     }
                 }
