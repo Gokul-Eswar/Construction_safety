@@ -43,7 +43,11 @@ bool InferenceEngine::init() {
         context_ = std::unique_ptr<nvinfer1::IExecutionContext, InferDeleter>(
             engine->createExecutionContext()
         );
-        if (!context_) return false;
+        if (!context_) {
+            std::cerr << "Failed to create TensorRT execution context. Continuing in degraded mode (no inference)." << "\n";
+            operational_ = false;
+            return true;
+        }
 
         // Calculate memory requirement before allocation
         size_t mem_requirement = 0;
@@ -78,8 +82,9 @@ bool InferenceEngine::init() {
         
         // Check available GPU memory before allocation
         if (!checkAvailableGPUMemory(required_memory_bytes_)) {
-            std::cerr << "Insufficient GPU memory for inference engine initialization" << "\n";
-            return false;
+            std::cerr << "Insufficient GPU memory for inference engine initialization. Continuing in degraded mode (no inference)." << "\n";
+            operational_ = false;
+            return true;
         }
         
         // Safe to allocate now

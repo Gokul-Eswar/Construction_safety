@@ -29,7 +29,9 @@ bool PipelineManager::init() {
     inf_config.clahe.tile_size = config_.preprocessing.clahe_tile_size;
     inf_config.clahe.blur_kernel = config_.preprocessing.clahe_blur_kernel;
     engine_ = std::make_unique<InferenceEngine>(inf_config);
-    if (!engine_->init()) return false;
+    if (!engine_->init()) {
+        std::cerr << "Inference engine initialization failed. Continuing in degraded mode (no inference)." << "\n";
+    }
 
     // 2. Init Shared Utilities
     violation_logger_ = std::make_unique<safety::ViolationLogger>();

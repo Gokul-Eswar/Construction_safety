@@ -13,7 +13,7 @@ endif()
 
 if(WIN32)
     # Aggressively force system libraries to the end of the link command for MinGW/GCC
-    set(CMAKE_CXX_LINK_EXECUTABLE "<CMAKE_CXX_COMPILER> <FLAGS> <CMAKE_CXX_LINK_FLAGS> <LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES> -lws2_32 -rpcrt4 -lcrypt32")
+    set(CMAKE_CXX_LINK_EXECUTABLE "<CMAKE_CXX_COMPILER> <FLAGS> <CMAKE_CXX_LINK_FLAGS> <LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES> -lws2_32 -lrpcrt4 -lcrypt32")
     link_libraries(ws2_32 rpcrt4 crypt32)
 endif()
 
@@ -186,11 +186,10 @@ set(PAHO_ENABLE_TESTING OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(PahoMqttC)
 
 set(PahoMqttC_FOUND TRUE CACHE BOOL "" FORCE)
-if(MSVC)
-    set(PAHO_MQTT_C_LIBRARIES ${pahomqttc_BINARY_DIR}/src/paho-mqtt3a-static.lib CACHE STRING "" FORCE)
-else()
-    # paho.mqtt.c static targets are emitted as libpaho-mqtt3a.a/libpaho-mqtt3c.a on Linux.
-    set(PAHO_MQTT_C_LIBRARIES ${pahomqttc_BINARY_DIR}/src/libpaho-mqtt3a.a CACHE STRING "" FORCE)
+if(TARGET paho-mqtt3a-static)
+    set(PAHO_MQTT_C_LIBRARIES ${pahomqttc_BINARY_DIR}/src/libpaho-mqtt3a-static.a CACHE STRING "" FORCE)
+elseif(TARGET paho-mqtt3a)
+    set(PAHO_MQTT_C_LIBRARIES paho-mqtt3a CACHE STRING "" FORCE)
 endif()
 set(PAHO_MQTT_C_INCLUDE_DIRS ${pahomqttc_SOURCE_DIR}/src CACHE STRING "" FORCE)
 

@@ -59,7 +59,7 @@ private:
 
     InferenceConfig config_;
     std::unique_ptr<ModelLoader> model_loader_;
-    std::unique_ptr<cv::CLAHE> clahe_;  // Cached CLAHE object
+    cv::Ptr<cv::CLAHE> clahe_;  // Cached CLAHE object
     bool operational_ = false;
     size_t required_memory_bytes_ = 0;  // Per-stream memory requirement
 

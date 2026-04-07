@@ -1,0 +1,21 @@
+# ninja log v7
+3	83	7972609888015519	googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-mkdir	75766a8263905216
+3	83	7972609888015519	D:/GOKUL_ESWAR/Codebase/construction safety/build_patch/_deps/googletest-subbuild/googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-mkdir	75766a8263905216
+84	2689	7972609914082864	googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-download	cddd03e27faa1fcd
+84	2689	7972609914082864	D:/GOKUL_ESWAR/Codebase/construction safety/build_patch/_deps/googletest-subbuild/googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-download	cddd03e27faa1fcd
+2689	2777	7972609914962631	googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-update	a38cad3d3c0c1638
+2689	2777	7972609914962631	D:/GOKUL_ESWAR/Codebase/construction safety/build_patch/_deps/googletest-subbuild/googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-update	a38cad3d3c0c1638
+2786	2881	7972609915985911	googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-patch	342ea97aaf61814
+2786	2881	7972609915985911	D:/GOKUL_ESWAR/Codebase/construction safety/build_patch/_deps/googletest-subbuild/googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-patch	342ea97aaf61814
+2882	2993	7972609917068918	googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-configure	b934e61507890783
+2882	2993	7972609917068918	D:/GOKUL_ESWAR/Codebase/construction safety/build_patch/_deps/googletest-subbuild/googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-configure	b934e61507890783
+2994	3100	7972609918181563	googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-build	b555e78561c4405
+2994	3100	7972609918181563	D:/GOKUL_ESWAR/Codebase/construction safety/build_patch/_deps/googletest-subbuild/googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-build	b555e78561c4405
+3100	3200	7972609919180814	googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-install	ecea5a058d8e7b52
+3100	3200	7972609919180814	D:/GOKUL_ESWAR/Codebase/construction safety/build_patch/_deps/googletest-subbuild/googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-install	ecea5a058d8e7b52
+3200	3297	7972609920171318	googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-test	2e4ff2783d85f8d5
+3200	3297	7972609920171318	D:/GOKUL_ESWAR/Codebase/construction safety/build_patch/_deps/googletest-subbuild/googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-test	2e4ff2783d85f8d5
+3298	3419	7972609921345857	CMakeFiles/googletest-populate-complete	49fd632aed2a018d
+3298	3419	7972609921345857	googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-done	49fd632aed2a018d
+3298	3419	7972609921345857	D:/GOKUL_ESWAR/Codebase/construction safety/build_patch/_deps/googletest-subbuild/CMakeFiles/googletest-populate-complete	49fd632aed2a018d
+3298	3419	7972609921345857	D:/GOKUL_ESWAR/Codebase/construction safety/build_patch/_deps/googletest-subbuild/googletest-populate-prefix/src/googletest-populate-stamp/googletest-populate-done	49fd632aed2a018d

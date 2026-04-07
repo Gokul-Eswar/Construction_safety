@@ -1,0 +1,21 @@
+# ninja log v7
+2	86	7972609991277474	spdlog-populate-prefix/src/spdlog-populate-stamp/spdlog-populate-mkdir	8a4d7fb1f838832e
+2	86	7972609991277474	D:/GOKUL_ESWAR/Codebase/construction safety/build_patch/_deps/spdlog-subbuild/spdlog-populate-prefix/src/spdlog-populate-stamp/spdlog-populate-mkdir	8a4d7fb1f838832e
+87	1987	7972610010250948	spdlog-populate-prefix/src/spdlog-populate-stamp/spdlog-populate-download	30736afd50243d7d
+87	1987	7972610010250948	D:/GOKUL_ESWAR/Codebase/construction safety/build_patch/_deps/spdlog-subbuild/spdlog-populate-prefix/src/spdlog-populate-stamp/spdlog-populate-download	30736afd50243d7d
+1987	2078	7972610011185530	spdlog-populate-prefix/src/spdlog-populate-stamp/spdlog-populate-update	f20548031b85771b
+1987	2078	7972610011185530	D:/GOKUL_ESWAR/Codebase/construction safety/build_patch/_deps/spdlog-subbuild/spdlog-populate-prefix/src/spdlog-populate-stamp/spdlog-populate-update	f20548031b85771b
+2087	2179	7972610012177793	spdlog-populate-prefix/src/spdlog-populate-stamp/spdlog-populate-patch	bae3c546619f3ae9
+2087	2179	7972610012177793	D:/GOKUL_ESWAR/Codebase/construction safety/build_patch/_deps/spdlog-subbuild/spdlog-populate-prefix/src/spdlog-populate-stamp/spdlog-populate-patch	bae3c546619f3ae9
+2180	2263	7972610013010875	spdlog-populate-prefix/src/spdlog-populate-stamp/spdlog-populate-configure	264089e858b9b78a
+2180	2263	7972610013010875	D:/GOKUL_ESWAR/Codebase/construction safety/build_patch/_deps/spdlog-subbuild/spdlog-populate-prefix/src/spdlog-populate-stamp/spdlog-populate-configure	264089e858b9b78a
+2264	2353	7972610013935788	spdlog-populate-prefix/src/spdlog-populate-stamp/spdlog-populate-build	9a496834b7c46523
+2264	2353	7972610013935788	D:/GOKUL_ESWAR/Codebase/construction safety/build_patch/_deps/spdlog-subbuild/spdlog-populate-prefix/src/spdlog-populate-stamp/spdlog-populate-build	9a496834b7c46523
+2353	2442	7972610014788113	spdlog-populate-prefix/src/spdlog-populate-stamp/spdlog-populate-install	2713b7716a5ddafe
+2353	2442	7972610014788113	D:/GOKUL_ESWAR/Codebase/construction safety/build_patch/_deps/spdlog-subbuild/spdlog-populate-prefix/src/spdlog-populate-stamp/spdlog-populate-install	2713b7716a5ddafe
+2442	2528	7972610015694241	spdlog-populate-prefix/src/spdlog-populate-stamp/spdlog-populate-test	7d80e4767c047685
+2442	2528	7972610015694241	D:/GOKUL_ESWAR/Codebase/construction safety/build_patch/_deps/spdlog-subbuild/spdlog-populate-prefix/src/spdlog-populate-stamp/spdlog-populate-test	7d80e4767c047685
+2528	2642	7972610016836525	CMakeFiles/spdlog-populate-complete	e8a2bb0202ded39f
+2528	2642	7972610016836525	spdlog-populate-prefix/src/spdlog-populate-stamp/spdlog-populate-done	e8a2bb0202ded39f
+2528	2642	7972610016836525	D:/GOKUL_ESWAR/Codebase/construction safety/build_patch/_deps/spdlog-subbuild/CMakeFiles/spdlog-populate-complete	e8a2bb0202ded39f
+2528	2642	7972610016836525	D:/GOKUL_ESWAR/Codebase/construction safety/build_patch/_deps/spdlog-subbuild/spdlog-populate-prefix/src/spdlog-populate-stamp/spdlog-populate-done	e8a2bb0202ded39f
