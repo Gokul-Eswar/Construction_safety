@@ -154,3 +154,12 @@
 15819	16010	7972635021483656	_deps/pahomqttc-build/src/libpaho-mqtt3c-static.a	372cee7cc2b9341
 12405	29082	7972634987347315	CMakeFiles/main_app.dir/src/utils/config_loader.cpp.obj	f4169198fe37bbc9
 29083	29535	7972635154111712	main_app.exe	940a87d8d9be0cc9
+41	14969	7972673591874079	CMakeFiles/main_app.dir/src/inference/inference_engine.cpp.obj	227e6eb7e3f0cebd
+64	11292	7972680969974637	CMakeFiles/main_app.dir/src/inference/model_loader.cpp.obj	4f914cd18ccfbb03
+93	803	7972681322885496	main_app.exe	940a87d8d9be0cc9
+60	10935	7972694729028230	CMakeFiles/main_app.dir/src/utils/violation_logger.cpp.obj	15d4fe8008fd334d
+52	25444	7972694728922420	CMakeFiles/main_app.dir/src/pipeline/pipeline_manager.cpp.obj	d08b31f5a063b0ab
+25446	26075	7972694982884817	main_app.exe	940a87d8d9be0cc9
+69	10406	7972700163166733	CMakeFiles/main_app.dir/src/utils/mqtt_client.cpp.obj	9b2cd13a5ace5fbd
+79	13927	7972700163303401	CMakeFiles/main_app.dir/src/utils/mjpeg_streamer.cpp.obj	e23e35002dbb7fbf
+13927	14573	7972700301768513	main_app.exe	940a87d8d9be0cc9

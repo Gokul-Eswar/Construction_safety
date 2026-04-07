@@ -1,4 +1,5 @@
 #include "mjpeg_streamer.hpp"
+#include <spdlog/spdlog.h>
 #include <iostream>
 
 #ifdef _WIN32
@@ -40,9 +41,10 @@ bool MJPEGStreamer::start(int port) {
     if (listen(server_socket_, 5) < 0) return false;
 
     server_thread_ = std::thread(&MJPEGStreamer::listenThread, this);
-    std::cout << "MJPEG Streamer started on port " << port_ << "\n";
+    spdlog::info("MJPEG Streamer started on port {}", port);
     return true;
-}
+    }
+
 
 void MJPEGStreamer::stop() {
     running_ = false;

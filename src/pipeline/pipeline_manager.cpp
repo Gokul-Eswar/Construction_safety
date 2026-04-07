@@ -1,4 +1,5 @@
 #include "pipeline_manager.hpp"
+#include <spdlog/spdlog.h>
 #include <iostream>
 #include <csignal>
 #include <fstream>
@@ -30,13 +31,13 @@ bool PipelineManager::init() {
     inf_config.clahe.blur_kernel = config_.preprocessing.clahe_blur_kernel;
     engine_ = std::make_unique<InferenceEngine>(inf_config);
     if (!engine_->init()) {
-        std::cerr << "Inference engine initialization failed. Continuing in degraded mode (no inference)." << "\n";
+        spdlog::error("Inference engine initialization failed. Continuing in degraded mode (no inference).");
     }
 
     // 2. Init Shared Utilities
     violation_logger_ = std::make_unique<safety::ViolationLogger>();
     if (!violation_logger_->init(config_.database_path, config_.log_retention_days)) {
-        std::cerr << "Failed to initialize violation logger." << "\n";
+        spdlog::error("Failed to initialize violation logger.");
         return false;
     }
 
@@ -56,7 +57,7 @@ bool PipelineManager::init() {
             mqtt_client_->subscribe("safety/v1/control", [this](const std::string& topic, const std::string& payload) {
                  (void)topic;
                  if (payload.find("restart") != std::string::npos) {
-                     std::cout << "Received restart command via MQTT. Initiating shutdown..." << "\n";
+                     spdlog::info("Received restart command via MQTT. Initiating shutdown...");
                      std::raise(SIGTERM);
                  }
             });
@@ -85,7 +86,7 @@ bool PipelineManager::init() {
                 world_pts.push_back(cp.world);
             }
             if (ctx->spatial_mapper->setCalibration(img_pts, world_pts)) {
-                std::cout << "[" << sc.id << "] Spatial calibration applied with " << img_pts.size() << " points." << "\n";
+                spdlog::info("[{}] Spatial calibration applied with {} points.", sc.id, img_pts.size());
             }
         }
 
@@ -123,24 +124,23 @@ void PipelineManager::start() {
             ctx->admitted = false;
             ctx->admission_reason = "denied: projected VRAM " + std::to_string(projected_usage / (1024 * 1024)) +
                                     "MB exceeds 90% of free " + std::to_string(free_vram / (1024 * 1024)) + "MB";
-            std::cerr << "[VRAM Admission] Denied stream '" << pair.first << "' - " << ctx->admission_reason << "\n";
+            spdlog::error("[VRAM Admission] Denied stream '{}' - {}", pair.first, ctx->admission_reason);
             continue;
         }
 
         ctx->admitted = true;
         ctx->admission_reason = "admitted";
         admitted_vram_bytes_ += ctx->estimated_vram_bytes;
-        std::cout << "[VRAM Admission] Starting stream '" << pair.first << "' (Free VRAM: " 
-                  << (free_vram / 1024 / 1024) << "MB)" << "\n";
+        spdlog::info("[VRAM Admission] Starting stream '{}' (Free VRAM: {}MB)", pair.first, (free_vram / 1024 / 1024));
 #endif
 
         if (!pair.second->source->start()) {
-            std::cerr << "Failed to start stream: " << pair.first << "\n";
+            spdlog::error("Failed to start stream: {}", pair.first);
         }
     }
     
     tiling_thread_ = std::thread(&PipelineManager::updateTiledView, this);
-    std::cout << "Pipelines started (governor-controlled)." << "\n";
+    spdlog::info("Pipelines started (governor-controlled).");
 }
 
 void PipelineManager::stop() {
@@ -154,7 +154,7 @@ void PipelineManager::stop() {
     if (mqtt_client_) {
         mqtt_client_->disconnect();
     }
-    std::cout << "All pipelines stopped." << "\n";
+    spdlog::info("All pipelines stopped.");
 }
 
 void PipelineManager::onFrameReceived(const std::string& stream_id, GstSample* sample) {
@@ -561,7 +561,7 @@ void PipelineManager::updateTiledView() {
                     
                     if (mqtt_client_->publish("safety/v1/cloud_sync", sync_payload.dump())) {
                         violation_logger_->mark_uploaded(uploaded_ids);
-                        std::cout << "Synced " << uploaded_ids.size() << " records to cloud." << "\n";
+                        spdlog::info("Synced {} records to cloud.", uploaded_ids.size());
                     }
                 }
             }
@@ -610,27 +610,27 @@ void PipelineManager::enforceRuntimeDegradationPolicy(StreamContext& ctx, const 
 
         if (ctx.dynamic_inference_interval < 6) {
             ++ctx.dynamic_inference_interval;
-            std::cout << "[VRAM Degrade][" << ctx.id << "] Increased inference interval to "
-                      << ctx.dynamic_inference_interval << " (free VRAM=" << (free_vram / (1024 * 1024)) << "MB)" << "\n";
+            spdlog::warn("[VRAM Degrade][{}] Increased inference interval to {} (free VRAM={}MB)",
+                         ctx.id, ctx.dynamic_inference_interval, (free_vram / (1024 * 1024)));
         }
 
         if (ctx.dynamic_input_scale > 0.65) {
             ctx.dynamic_input_scale = std::max(0.65, ctx.dynamic_input_scale - 0.10);
-            std::cout << "[VRAM Degrade][" << ctx.id << "] Reduced inference input scale to "
-                      << ctx.dynamic_input_scale << " (free VRAM=" << (free_vram / (1024 * 1024)) << "MB)" << "\n";
+            spdlog::warn("[VRAM Degrade][{}] Reduced inference input scale to {} (free VRAM={}MB)",
+                         ctx.id, ctx.dynamic_input_scale, (free_vram / (1024 * 1024)));
         }
 
         if (free_vram < CRITICAL_VRAM_WATERMARK && !ctx.paused_for_vram && ctx.source) {
             ctx.paused_for_vram = true;
             ctx.source->stop();
-            std::cout << "[VRAM Degrade][" << ctx.id << "] Stream paused due to critical low VRAM ("
-                      << (free_vram / (1024 * 1024)) << "MB free)" << "\n";
+            spdlog::error("[VRAM Degrade][{}] Stream paused due to critical low VRAM ({}MB free)",
+                          ctx.id, (free_vram / (1024 * 1024)));
         }
     } else {
         if (ctx.paused_for_vram && free_vram > (LOW_VRAM_WATERMARK + 150ULL * 1024ULL * 1024ULL) && ctx.source) {
             if (ctx.source->start()) {
                 ctx.paused_for_vram = false;
-                std::cout << "[VRAM Recover][" << ctx.id << "] Stream resumed." << "\n";
+                spdlog::info("[VRAM Recover][{}] Stream resumed.", ctx.id);
             }
         }
 

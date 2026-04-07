@@ -1,5 +1,5 @@
 #include "violation_logger.hpp"
-
+#include <spdlog/spdlog.h>
 #include <algorithm>
 #include <chrono>
 #include <iomanip>
@@ -62,7 +62,7 @@ bool ViolationLogger::init(const std::string& db_path, int retention_days) {
 
     int rc = sqlite3_open(db_path_.c_str(), &db_);
     if (rc) {
-        std::cerr << "Can't open database: " << sqlite3_errmsg(db_) << "\n";
+        spdlog::error("Can't open database: {}", sqlite3_errmsg(db_));
         return false;
     }
 
@@ -71,14 +71,14 @@ bool ViolationLogger::init(const std::string& db_path, int retention_days) {
     char* zErrMsg = nullptr;
     sqlite3_exec(db_, "PRAGMA journal_mode=WAL;", 0, 0, &zErrMsg);
     if (zErrMsg) {
-        std::cerr << "Failed to set WAL mode: " << zErrMsg << "\n";
+        spdlog::error("Failed to set WAL mode: {}", zErrMsg);
         sqlite3_free(zErrMsg);
         zErrMsg = nullptr;
     }
 
     sqlite3_exec(db_, "PRAGMA synchronous=NORMAL;", 0, 0, &zErrMsg);
     if (zErrMsg) {
-        std::cerr << "Failed to set synchronous mode: " << zErrMsg << "\n";
+        spdlog::error("Failed to set synchronous mode: {}", zErrMsg);
         sqlite3_free(zErrMsg);
         zErrMsg = nullptr;
     }
@@ -136,7 +136,7 @@ bool ViolationLogger::create_tables_if_not_exist() {
     char* zErrMsg = nullptr;
     int rc = sqlite3_exec(db_, sql, 0, 0, &zErrMsg);
     if (rc != SQLITE_OK) {
-        std::cerr << "SQL error: " << zErrMsg << "\n";
+        spdlog::error("SQL error: {}", zErrMsg);
         sqlite3_free(zErrMsg);
         return false;
     }
@@ -371,10 +371,10 @@ void ViolationLogger::cleanup_old_logs(int days) {
     int rc = sqlite3_exec(db_, query.c_str(), 0, 0, &zErrMsg);
 
     if (rc != SQLITE_OK) {
-        std::cerr << "DB Cleanup Error: " << zErrMsg << "\n";
+        spdlog::error("DB Cleanup Error: {}", zErrMsg);
         sqlite3_free(zErrMsg);
     } else {
-        std::cout << "Database cleanup completed. Logs older than " << days << " days removed." << "\n";
+        spdlog::info("Database cleanup completed. Logs older than {} days removed.", days);
     }
 }
 
@@ -411,7 +411,7 @@ std::vector<ViolationRecord> ViolationLogger::get_pending_uploads(int limit) {
         }
         sqlite3_finalize(stmt);
     } else {
-        std::cerr << "Failed to query pending uploads." << "\n";
+        spdlog::error("Failed to query pending uploads.");
     }
     return records;
 }
@@ -435,7 +435,7 @@ void ViolationLogger::mark_uploaded(const std::vector<int>& ids) {
     char* zErrMsg = nullptr;
     int rc = sqlite3_exec(db_, sql.str().c_str(), 0, 0, &zErrMsg);
     if (rc != SQLITE_OK) {
-        std::cerr << "Failed to update uploaded status: " << zErrMsg << "\n";
+        spdlog::error("Failed to update uploaded status: {}", zErrMsg);
         sqlite3_free(zErrMsg);
     }
 }

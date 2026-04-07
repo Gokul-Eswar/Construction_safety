@@ -211,21 +211,24 @@ bool ModelLoader::deserializeEngine() {
 #endif
 }
 
-void ModelLoader::saveEngine(const std::string& path) {
+bool ModelLoader::saveEngine(const std::string& path) {
 #ifdef ENABLE_TENSORRT
-    if (!engine_) return;
+    if (!engine_) return false;
 
     std::unique_ptr<nvinfer1::IHostMemory, InferDeleter> serialized{
         engine_->serialize()
     };
-    if (!serialized) return;
+    if (!serialized) return false;
 
     std::ofstream p(path, std::ios::binary);
     if (!p) {
         spdlog::error("Failed to open file for writing engine: {}", path);
-        return;
+        return false;
     }
     p.write(reinterpret_cast<const char*>(serialized->data()), serialized->size());
     spdlog::info("Saved TensorRT engine to: {}", path);
+    return true;
+#else
+    return false;
 #endif
 }

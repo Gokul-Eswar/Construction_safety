@@ -23,8 +23,7 @@ InferenceEngine::~InferenceEngine() {
 bool InferenceEngine::init() {
     model_loader_ = std::make_unique<ModelLoader>(config_.model_path);
     if (!model_loader_->load()) {
-        std::cerr << "Failed to load model: " << config_.model_path
-                  << ". Continuing in degraded mode (no inference)." << "\n";
+        spdlog::error("Failed to load model: {}. Continuing in degraded mode (no inference).", config_.model_path);
         operational_ = false;
         return true;
     }
@@ -34,7 +33,7 @@ bool InferenceEngine::init() {
         clahe_ = cv::createCLAHE(config_.clahe.clip_limit, 
                                  cv::Size(config_.clahe.tile_size, config_.clahe.tile_size));
         if (!clahe_) {
-            std::cerr << "Failed to initialize CLAHE; continuing without lighting correction" << "\n";
+            spdlog::error("Failed to initialize CLAHE; continuing without lighting correction");
             config_.clahe.enabled = false;
         }
     }
@@ -45,7 +44,7 @@ bool InferenceEngine::init() {
             engine->createExecutionContext()
         );
         if (!context_) {
-            std::cerr << "Failed to create TensorRT execution context. Continuing in degraded mode (no inference)." << "\n";
+            spdlog::error("Failed to create TensorRT execution context. Continuing in degraded mode (no inference).");
             operational_ = false;
             return true;
         }
@@ -83,7 +82,7 @@ bool InferenceEngine::init() {
         
         // Check available GPU memory before allocation
         if (!checkAvailableGPUMemory(required_memory_bytes_)) {
-            std::cerr << "Insufficient GPU memory for inference engine initialization. Continuing in degraded mode (no inference)." << "\n";
+            spdlog::error("Insufficient GPU memory for inference engine initialization. Continuing in degraded mode (no inference).");
             operational_ = false;
             return true;
         }
@@ -98,7 +97,7 @@ bool InferenceEngine::init() {
         }
 
         cudaStreamCreate(&stream_);
-        std::cout << "TensorRT Execution Context initialized." << "\n";
+        spdlog::info("TensorRT Execution Context initialized.");
         operational_ = true;
         return true;
     }
@@ -330,16 +329,14 @@ bool InferenceEngine::checkAvailableGPUMemory(size_t required_bytes) {
     cudaError_t cuda_status = cudaMemGetInfo(&free_bytes, &total_bytes);
     
     if (cuda_status != cudaSuccess) {
-        std::cerr << "Error querying GPU memory: " << cudaGetErrorString(cuda_status) << "\n";
+        spdlog::error("Error querying GPU memory: {}", cudaGetErrorString(cuda_status));
         return false;
     }
     
-    std::cout << "GPU Memory Status: " << (free_bytes / 1024 / 1024) << " MB free / " 
-              << (total_bytes / 1024 / 1024) << " MB total" << "\n";
+    spdlog::info("GPU Memory Status: {} MB free / {} MB total", (free_bytes / 1024 / 1024), (total_bytes / 1024 / 1024));
     
     if (free_bytes < required_bytes) {
-        std::cerr << "Insufficient GPU memory. Required: " << (required_bytes / 1024 / 1024) << " MB, "
-                  << "Available: " << (free_bytes / 1024 / 1024) << " MB" << "\n";
+        spdlog::error("Insufficient GPU memory. Required: {} MB, Available: {} MB", (required_bytes / 1024 / 1024), (free_bytes / 1024 / 1024));
         return false;
     }
     
