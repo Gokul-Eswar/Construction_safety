@@ -36,7 +36,7 @@
     }
   ],
 
-  "model_path": "yolo11n.onnx",
+  "model_path": "yolov8n.onnx",
   "database_path": "safety_violations.db",
   
   "alert_cooldown": 5000,

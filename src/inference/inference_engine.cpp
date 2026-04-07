@@ -1,4 +1,5 @@
 #include "inference_engine.hpp"
+#include <spdlog/spdlog.h>
 #include <iostream>
 #include <cstddef>  // for ptrdiff_t
 

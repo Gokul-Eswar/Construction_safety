@@ -2,6 +2,7 @@
 #include <fstream>
 #include <iostream>
 #include <vector>
+#include <spdlog/spdlog.h>
 
 #ifdef ENABLE_TENSORRT
 #include <NvOnnxParser.h>
@@ -21,7 +22,7 @@ ModelLoader::~ModelLoader() {
 bool ModelLoader::load() {
     std::ifstream f(model_path_.c_str());
     if (!f.good()) {
-        std::cerr << "Model file not found: " << model_path_ << "\n";
+        spdlog::error("Model file not found: {}", model_path_);
         return false;
     }
 
@@ -30,10 +31,10 @@ bool ModelLoader::load() {
         // Optimization: Check if a serialized .engine file already exists
         std::string engine_path = model_path_.substr(0, model_path_.find_last_of('.')) + ".engine";
         std::ifstream engine_file(engine_path);
-        
+
         if (engine_file.good()) {
 #ifdef ENABLE_TENSORRT
-            std::cout << "Found existing TensorRT engine: " << engine_path << ". Loading directly..." << "\n";
+            spdlog::info("Found existing TensorRT engine: {}. Loading directly...", engine_path);
             // Temporarily switch path to load the engine
             std::string original_path = model_path_;
             model_path_ = engine_path;
@@ -41,47 +42,47 @@ bool ModelLoader::load() {
             model_path_ = original_path; // Restore original path
             return success;
 #else
-            std::cout << "Found existing TensorRT engine: " << engine_path << ", but TensorRT is disabled. Falling back to ONNX." << "\n";
+            spdlog::info("Found existing TensorRT engine: {}, but TensorRT is disabled. Falling back to ONNX.", engine_path);
 #endif
         }
 
-        std::cout << "Detected ONNX model. Loading with the available inference backend..." << "\n";
+        spdlog::info("Detected ONNX model. Loading with the available inference backend...");
         return buildFromOnnx();
     } else if (model_path_.find(".engine") != std::string::npos) {
-         std::cout << "Detected TensorRT engine. Deserializing..." << "\n";
+         spdlog::info("Detected TensorRT engine. Deserializing...");
          return deserializeEngine();
     }
-    
+
     loaded_ = false;
     return false;
 }
 
 bool ModelLoader::loadOnnxWithOpenCVDnn() {
     try {
-        std::cout << "Loading ONNX model using OpenCV DNN: " << model_path_ << "\n";
+        spdlog::info("Loading ONNX model using OpenCV DNN: {}", model_path_);
         net_ = cv::dnn::readNetFromONNX(model_path_);
 
         // Keep fallback predictable and portable across environments.
         net_.setPreferableBackend(cv::dnn::DNN_BACKEND_OPENCV);
         net_.setPreferableTarget(cv::dnn::DNN_TARGET_CPU);
-        std::cout << "OpenCV DNN: Using CPU backend." << "\n";
+        spdlog::info("OpenCV DNN: Using CPU backend.");
 
         if (net_.empty()) {
-            std::cerr << "Failed to load network with OpenCV DNN." << "\n";
+            spdlog::error("Failed to load network with OpenCV DNN.");
             return false;
         }
 
         loaded_ = true;
         return true;
     } catch (const cv::Exception& e) {
-        std::cerr << "OpenCV Exception loading ONNX: " << e.what() << "\n";
+        spdlog::error("OpenCV Exception loading ONNX: {}", e.what());
         return false;
     }
 }
 
 bool ModelLoader::buildFromOnnx() {
 #ifdef ENABLE_TENSORRT
-    std::cout << "Building TensorRT Engine from ONNX: " << model_path_ << "\n";
+    spdlog::info("Building TensorRT Engine from ONNX: {}", model_path_);
     
     auto builder = std::unique_ptr<nvinfer1::IBuilder, InferDeleter>(
         nvinfer1::createInferBuilder(*logger_)
@@ -100,7 +101,7 @@ bool ModelLoader::buildFromOnnx() {
     if (!parser) return false;
 
     if (!parser->parseFromFile(model_path_.c_str(), static_cast<int>(nvinfer1::ILogger::Severity::kWARNING))) {
-        std::cerr << "Failed to parse ONNX file with TensorRT. Falling back to OpenCV DNN." << "\n";
+        spdlog::error("Failed to parse ONNX file with TensorRT. Falling back to OpenCV DNN.");
         return loadOnnxWithOpenCVDnn();
     }
 
@@ -111,7 +112,7 @@ bool ModelLoader::buildFromOnnx() {
 
     if (builder->platformHasFastFp16()) {
         config->setFlag(nvinfer1::BuilderFlag::kFP16);
-        std::cout << "FP16 mode enabled." << "\n";
+        spdlog::info("FP16 mode enabled.");
     }
 
     // Dynamic Shape Support (Required for YOLO models with dynamic axes)
@@ -128,7 +129,7 @@ bool ModelLoader::buildFromOnnx() {
             }
 
             if (isDynamic) {
-                std::cout << "Dynamic input detected: " << input->getName() << ". Creating optimization profile." << "\n";
+                spdlog::info("Dynamic input detected: {}. Creating optimization profile.", input->getName());
                 // Min, Opt, Max dimensions
                 // Forcing 640x640 for consistency and speed
                 profile->setDimensions(input->getName(), nvinfer1::OptProfileSelector::kMIN, nvinfer1::Dims4{1, 3, 640, 640});
@@ -143,7 +144,7 @@ bool ModelLoader::buildFromOnnx() {
         builder->buildSerializedNetwork(*network, *config)
     };
     if (!plan) {
-        std::cerr << "Failed to build serialized TensorRT network. Falling back to OpenCV DNN." << "\n";
+        spdlog::error("Failed to build serialized TensorRT network. Falling back to OpenCV DNN.");
         return loadOnnxWithOpenCVDnn();
     }
 
@@ -156,11 +157,11 @@ bool ModelLoader::buildFromOnnx() {
     );
 
     if (!engine_) {
-        std::cerr << "Failed to create TensorRT engine from plan. Falling back to OpenCV DNN." << "\n";
+        spdlog::error("Failed to create TensorRT engine from plan. Falling back to OpenCV DNN.");
         return loadOnnxWithOpenCVDnn();
     }
     
-    std::cout << "Successfully built and loaded TensorRT engine." << "\n";
+    spdlog::info("Successfully built and loaded TensorRT engine.");
     loaded_ = true;
 
     // Auto-save engine
@@ -176,77 +177,55 @@ bool ModelLoader::buildFromOnnx() {
 
 bool ModelLoader::deserializeEngine() {
 #ifdef ENABLE_TENSORRT
-    std::cout << "Deserializing TensorRT engine from: " << model_path_ << "\n";
-    
+    spdlog::info("Deserializing TensorRT engine from: {}", model_path_);
+
     std::ifstream file(model_path_, std::ios::binary | std::ios::ate);
     if (!file.good()) {
-        std::cerr << "Error reading engine file: " << model_path_ << "\n";
+        spdlog::error("Error reading engine file: {}", model_path_);
         return false;
     }
     std::streamsize size = file.tellg();
     file.seekg(0, std::ios::beg);
 
     std::vector<char> buffer(size);
-    if (!file.read(buffer.data(), size)) {
-        std::cerr << "Error reading engine file content." << "\n";
-        return false;
-    }
+    if (!file.read(buffer.data(), size)) return false;
 
     runtime_ = std::unique_ptr<nvinfer1::IRuntime, InferDeleter>(
         nvinfer1::createInferRuntime(*logger_)
     );
-    if (!runtime_) {
-        std::cerr << "Failed to create TensorRT Runtime." << "\n";
-        return false;
-    }
 
     engine_ = std::unique_ptr<nvinfer1::ICudaEngine, InferDeleter>(
         runtime_->deserializeCudaEngine(buffer.data(), size, nullptr)
     );
 
     if (!engine_) {
-        std::cerr << "Failed to deserialize CUDA Engine." << "\n";
+        spdlog::error("Failed to deserialize TensorRT engine.");
         return false;
     }
 
-    std::cout << "TensorRT Engine loaded successfully." << "\n";
+    spdlog::info("Successfully loaded TensorRT engine.");
     loaded_ = true;
     return true;
 #else
-    std::cerr << "TensorRT engine loading requested, but TensorRT is disabled in this build." << "\n";
-    loaded_ = false;
     return false;
 #endif
 }
 
-bool ModelLoader::saveEngine(const std::string& engine_path) {
+void ModelLoader::saveEngine(const std::string& path) {
 #ifdef ENABLE_TENSORRT
-    if (!engine_) return false;
-    
-    std::cout << "Serializing TensorRT engine to: " << engine_path << "\n";
-    std::unique_ptr<nvinfer1::IHostMemory, InferDeleter> plan{ engine_->serialize() };
-    if (!plan) {
-        std::cerr << "Failed to serialize engine." << "\n";
-        return false;
-    }
+    if (!engine_) return;
 
-    std::ofstream f(engine_path, std::ios::binary);
-    if (!f.good()) {
-        std::cerr << "Cannot open file for writing: " << engine_path << "\n";
-        return false;
+    std::unique_ptr<nvinfer1::IHostMemory, InferDeleter> serialized{
+        engine_->serialize()
+    };
+    if (!serialized) return;
+
+    std::ofstream p(path, std::ios::binary);
+    if (!p) {
+        spdlog::error("Failed to open file for writing engine: {}", path);
+        return;
     }
-    f.write(reinterpret_cast<const char*>(plan->data()), plan->size());
-    f.close();
-    std::cout << "Engine saved successfully." << "\n";
-    return true;
-#else
-    // If TRT is not enabled, we can't save a TRT engine.
-    (void)engine_path;
-    std::cerr << "Cannot save TensorRT engine: TRT disabled." << "\n";
-    return false;
+    p.write(reinterpret_cast<const char*>(serialized->data()), serialized->size());
+    spdlog::info("Saved TensorRT engine to: {}", path);
 #endif
-}
-
-bool ModelLoader::isLoaded() const {
-    return loaded_;
 }

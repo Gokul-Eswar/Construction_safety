@@ -212,6 +212,7 @@ endif()
 
 # Source Files
 set(COMMON_SOURCES
+    src/system_lifecycle.cpp
     src/pipeline/camera_source.cpp
     src/pipeline/pipeline_manager.cpp
     src/inference/model_loader.cpp
