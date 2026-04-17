@@ -181,13 +181,27 @@ router.post('/config/global', (req, res) => {
 });
 
 // POST /api/config/streams
-router.post('/config/streams', (req, res) => {
+router.post('/config/streams', async (req, res) => {
     if (!Array.isArray(req.body)) {
         return res.status(400).json({ error: 'Payload must be an array of streams' });
     }
 
     if (configManager.updateStreams(req.body)) {
-        res.json({ success: true, config: filterConfig(configManager.getConfig()) });
+        let restartTriggered = false;
+        let restartWarning = null;
+        try {
+            await mqttService.sendRestartCommand();
+            restartTriggered = true;
+        } catch (err) {
+            restartWarning = "Streams updated, but engine restart signal could not be sent. Use /api/system/restart or launcher option 2->1.";
+        }
+
+        res.json({
+            success: true,
+            restart_triggered: restartTriggered,
+            warning: restartWarning,
+            config: filterConfig(configManager.getConfig())
+        });
     } else {
         res.status(500).json({ error: "Failed to update streams" });
     }

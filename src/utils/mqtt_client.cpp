@@ -13,10 +13,16 @@ MQTTClient::~MQTTClient() {
 bool MQTTClient::connect(const std::string& host, int port) {
     std::string server_address = "tcp://" + host + ":" + std::to_string(port);
     try {
+        if (client_ && client_->is_connected()) {
+            return true;
+        }
+
         client_ = std::make_unique<mqtt::async_client>(server_address, client_id_);
         
         mqtt::connect_options connOpts;
-        connOpts.set_clean_session(true);
+        connOpts.set_clean_session(false);
+        connOpts.set_keep_alive_interval(20);
+        connOpts.set_automatic_reconnect(true);
 
         spdlog::info("Connecting to MQTT broker at {}...", server_address);
         client_->connect(connOpts)->wait();

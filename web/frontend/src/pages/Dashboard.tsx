@@ -106,6 +106,15 @@ export default function Dashboard() {
 
   if (loading) return <Box display="flex" justifyContent="center"><CircularProgress /></Box>;
 
+    const configuredCameraCount = stats?.active_streams || 0;
+    const hasConfiguredCameras = configuredCameraCount > 0;
+    const statusLabel = systemOnline
+        ? (hasConfiguredCameras ? 'LIVE' : 'ONLINE (NO CAMERAS)')
+        : 'OFFLINE';
+    const statusColor = systemOnline
+        ? (hasConfiguredCameras ? 'success' : 'warning')
+        : 'default';
+
     const latencyP99Values = telemetry?.latency
         ? Object.values(telemetry.latency)
                 .map((metric: any) => Number(metric?.p99))
@@ -120,9 +129,20 @@ export default function Dashboard() {
           <Grid item xs={12}>
               <Alert severity="error" variant="filled" icon={<VideocamOffIcon fontSize="inherit" />}>
                   <Typography variant="subtitle1" fontWeight="bold">
-                      SYSTEM OFFLINE
+                      ENGINE OFFLINE
                   </Typography>
-                  The inference engine is not reachable. Live streams and alerts may be unavailable.
+                  The inference engine heartbeat is not reachable. Live streams and alerts are unavailable until engine reconnects.
+              </Alert>
+          </Grid>
+      )}
+
+      {systemOnline && !hasConfiguredCameras && (
+          <Grid item xs={12}>
+              <Alert severity="info" variant="filled">
+                  <Typography variant="subtitle1" fontWeight="bold">
+                      ENGINE ONLINE, NO CAMERAS CONFIGURED
+                  </Typography>
+                  Add a camera from the Cameras page. The system will reload and activate it automatically.
               </Alert>
           </Grid>
       )}
@@ -143,7 +163,7 @@ export default function Dashboard() {
           <Card>
               <CardContent>
                   <Typography color="text.secondary" gutterBottom>Active Cameras</Typography>
-                  <Typography variant="h4">{stats?.active_streams || 0}</Typography>
+                  <Typography variant="h4">{configuredCameraCount}</Typography>
               </CardContent>
           </Card>
       </Grid>
@@ -162,8 +182,8 @@ export default function Dashboard() {
               <CardContent>
                   <Typography color="text.secondary" gutterBottom>Status</Typography>
                   <Chip 
-                      label={systemOnline ? 'LIVE' : 'OFFLINE'} 
-                      color={systemOnline ? 'success' : 'default'}
+                      label={statusLabel}
+                      color={statusColor}
                       variant="outlined"
                   />
               </CardContent>
@@ -194,17 +214,23 @@ export default function Dashboard() {
                               />
                           )}
                           <Chip
-                              label={systemOnline ? 'Live' : 'Offline'}
-                              color={systemOnline ? 'success' : 'default'}
+                              label={statusLabel}
+                              color={statusColor}
                               variant="outlined"
                               size="small"
                           />
                       </Box>
                   </Box>
-                  <MJPEGPlayer
-                      url={`http://${window.location.hostname}:8081`}
-                      label="Primary Site Camera"
-                  />
+                  {hasConfiguredCameras ? (
+                      <MJPEGPlayer
+                          url={`http://${window.location.hostname}:8081`}
+                          label="Primary Site Camera"
+                      />
+                  ) : (
+                      <Alert severity="info" sx={{ mt: 1 }}>
+                          No cameras configured yet. Add one in the Cameras page to begin streaming.
+                      </Alert>
+                  )}
               </CardContent>
           </Card>
       </Grid>

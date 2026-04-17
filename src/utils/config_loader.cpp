@@ -323,7 +323,7 @@ AppConfig ConfigLoader::load(const std::string& path) {
         // Stream Configuration Validation
         // ================================================================================
         if (j["streams"].size() == 0) {
-            throw std::runtime_error("streams array must contain at least 1 stream (schema requires minItems: 1)");
+            spdlog::warn("No streams configured. Engine will start in idle mode and remain online for camera onboarding.");
         }
         
         for (size_t stream_idx = 0; stream_idx < j["streams"].size(); ++stream_idx) {

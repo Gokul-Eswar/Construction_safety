@@ -15,6 +15,7 @@
 #include <map>
 #include <atomic>
 #include <ctime>
+#include <chrono>
 
 struct StreamContext {
     std::string id;
@@ -50,6 +51,8 @@ protected:
 private:
     void onFrameReceived(const std::string& stream_id, GstSample* sample);
     void updateTiledView();
+    void ensureMQTTConnected();
+    bool subscribeControlTopic();
     size_t estimatePerStreamVramBytes(int frame_width, int frame_height, int input_width, int input_height) const;
     void enforceRuntimeDegradationPolicy(StreamContext& ctx, const cv::Mat& frame);
     bool shouldRunInferenceForStream(const StreamContext& ctx) const;
@@ -70,6 +73,12 @@ private:
     std::atomic<std::time_t> last_activity_;
     size_t admitted_vram_bytes_ = 0;
     size_t last_reported_free_vram_ = 0;
+
+    std::string mqtt_host_;
+    int mqtt_port_ = 1883;
+    bool control_topic_subscribed_ = false;
+    std::chrono::steady_clock::time_point last_mqtt_attempt_{};
+    std::chrono::seconds mqtt_retry_interval_{5};
     
     std::thread tiling_thread_;
 };

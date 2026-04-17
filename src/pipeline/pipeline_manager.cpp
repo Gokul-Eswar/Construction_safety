@@ -51,17 +51,10 @@ bool PipelineManager::init() {
 
     // MQTT Connectivity
     if (!config_.mqtt.host.empty()) {
+        mqtt_host_ = config_.mqtt.host;
+        mqtt_port_ = config_.mqtt.port;
         mqtt_client_ = std::make_unique<MQTTClient>(config_.mqtt.client_id);
-        if (mqtt_client_->connect(config_.mqtt.host, config_.mqtt.port)) {
-            // Subscribe to versioned control topic
-            mqtt_client_->subscribe("safety/v1/control", [this](const std::string& topic, const std::string& payload) {
-                 (void)topic;
-                 if (payload.find("restart") != std::string::npos) {
-                     spdlog::info("Received restart command via MQTT. Initiating shutdown...");
-                     std::raise(SIGTERM);
-                 }
-            });
-        }
+        ensureMQTTConnected();
     }
 
     // 3. Init Streams
@@ -421,6 +414,8 @@ void PipelineManager::checkAlerts(const std::string& stream_id, const std::vecto
 
 void PipelineManager::updateTiledView() {
     while (running_) {
+        ensureMQTTConnected();
+
         // Health check: stay healthy while active, and also when intentionally idle (no streams configured).
         auto now = std::time(nullptr);
         bool has_streams = !streams_.empty();
@@ -571,6 +566,51 @@ void PipelineManager::updateTiledView() {
         // Reduced sleep for higher visual FPS (10ms ~= 100 FPS target)
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
+}
+
+void PipelineManager::ensureMQTTConnected() {
+    if (mqtt_host_.empty()) {
+        return;
+    }
+
+    if (!mqtt_client_) {
+        mqtt_client_ = std::make_unique<MQTTClient>(config_.mqtt.client_id);
+    }
+
+    if (mqtt_client_->isConnected()) {
+        if (!control_topic_subscribed_) {
+            control_topic_subscribed_ = subscribeControlTopic();
+        }
+        return;
+    }
+
+    const auto now = std::chrono::steady_clock::now();
+    if (last_mqtt_attempt_.time_since_epoch().count() > 0 && now - last_mqtt_attempt_ < mqtt_retry_interval_) {
+        return;
+    }
+
+    last_mqtt_attempt_ = now;
+    spdlog::warn("MQTT disconnected. Attempting reconnect to {}:{}", mqtt_host_, mqtt_port_);
+    if (mqtt_client_->connect(mqtt_host_, mqtt_port_)) {
+        spdlog::info("MQTT reconnected successfully.");
+        control_topic_subscribed_ = subscribeControlTopic();
+    } else {
+        control_topic_subscribed_ = false;
+    }
+}
+
+bool PipelineManager::subscribeControlTopic() {
+    if (!mqtt_client_ || !mqtt_client_->isConnected()) {
+        return false;
+    }
+
+    return mqtt_client_->subscribe("safety/v1/control", [this](const std::string& topic, const std::string& payload) {
+        (void)topic;
+        if (payload.find("restart") != std::string::npos) {
+            spdlog::info("Received restart command via MQTT. Initiating shutdown...");
+            std::raise(SIGTERM);
+        }
+    });
 }
 
 size_t PipelineManager::estimatePerStreamVramBytes(int frame_width, int frame_height, int input_width, int input_height) const {

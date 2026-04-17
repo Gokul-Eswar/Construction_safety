@@ -1,0 +1,102 @@
+{
+  "_comment": "Construction Safety Sentinel - Complete Configuration",
+  "_demo_mode": "This config uses simulation (no camera required). For RTSP cameras, update the 'uri' fields.",
+  "streams": [
+    {
+      "id": "sim_01",
+      "name": "Simulation Feed - Zone A",
+      "type": "rtsp",
+      "uri": "rtsp://via.placeholder.com/stream?action=stream",
+      "zones": [
+        {
+          "id": 1,
+          "name": "High Hazard Area",
+          "polygon_type": "rectangle",
+          "points": [
+            [
+              100,
+              100
+            ],
+            [
+              300,
+              100
+            ],
+            [
+              300,
+              300
+            ],
+            [
+              100,
+              300
+            ]
+          ]
+        },
+        {
+          "id": 2,
+          "name": "Equipment Zone",
+          "polygon_type": "polygon",
+          "points": [
+            [
+              400,
+              150
+            ],
+            [
+              550,
+              100
+            ],
+            [
+              600,
+              250
+            ],
+            [
+              500,
+              350
+            ],
+            [
+              350,
+              300
+            ]
+          ]
+        }
+      ]
+    }
+  ],
+  "model_path": "yolo11n.onnx",
+  "database_path": "safety_violations.db",
+  "alert_cooldown": 5000,
+  "log_retention_days": 30,
+  "stream_port": 8081,
+  "auth": {
+    "username": "admin",
+    "password": "password"
+  },
+  "detection_tuning": {
+    "confidence_threshold": 0.2,
+    "nms_threshold": 0.5,
+    "inference_interval": 1
+  },
+  "tracking_tuning": {
+    "max_age": 45,
+    "min_hits": 3,
+    "iou_threshold": 0.3,
+    "feature_threshold": 0.5,
+    "occlusion_extension_frames": 15
+  },
+  "preprocessing": {
+    "clahe_enabled": true,
+    "clahe_clip_limit": 2,
+    "clahe_tile_size": 8,
+    "clahe_blur_kernel": 3
+  },
+  "zone_detection": {
+    "mode": "footprint",
+    "boundary_margin": 5,
+    "footprint_voting": "majority"
+  },
+  "mqtt": {
+    "host": "localhost",
+    "port": 1883,
+    "topic": "safety/v1/violations",
+    "client_id": "safety_engine_01"
+  }
+}
