@@ -1,0 +1,51 @@
+{
+  "generated_at": "2026-04-17T14:17:31.426Z",
+  "database_path": "D:\\GOKUL_ESWAR\\Codebase\\construction safety\\safety_violations.db",
+  "tables": [
+    "sqlite_sequence",
+    "violations"
+  ],
+  "violations": {
+    "summary": {
+      "total": 1,
+      "first_ts": "2026-01-29 15:18:32",
+      "last_ts": "2026-01-29 15:18:32",
+      "avg_conf": 0.95,
+      "min_conf": 0.95,
+      "max_conf": 0.95,
+      "uploaded_count": 0,
+      "pending_count": 1
+    },
+    "by_day_last_30": [
+      {
+        "day": "2026-01-29",
+        "count": 1
+      }
+    ],
+    "by_zone": [
+      {
+        "zone_id": 1,
+        "count": 1,
+        "avg_conf": 0.95
+      }
+    ],
+    "by_camera": [
+      {
+        "camera_id": "unknown",
+        "count": 1
+      }
+    ],
+    "latest_10": [
+      {
+        "id": 1,
+        "timestamp": "2026-01-29 15:18:32",
+        "zone_id": 1,
+        "confidence": 0.95,
+        "object_id": -1,
+        "uploaded": 0,
+        "camera_id": ""
+      }
+    ]
+  },
+  "notes": []
+}

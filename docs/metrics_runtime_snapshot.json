@@ -1,0 +1,38 @@
+{
+  "generated_at": "2026-04-17T14:18:34.954Z",
+  "input": {
+    "host": "localhost",
+    "port": 1883,
+    "duration_sec": 10,
+    "topics": [
+      "safety/v1/telemetry",
+      "safety/v1/heartbeat",
+      "safety/v1/violations",
+      "safety/v1/cloud_sync"
+    ]
+  },
+  "counts": {
+    "telemetry": 0,
+    "heartbeat": 0,
+    "violations": 0,
+    "cloud_sync": 0,
+    "parse_errors": 0
+  },
+  "stream_fps": {},
+  "latency_ms": {},
+  "gpu": {
+    "utilization_percent": null,
+    "temperature_c": null,
+    "memory_used_mb": null,
+    "memory_total_mb": null
+  },
+  "heartbeat_statuses": {},
+  "event_window": {
+    "first_event_ts": null,
+    "last_event_ts": null
+  },
+  "notes": [
+    "No GPU telemetry received in capture window.",
+    "No telemetry messages were received. Ensure MQTT broker and engine are both running and connected."
+  ]
+}
