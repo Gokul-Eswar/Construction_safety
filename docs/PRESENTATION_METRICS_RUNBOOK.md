@@ -6,6 +6,7 @@ This runbook produces report-ready metrics directly from the running system.
 
 - Database snapshot file: [docs/metrics_db_snapshot.json](docs/metrics_db_snapshot.json)
 - Runtime snapshot file: [docs/metrics_runtime_snapshot.json](docs/metrics_runtime_snapshot.json)
+- Graph report: [docs/graphs/report.html](docs/graphs/report.html)
 
 Current status:
 - Database snapshot contains valid persisted data.
@@ -20,6 +21,18 @@ powershell -ExecutionPolicy Bypass -File .\tools\capture_presentation_metrics.ps
 This produces:
 - [docs/metrics_db_snapshot.json](docs/metrics_db_snapshot.json)
 - [docs/metrics_runtime_snapshot.json](docs/metrics_runtime_snapshot.json)
+- [docs/graphs/report.html](docs/graphs/report.html)
+
+Optional if you have YOLO training outputs:
+
+powershell -ExecutionPolicy Bypass -File .\tools\capture_presentation_metrics.ps1 -DurationSec 60 -ResultsCsv ".\path\to\results.csv" -ConfusionPath ".\path\to\confusion_matrix.json"
+
+This also produces:
+- confusion matrix graph in [docs/graphs/confusion_matrix.svg](docs/graphs/confusion_matrix.svg)
+- training curves in [docs/graphs/training_losses.svg](docs/graphs/training_losses.svg) and [docs/graphs/training_metrics.svg](docs/graphs/training_metrics.svg)
+
+If you only have class-count matrix values and no exported file yet, fill this template first:
+- [docs/confusion_matrix_template.json](docs/confusion_matrix_template.json)
 
 ## 3. Required preconditions for live runtime metrics
 
