@@ -79,7 +79,12 @@ desktop.ini
 # Data and Logs
 *.log
 *.db
+*.db-shm
+*.db-wal
 *.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.pid
 *.tmp
 *.temp
 *.bak
